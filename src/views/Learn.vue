@@ -5,8 +5,11 @@
       <div class="w-full lg:w-1/2 px-2 mb-4" :key="activeTab">
         <h2 class="text-xl font-semibold mb-3">
           <el-tabs v-model="activeTab" class="mb-4">
-            <el-tab-pane label="平假名" name="hiragana"></el-tab-pane>
-            <el-tab-pane label="片假名" name="katakana"></el-tab-pane>
+            <el-tab-pane label="(清音)平假名" name="hiragana"></el-tab-pane>
+            <el-tab-pane label="(清音)片假名" name="katakana"></el-tab-pane>
+            <el-tab-pane label="濁音" name="dakuon"></el-tab-pane>
+            <el-tab-pane label="半濁音" name="handakuon"></el-tab-pane>
+            <el-tab-pane label="拗音" name="yoon"></el-tab-pane>
           </el-tabs>
         </h2>
         <div
@@ -43,7 +46,9 @@
         >
           <div class="h-12 flex items-center gap-10">
             <div class="flex-grow flex gap-4 self-center items-center">
-              <div class="text-6xl font-bold">{{ selectedSound.kana }}</div>
+              <div class="text-5xl font-bold w-max">
+                {{ selectedSound.kana }}
+              </div>
               <div class="text-4xl font-bold">{{ selectedSound.romaji }}</div>
               <div class="text-4xl font-bold">{{ selectedSound.evo }}</div>
             </div>
@@ -150,8 +155,9 @@ const currentSounds = computed(() => {
 
 const groupedSounds = computed(() => {
   const groups = [];
-  for (let i = 0; i < currentSounds.value.length; i += 5) {
-    groups.push(currentSounds.value.slice(i, i + 5));
+  let groupSize = activeTab.value === "yoon" ? 3 : 5;
+  for (let i = 0; i < currentSounds.value.length; i += groupSize) {
+    groups.push(currentSounds.value.slice(i, i + groupSize));
   }
   return groups;
 });

@@ -67,11 +67,11 @@
     { "kana": "", "romaji": "", "evo": "" }
   ],
   "katakana": [
-    { "kana": "ア", "romaji": "a" , "evo": "阿" },
-    { "kana": "イ", "romaji": "i" , "evo": "伊" },
-    { "kana": "ウ", "romaji": "u" , "evo": "宇" },
-    { "kana": "エ", "romaji": "e" , "evo": "江" },
-    { "kana": "オ", "romaji": "o" , "evo": "於" },
+    { "kana": "ア", "romaji": "a", "evo": "阿" },
+    { "kana": "イ", "romaji": "i", "evo": "伊" },
+    { "kana": "ウ", "romaji": "u", "evo": "宇" },
+    { "kana": "エ", "romaji": "e", "evo": "江" },
+    { "kana": "オ", "romaji": "o", "evo": "於" },
 
     { "kana": "カ", "romaji": "ka", "evo": "加" },
     { "kana": "キ", "romaji": "ki", "evo": "幾" },
@@ -127,10 +127,71 @@
     { "kana": "", "romaji": "", "evo": "" },
     { "kana": "ヲ", "romaji": "o", "evo": "乎" },
 
-    { "kana": "ン", "romaji": "n", "evo": "尓"},
+    { "kana": "ン", "romaji": "n", "evo": "尓" },
     { "kana": "", "romaji": "", "evo": "" },
     { "kana": "", "romaji": "", "evo": "" },
     { "kana": "", "romaji": "", "evo": "" },
     { "kana": "", "romaji": "", "evo": "" }
+  ],
+  "dakuon": [
+    { "kana": "が", "romaji": "ga", "evo": "我" },
+    { "kana": "ぎ", "romaji": "gi", "evo": "義" },
+    { "kana": "ぐ", "romaji": "gu", "evo": "具" },
+    { "kana": "げ", "romaji": "ge", "evo": "外" },
+    { "kana": "ご", "romaji": "go", "evo": "呉" },
+
+    { "kana": "ざ", "romaji": "za", "evo": "座" },
+    { "kana": "じ", "romaji": "ji", "evo": "治" },
+    { "kana": "ず", "romaji": "zu", "evo": "図" },
+    { "kana": "ぜ", "romaji": "ze", "evo": "是" },
+    { "kana": "ぞ", "romaji": "zo", "evo": "蘇" },
+
+    { "kana": "だ", "romaji": "da", "evo": "太" },
+    { "kana": "ぢ", "romaji": "ji", "evo": "治" },
+    { "kana": "づ", "romaji": "zu", "evo": "図" },
+    { "kana": "で", "romaji": "de", "evo": "出" },
+    { "kana": "ど", "romaji": "do", "evo": "度" },
+
+    { "kana": "ば", "romaji": "ba", "evo": "馬" },
+    { "kana": "び", "romaji": "bi", "evo": "比" },
+    { "kana": "ぶ", "romaji": "bu", "evo": "部" },
+    { "kana": "べ", "romaji": "be", "evo": "米" },
+    { "kana": "ぼ", "romaji": "bo", "evo": "母" }
+  ],
+  "handakuon": [
+    { "kana": "ぱ", "romaji": "pa", "evo": "波" },
+    { "kana": "ぴ", "romaji": "pi", "evo": "比" },
+    { "kana": "ぷ", "romaji": "pu", "evo": "不" },
+    { "kana": "ぺ", "romaji": "pe", "evo": "部" },
+    { "kana": "ぽ", "romaji": "po", "evo": "保" }
+  ],
+  "yoon": [
+    { "kana": "きゃ", "romaji": "kya", "evo": "伽" },
+    { "kana": "きゅ", "romaji": "kyu", "evo": "久" },
+    { "kana": "きょ", "romaji": "kyo", "evo": "卿" },
+
+    { "kana": "しゃ", "romaji": "sha", "evo": "者" },
+    { "kana": "しゅ", "romaji": "shu", "evo": "手" },
+    { "kana": "しょ", "romaji": "sho", "evo": "書" },
+
+    { "kana": "ちゃ", "romaji": "cha", "evo": "茶" },
+    { "kana": "ちゅ", "romaji": "chu", "evo": "注" },
+    { "kana": "ちょ", "romaji": "cho", "evo": "著" },
+
+    { "kana": "にゃ", "romaji": "nya", "evo": "那" },
+    { "kana": "にゅ", "romaji": "nyu", "evo": "入" },
+    { "kana": "にょ", "romaji": "nyo", "evo": "女" },
+
+    { "kana": "ひゃ", "romaji": "hya", "evo": "兵" },
+    { "kana": "ひゅ", "romaji": "hyu", "evo": "平" },
+    { "kana": "ひょ", "romaji": "hyo", "evo": "表" },
+
+    { "kana": "みゃ", "romaji": "mya", "evo": "耶" },
+    { "kana": "みゅ", "romaji": "myu", "evo": "武" },
+    { "kana": "みょ", "romaji": "myo", "evo": "妙" },
+
+    { "kana": "りゃ", "romaji": "rya", "evo": "良" },
+    { "kana": "りゅ", "romaji": "ryu", "evo": "流" },
+    { "kana": "りょ", "romaji": "ryo", "evo": "了" }
   ]
 }
