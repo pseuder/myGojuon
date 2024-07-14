@@ -16,12 +16,19 @@
           >
             {{ isPlaying ? "⏸" : "▶️" }}
           </el-button>
-          <el-button @click="changeSound('prev')" type="warning" circle>
-            <el-icon size="30" color="white"><CaretLeft /></el-icon>
-          </el-button>
-          <el-button @click="changeSound('next')" type="warning" circle>
-            <el-icon size="30" color="white"><CaretRight /></el-icon>
-          </el-button>
+
+          <el-select
+            v-model="activeTab"
+            placeholder="選擇假名"
+            size="small"
+            style="width: 100px"
+          >
+            <el-option key="hiragana" label="平假名" value="hiragana" />
+            <el-option key="katakana" label="片假名" value="katakana" />
+            <el-option key="dakuon" label="濁音" value="dakuon" />
+            <el-option key="handakuon" label="半濁音" value="handakuon" />
+            <el-option key="yoon" label="拗音" value="yoon" />
+          </el-select>
 
           <el-switch
             v-model="isRandomMode"
@@ -29,9 +36,11 @@
             inactive-text="循序"
             @change="handleModeChange"
           />
-
-          <el-button @click="showCurrentWord = !showCurrentWord" type="text">
-            {{ showCurrentWord ? "隱藏" : "顯示" }}答案
+          <el-button @click="changeSound('prev')" type="warning" circle>
+            <el-icon size="30" color="white"><CaretLeft /></el-icon>
+          </el-button>
+          <el-button @click="changeSound('next')" type="warning" circle>
+            <el-icon size="30" color="white"><CaretRight /></el-icon>
           </el-button>
         </div>
 
@@ -50,6 +59,10 @@
           <div>預測值：{{ predictKana }}</div>
           <div>信心值：{{ predictConfidence.toString().slice(0, 5) }}</div>
         </div>
+
+        <el-button @click="showCurrentWord = !showCurrentWord" type="text">
+          {{ showCurrentWord ? "隱藏" : "顯示" }}答案
+        </el-button>
 
         <div v-if="showCurrentWord" class="mt-4 p-4 bg-gray-100 rounded-lg">
           <h3 class="text-xl font-bold mb-2">當前單字信息：</h3>
