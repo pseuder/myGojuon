@@ -1,15 +1,16 @@
 <template>
   <div class="container learn-container">
     <div class="flex flex-wrap">
-      <!-- 左侧50音列表 -->
+      <!-- 左側50音列表 -->
       <div class="w-full lg:w-1/2 px-2 mb-4" :key="activeTab">
         <h2 class="text-xl font-semibold mb-3">
           <el-tabs v-model="activeTab" class="mb-4">
-            <el-tab-pane label="(清音)平假名" name="hiragana"></el-tab-pane>
-            <el-tab-pane label="(清音)片假名" name="katakana"></el-tab-pane>
-            <el-tab-pane label="濁音" name="dakuon"></el-tab-pane>
-            <el-tab-pane label="半濁音" name="handakuon"></el-tab-pane>
-            <el-tab-pane label="拗音" name="yoon"></el-tab-pane>
+            <el-tab-pane
+              v-for="tab in tabs"
+              :key="tab.name"
+              :label="tab.label"
+              :name="tab.name"
+            />
           </el-tabs>
         </h2>
         <div
@@ -24,11 +25,7 @@
           >
             <el-button
               @click="selectSound(sound)"
-              :type="
-                selectedSound && selectedSound.kana === sound.kana
-                  ? 'primary'
-                  : ''
-              "
+              :type="isSelectedSound(sound) ? 'primary' : ''"
               :style="{ visibility: sound.kana ? 'visible' : 'hidden' }"
               class="flex-grow"
             >
@@ -37,7 +34,7 @@
           </div>
         </div>
       </div>
-      <!-- 右侧显示区和手写区 -->
+      <!-- 右側手寫區 -->
       <div class="w-full h-[500px] lg:w-1/2 px-2">
         <el-card
           v-if="selectedSound"
@@ -54,18 +51,23 @@
             </div>
 
             <div class="flex gap-4">
+              <audio
+                ref="audioPlayer"
+                :src="`/sounds/${selectedSound.romaji}.mp3`"
+                @ended="audioEnded"
+              ></audio>
               <el-button
-                @click="playSound(selectedSound)"
+                @click="togglePlay"
                 type="text"
                 style="font-size: 35px; padding: 0; margin: 0; line-height: 1"
               >
-                🔊
+                {{ isPlaying ? "⏸" : "▶️" }}
               </el-button>
-              <el-button @click="changeSound('prev')" type="warning " circle>
-                <el-icon size="30" color="brown"><CaretLeft /></el-icon>
+              <el-button @click="changeSound('prev')" type="warning" circle>
+                <el-icon size="30" color="white"><CaretLeft /></el-icon>
               </el-button>
               <el-button @click="changeSound('next')" type="warning" circle>
-                <el-icon size="30" color="brown"><CaretRight /></el-icon>
+                <el-icon size="30" color="white"><CaretRight /></el-icon>
               </el-button>
             </div>
           </div>
@@ -73,21 +75,21 @@
             <HandwritingCanvas
               ref="handwritingCanvas"
               @clear="clearSelectedSound"
-              @autoDetect="autoDetect"
-              :exampleKana="selectedSound.kana"
+              @auto-detect="autoDetect"
+              :example-kana="selectedSound.kana"
             />
           </div>
         </el-card>
-        <el-empty v-else description="請選擇一個音節"></el-empty>
+        <el-empty v-else description="請選擇一個音節" />
       </div>
     </div>
   </div>
 </template>
-<script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
-import { CaretLeft, CaretRight } from "@element-plus/icons-vue";
-import { ElMessageBox } from "element-plus";
 
+<script setup>
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
+import { CaretLeft, CaretRight } from "@element-plus/icons-vue";
+import { ElMessageBox, ElMessage } from "element-plus";
 import HandwritingCanvas from "@/components/HandwritingCanvas.vue";
 import fiftySoundsData from "@/data/fifty-sounds.json";
 
@@ -95,7 +97,49 @@ const fiftySounds = ref(fiftySoundsData);
 const activeTab = ref("hiragana");
 const selectedSound = ref({ kana: "あ", romaji: "a", evo: "安" });
 const handwritingCanvas = ref(null);
-const audio = ref(null);
+const audioPlayer = ref(null);
+const isPlaying = ref(false);
+
+const tabs = [
+  { name: "hiragana", label: "(清音)平假名" },
+  { name: "katakana", label: "(清音)片假名" },
+  { name: "dakuon", label: "濁音" },
+  { name: "handakuon", label: "半濁音" },
+  { name: "yoon", label: "拗音" },
+];
+
+const currentSounds = computed(() =>
+  fiftySounds.value ? fiftySounds.value[activeTab.value] : []
+);
+
+const groupedSounds = computed(() => {
+  const groups = [];
+  const groupSize = activeTab.value === "yoon" ? 3 : 5;
+  for (let i = 0; i < currentSounds.value.length; i += groupSize) {
+    groups.push(currentSounds.value.slice(i, i + groupSize));
+  }
+  return groups;
+});
+
+watch(
+  selectedSound,
+  (newSound, oldSound) => {
+    if (newSound !== oldSound) {
+      if (audioPlayer.value) {
+        audioPlayer.value.load(); // 加载新的音频文件
+        // 使用 nextTick 确保音频加载完成后再播放
+        nextTick(() => {
+          playSound();
+        });
+      }
+    }
+  },
+  { deep: true }
+);
+
+watch(activeTab, () => {
+  handwritingCanvas.value?.clearCanvas();
+});
 
 const findNextValidKana = (currentIndex, direction) => {
   const totalItems = currentSounds.value.length;
@@ -110,99 +154,52 @@ const findNextValidKana = (currentIndex, direction) => {
     loopCount++;
   }
 
-  return null; // 如果所有項目都是空的，返回 null
+  return null;
 };
 
-function changeSound(type) {
+const changeSound = (type) => {
   const currentIndex = currentSounds.value.findIndex(
     (sound) => sound.kana === selectedSound.value.kana
   );
 
-  let nextSound = null;
-
-  if (type === "next") {
-    nextSound = findNextValidKana(currentIndex, 1);
-  } else if (type === "prev") {
-    nextSound = findNextValidKana(currentIndex, -1);
-  }
+  const nextSound =
+    type === "next"
+      ? findNextValidKana(currentIndex, 1)
+      : findNextValidKana(currentIndex, -1);
 
   if (nextSound) {
     selectSound(nextSound);
   }
-}
+};
 
-onMounted(async () => {
-  window.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowLeft") {
-      changeSound("prev");
-    } else if (event.key === "ArrowRight") {
-      changeSound("next");
+const togglePlay = () => {
+  if (audioPlayer.value) {
+    if (isPlaying.value) {
+      audioPlayer.value.pause();
+    } else {
+      audioPlayer.value.play();
     }
-  });
-});
-
-onUnmounted(() => {
-  audioCache.forEach((audio) => {
-    audio.pause();
-    audio.src = "";
-  });
-  audioCache.clear();
-});
-
-const currentSounds = computed(() => {
-  return fiftySounds.value ? fiftySounds.value[activeTab.value] : [];
-});
-
-const groupedSounds = computed(() => {
-  const groups = [];
-  let groupSize = activeTab.value === "yoon" ? 3 : 5;
-  for (let i = 0; i < currentSounds.value.length; i += groupSize) {
-    groups.push(currentSounds.value.slice(i, i + groupSize));
+    isPlaying.value = !isPlaying.value;
   }
-  return groups;
-});
+};
 
-watch(activeTab, () => {
-  if (handwritingCanvas.value) {
-    handwritingCanvas.value.clearCanvas();
-  }
+const audioEnded = () => {
+  isPlaying.value = false;
+};
 
-  const firstFewSounds = currentSounds.value.slice(0, 5);
-  firstFewSounds.forEach((sound) => {
-    if (sound.kana) {
-      preloadAudio(sound.romaji);
-    }
-  });
-});
-
-// 音頻緩存系統
-const audioCache = new Map();
-
-// 預加載音頻
-const preloadAudio = (romaji) => {
-  if (!audioCache.has(romaji)) {
-    const audio = new Audio(`/sounds/${romaji}.mp3`);
-    audio.load(); // 預加載音頻
-    audioCache.set(romaji, audio);
+const playSound = () => {
+  if (audioPlayer.value) {
+    audioPlayer.value.currentTime = 0; // 重置音频到开始位置
+    audioPlayer.value.play();
+    isPlaying.value = true;
   }
 };
 
 const selectSound = (sound) => {
   if (sound.kana) {
     selectedSound.value = sound;
-    playSound(sound);
-    if (handwritingCanvas.value) {
-      handwritingCanvas.value.clearCanvas();
-    }
-    preloadAudio(sound.romaji); // 預加載當前音頻
-    // 預加載下一個和上一個音頻
-    const currentIndex = currentSounds.value.findIndex(
-      (s) => s.kana === sound.kana
-    );
-    const nextSound = findNextValidKana(currentIndex, 1);
-    const prevSound = findNextValidKana(currentIndex, -1);
-    if (nextSound) preloadAudio(nextSound.romaji);
-    if (prevSound) preloadAudio(prevSound.romaji);
+    handwritingCanvas.value?.clearCanvas();
+    // 不在这里直接播放音频，而是通过 watch 来触发
   }
 };
 
@@ -210,39 +207,40 @@ const clearSelectedSound = () => {
   selectedSound.value = null;
 };
 
-const playSound = (sound) => {
-  const romaji = sound.romaji;
-  if (audioCache.has(romaji)) {
-    console.log("Playing cached audio:", romaji);
-    const audio = audioCache.get(romaji);
-    audio.currentTime = 0; // 重置音頻播放位置
-    audio.play().catch((error) => {
-      console.error("Error playing audio:", error);
-    });
-  } else {
-    console.log("Playing audio:", romaji);
-    preloadAudio(romaji);
-    audioCache
-      .get(romaji)
-      .play()
-      .catch((error) => {
-        console.error("Error playing audio:", error);
-      });
-  }
-};
-
-function autoDetect(predictKana) {
-  if (predictKana == selectedSound.value.kana) {
+const autoDetect = (predictKana) => {
+  if (predictKana === selectedSound.value.kana) {
     ElMessage({
       type: "success",
       message: predictKana,
     });
     changeSound("next");
   }
-}
-</script>
+};
 
-<style scoped>
-.learn-container {
-}
-</style>
+const isSelectedSound = (sound) =>
+  selectedSound.value && selectedSound.value.kana === sound.kana;
+
+const handleKeydown = (event) => {
+  if (event.key === "ArrowLeft") {
+    changeSound("prev");
+  } else if (event.key === "ArrowRight") {
+    changeSound("next");
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("keydown", handleKeydown);
+  // 初始加载时播放第一个音频
+  nextTick(() => {
+    playSound();
+  });
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeydown);
+  if (audioPlayer.value) {
+    audioPlayer.value.pause();
+    audioPlayer.value.src = "";
+  }
+});
+</script>
