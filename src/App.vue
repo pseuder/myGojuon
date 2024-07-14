@@ -6,31 +6,37 @@
           :default-active="activeIndex"
           class="user-select-none overflow-hidden"
           mode="horizontal"
-          @select="handleSelect"
+          router
         >
-          <el-menu-item index="home">首頁</el-menu-item>
-          <el-menu-item index="learn">練習</el-menu-item>
+          <el-menu-item index="/">首頁</el-menu-item>
+          <el-menu-item index="/writing">手寫練習</el-menu-item>
+          <el-menu-item index="/listening">聽寫練習</el-menu-item>
         </el-menu>
       </div>
     </header>
     <main class="flex-grow container mx-auto main-container">
-      <component
-        class="main-component"
-        :is="activeIndex === 'home' ? Home : Learn"
-      />
+      <div class="main-component">
+        <router-view></router-view>
+      </div>
     </main>
   </div>
 </template>
+
 <script setup>
-import { ref } from "vue";
-import Home from "@/views/Home.vue";
-import Learn from "@/views/Learn.vue";
+import { ref, watch } from "vue";
+import { useRoute } from "vue-router";
 
-const activeIndex = ref("home");
+const route = useRoute();
+const activeIndex = ref("/");
 
-const handleSelect = (index) => {
-  activeIndex.value = index;
-};
+// 监听路由变化，更新 activeIndex
+watch(
+  () => route.path,
+  (newPath) => {
+    activeIndex.value = newPath;
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
@@ -56,7 +62,7 @@ const handleSelect = (index) => {
   background-image: url("/images/gojuon-writing.jpg");
   background-size: cover;
   background-position: center;
-  opacity: 0.5; /* 調整這個值來改變透明度，範圍從0到1 */
+  opacity: 0.5;
   z-index: -1;
 }
 
