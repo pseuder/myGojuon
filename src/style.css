@@ -5,3 +5,7 @@
 .my-color-picker {
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.5) !important;
 }
+
+.el-tabs, .el-menu {
+  user-select: none;
+}

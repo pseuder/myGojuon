@@ -1,6 +1,6 @@
 <!-- pages/index.vue -->
 <template>
-  <div class="container mx-auto px-4">
+  <div class="container w-[80vw] mx-auto px-4">
     <header class="text-center py-10">
       <h1 class="text-4xl font-bold text-indigo-700">日語 50 音學習</h1>
       <p class="mt-2 text-xl text-gray-600">互動式日語假名學習平台</p>
@@ -27,12 +27,19 @@
 
       <!-- 開始學習按鈕 -->
       <div class="text-center my-10">
-        <NuxtLink
-          to="/learn"
-          class="bg-indigo-600 text-white px-6 py-3 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
+        <el-button
+          @click="router.push('/writing')"
+          class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
         >
-          開始學習
-        </NuxtLink>
+          開始手寫練習
+        </el-button>
+
+        <el-button
+          @click="router.push('/listening')"
+          class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
+        >
+          開始聽寫練習
+        </el-button>
       </div>
 
       <!-- 學習進度 -->
@@ -46,9 +53,9 @@
       <section class="my-10">
         <h2 class="text-2xl font-bold text-indigo-700 mb-4">最近更新</h2>
         <ul class="list-disc list-inside">
-          <li>新增五十音圖互動練習</li>
-          <li>優化手機版面設計</li>
-          <li>添加更多日常會話例句</li>
+          <li>新增手寫練習</li>
+          <li>新增聽寫練習</li>
+          <li>加入自動辨識功能(實驗性)</li>
         </ul>
       </section>
     </main>
@@ -57,6 +64,11 @@
 
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+
+const isLoggedIn = ref(true);
 </script>
 
 <style scoped>

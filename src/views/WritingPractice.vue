@@ -74,7 +74,6 @@
           <div class="flex-grow">
             <HandwritingCanvas
               ref="handwritingCanvas"
-              @clear="clearSelectedSound"
               :example-kana="selectedSound.kana"
               :show-example="true"
             />
@@ -201,10 +200,6 @@ const selectSound = (sound) => {
     handwritingCanvas.value?.clearCanvas();
     // 不在这里直接播放音频，而是通过 watch 来触发
   }
-};
-
-const clearSelectedSound = () => {
-  selectedSound.value = null;
 };
 
 const isSelectedSound = (sound) =>

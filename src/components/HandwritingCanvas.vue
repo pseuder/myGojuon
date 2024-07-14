@@ -20,17 +20,20 @@
         @change="updatePenStyle"
         style="width: 50px"
       >
-        <el-option label="細" :value="6" />
-        <el-option label="中" :value="8" />
-        <el-option label="粗" :value="10" />
+        <el-option
+          v-for="option in penSizeOptions"
+          :key="option.value"
+          :label="option.label"
+          :value="option.value"
+        />
       </el-select>
-
       <el-button
         @click="handleClear"
         type="text"
         style="font-size: 35px; padding: 0; margin: 0; line-height: 1"
-        >🧹</el-button
       >
+        🧹
+      </el-button>
     </div>
     <div class="canvas-wrapper" ref="canvasWrapper">
       <canvas
@@ -47,10 +50,13 @@
     </div>
   </div>
 </template>
+
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from "vue";
+import { useCanvas } from "@/composables/useCanvas";
+import { usePen } from "@/composables/usePen";
+import { useDrawing } from "@/composables/useDrawing";
 import axios from "axios";
-import { ElMessageBox } from "element-plus";
 
 const props = defineProps({
   exampleKana: {
@@ -63,178 +69,52 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["clear", "autoDetect"]);
+const emit = defineEmits(["autoDetect"]);
 
-const canvas = ref(null);
-const canvasContainer = ref(null);
-let ctx;
-let isDrawing = false;
-let canvasWidth = 0;
-let canvasHeight = 0;
-const penColor = ref("#000000");
-const penSize = ref(8);
+const {
+  canvas,
+  canvasContainer,
+  canvasWrapper,
+  ctx,
+  initCanvas,
+  clearCanvas,
+  clearUserDrawing,
+  redrawCanvas,
+  drawGrid,
+  drawExampleKana,
+  handleResize,
+} = useCanvas(props);
 
-const penMode = ref(true);
+const {
+  penMode,
+  penColor,
+  penSize,
+  penSizeOptions,
+  updatePenStyle,
+  handleModeChange,
+  updateTouchAction,
+} = usePen(ctx);
 
-const canvasWrapper = ref(null);
-
-let drawingTimer = null;
+const {
+  isDrawing,
+  userPaths,
+  startDrawing,
+  draw,
+  stopDrawing,
+  drawUserPaths,
+  clearUserPaths,
+} = useDrawing(canvas, penMode, penColor, penSize, ctx);
 
 const isSending = ref(false);
 
-const userPaths = ref([]);
-
-const updatePenStyle = () => {
-  if (ctx) {
-    ctx.strokeStyle = penColor.value;
-    ctx.lineWidth = penSize.value;
-  }
-};
-
-const initCanvas = () => {
-  if (!canvasContainer.value || !canvasWrapper.value) return;
-
-  const containerWidth = canvasWrapper.value.offsetWidth;
-  const containerHeight = canvasWrapper.value.offsetHeight;
-
-  canvasWidth = containerWidth;
-  canvasHeight = containerHeight;
-
-  canvas.value.width = canvasWidth;
-  canvas.value.height = canvasHeight;
-
-  ctx = canvas.value.getContext("2d");
-  updatePenStyle();
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-
-  redrawCanvas();
-};
-
-const redrawCanvas = () => {
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-  drawGrid();
-  if (props.showExample) {
-    drawExampleKana();
-  }
-  drawUserPaths();
-};
-
-watch(() => props.showExample, redrawCanvas);
-
-const drawGrid = () => {
-  ctx.save();
-  ctx.strokeStyle = "#ccc";
-  ctx.lineWidth = 1;
-
-  ctx.beginPath();
-  ctx.moveTo(0, canvasHeight / 2);
-  ctx.lineTo(canvasWidth, canvasHeight / 2);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(canvasWidth / 2, 0);
-  ctx.lineTo(canvasWidth / 2, canvasHeight);
-  ctx.stroke();
-
-  ctx.restore();
-};
-
-const drawExampleKana = () => {
-  ctx.save();
-  ctx.font = `${canvasHeight * 0.8}px serif`;
-  ctx.fillStyle = "rgba(200, 200, 200, 0.5)";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(props.exampleKana, canvasWidth / 2, canvasHeight / 2);
-  ctx.restore();
-};
-
-const drawUserPaths = () => {
-  ctx.save();
-  ctx.strokeStyle = penColor.value;
-  ctx.lineWidth = penSize.value;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-
-  userPaths.value.forEach((path) => {
-    if (path.length > 0) {
-      ctx.beginPath();
-      ctx.moveTo(path[0].x, path[0].y);
-      for (let i = 1; i < path.length; i++) {
-        ctx.lineTo(path[i].x, path[i].y);
-      }
-      ctx.stroke();
-    }
-  });
-
-  ctx.restore();
-};
-
-const startDrawing = (event) => {
-  if (penMode.value && event.pointerType !== "pen") return;
-  if (
-    !penMode.value &&
-    event.pointerType !== "touch" &&
-    event.pointerType !== "mouse"
-  )
-    return;
-
-  isDrawing = true;
-  updatePenStyle();
-
-  const rect = canvas.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-
-  userPaths.value.push([{ x, y }]);
-
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-
-  if (drawingTimer) {
-    clearTimeout(drawingTimer);
-  }
-};
-
-const draw = (event) => {
-  if (!isDrawing) return;
-
-  if (penMode.value && event.pointerType !== "pen") return;
-  if (
-    !penMode.value &&
-    event.pointerType !== "touch" &&
-    event.pointerType !== "mouse"
-  )
-    return;
-
-  const rect = canvas.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-
-  userPaths.value[userPaths.value.length - 1].push({ x, y });
-
-  ctx.lineTo(x, y);
-  ctx.stroke();
-
-  if (drawingTimer) {
-    clearTimeout(drawingTimer);
-  }
-};
-
-const stopDrawing = () => {
-  isDrawing = false;
-  ctx.beginPath();
-};
-
-const generateCanvasImage = () => {
+const generateCanvasImage = async () => {
   const offscreenCanvas = document.createElement("canvas");
-  offscreenCanvas.width = canvasWidth;
-  offscreenCanvas.height = canvasHeight;
+  offscreenCanvas.width = canvas.value.width;
+  offscreenCanvas.height = canvas.value.height;
   const offscreenCtx = offscreenCanvas.getContext("2d");
 
   offscreenCtx.fillStyle = "white";
-  offscreenCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+  offscreenCtx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
 
   offscreenCtx.strokeStyle = penColor.value;
   offscreenCtx.lineWidth = penSize.value;
@@ -245,16 +125,12 @@ const generateCanvasImage = () => {
     if (path.length > 0) {
       offscreenCtx.beginPath();
       offscreenCtx.moveTo(path[0].x, path[0].y);
-      for (let i = 1; i < path.length; i++) {
-        offscreenCtx.lineTo(path[i].x, path[i].y);
-      }
+      path.slice(1).forEach((point) => offscreenCtx.lineTo(point.x, point.y));
       offscreenCtx.stroke();
     }
   });
 
-  return new Promise((resolve) => {
-    offscreenCanvas.toBlob(resolve, "image/png");
-  });
+  return new Promise((resolve) => offscreenCanvas.toBlob(resolve, "image/png"));
 };
 
 const sendCanvasImageToBackend = async () => {
@@ -274,38 +150,22 @@ const sendCanvasImageToBackend = async () => {
       }
     );
     console.log("Image sent successfully:", response.data);
-    const res = response.data;
-    isSending.value = false;
-
-    emit("autoDetect", res);
+    emit("autoDetect", response.data);
   } catch (error) {
     console.error("Error sending image to backend:", error);
+  } finally {
     isSending.value = false;
   }
 };
 
 const handleClear = () => {
-  clearCanvas();
-};
-
-const handleModeChange = () => {
-  clearCanvas();
-  updateTouchAction();
+  clearUserDrawing();
+  clearUserPaths();
 };
 
 const handleTouch = (event) => {
   event.preventDefault();
 };
-
-const updateTouchAction = () => {
-  canvas.value.style.touchAction = penMode.value ? "none" : "pinch-zoom";
-};
-
-const handleResize = () => {
-  initCanvas();
-};
-
-watch(() => props.exampleKana, redrawCanvas);
 
 onMounted(() => {
   initCanvas();
@@ -313,20 +173,28 @@ onMounted(() => {
   updateTouchAction();
 });
 
+watch(
+  () => props.exampleKana,
+  () => {
+    clearCanvas();
+    clearUserPaths();
+  }
+);
+watch(() => props.showExample, redrawCanvas);
+
+// 確保在每次繪製後重新繪製用戶路徑
+watch(
+  userPaths,
+  () => {
+    redrawCanvas();
+    drawUserPaths();
+  },
+  { deep: true }
+);
+
 onUnmounted(() => {
   window.removeEventListener("resize", handleResize);
-  if (drawingTimer) {
-    clearTimeout(drawingTimer);
-  }
 });
-const clearCanvas = () => {
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-  userPaths.value = [];
-  drawGrid();
-  if (props.showExample) {
-    drawExampleKana();
-  }
-};
 
 defineExpose({ clearCanvas, sendCanvasImageToBackend, isSending });
 </script>

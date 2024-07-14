@@ -81,7 +81,6 @@
           <div class="flex-grow">
             <HandwritingCanvas
               ref="handwritingCanvas"
-              @clear="clearSelectedSound"
               @auto-detect="autoDetect"
               :example-kana="selectedSound.kana"
               :show-example="false"
