@@ -1,5 +1,5 @@
 <template>
-  <div class="container learn-container">
+  <div class="container w-[80vw]">
     <div class="flex flex-wrap">
       <!-- 左側50音列表 -->
       <div class="w-full lg:w-1/2 px-2 mb-4" :key="activeTab">
@@ -75,8 +75,8 @@
             <HandwritingCanvas
               ref="handwritingCanvas"
               @clear="clearSelectedSound"
-              @auto-detect="autoDetect"
               :example-kana="selectedSound.kana"
+              :show-example="true"
             />
           </div>
         </el-card>
@@ -205,16 +205,6 @@ const selectSound = (sound) => {
 
 const clearSelectedSound = () => {
   selectedSound.value = null;
-};
-
-const autoDetect = (predictKana) => {
-  if (predictKana === selectedSound.value.kana) {
-    ElMessage({
-      type: "success",
-      message: predictKana,
-    });
-    changeSound("next");
-  }
 };
 
 const isSelectedSound = (sound) =>

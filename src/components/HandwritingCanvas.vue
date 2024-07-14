@@ -7,9 +7,6 @@
         inactive-text="觸控"
         @change="handleModeChange"
       />
-      <el-checkbox v-model="showExample" @change="redrawCanvas">
-        範例
-      </el-checkbox>
       <el-color-picker
         v-model="penColor"
         popper-class="my-color-picker"
@@ -50,7 +47,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import axios from "axios";
@@ -60,6 +56,10 @@ const props = defineProps({
   exampleKana: {
     type: String,
     default: "あ",
+  },
+  showExample: {
+    type: Boolean,
+    default: true,
   },
 });
 
@@ -75,14 +75,11 @@ const penColor = ref("#000000");
 const penSize = ref(8);
 
 const penMode = ref(true);
-const showExample = ref(true);
 
 const canvasWrapper = ref(null);
 
-// 新增: 用於計時器的變量
 let drawingTimer = null;
 
-// 新增：用於存儲用戶繪製的路徑
 const userPaths = ref([]);
 
 const updatePenStyle = () => {
@@ -114,13 +111,14 @@ const initCanvas = () => {
 
 const redrawCanvas = () => {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-  if (showExample.value) {
+  if (props.showExample) {
     drawGrid();
     drawExampleKana();
   }
-  // 重繪用戶的繪圖
   drawUserPaths();
 };
+
+watch(() => props.showExample, redrawCanvas);
 
 const drawGrid = () => {
   ctx.save();
@@ -150,7 +148,6 @@ const drawExampleKana = () => {
   ctx.restore();
 };
 
-// 新增：繪製用戶路徑的函數
 const drawUserPaths = () => {
   ctx.save();
   ctx.strokeStyle = penColor.value;
@@ -193,7 +190,6 @@ const startDrawing = (event) => {
   ctx.beginPath();
   ctx.moveTo(x, y);
 
-  // 清除之前的計時器
   if (drawingTimer) {
     clearTimeout(drawingTimer);
   }
@@ -219,7 +215,6 @@ const draw = (event) => {
   ctx.lineTo(x, y);
   ctx.stroke();
 
-  // 每次繪製時重置計時器
   if (drawingTimer) {
     clearTimeout(drawingTimer);
   }
@@ -228,25 +223,17 @@ const draw = (event) => {
 const stopDrawing = () => {
   isDrawing = false;
   ctx.beginPath();
-
-  // 設置2秒後自動發送圖像的計時器
-  // drawingTimer = setTimeout(async () => {
-  //   await sendCanvasImageToBackend();
-  // }, 500);
 };
 
 const generateCanvasImage = () => {
-  // 創建一個新的離屏 canvas
   const offscreenCanvas = document.createElement("canvas");
   offscreenCanvas.width = canvasWidth;
   offscreenCanvas.height = canvasHeight;
   const offscreenCtx = offscreenCanvas.getContext("2d");
 
-  // 設置白色背景
   offscreenCtx.fillStyle = "white";
   offscreenCtx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-  // 只繪製用戶的筆跡
   offscreenCtx.strokeStyle = penColor.value;
   offscreenCtx.lineWidth = penSize.value;
   offscreenCtx.lineCap = "round";
@@ -263,7 +250,6 @@ const generateCanvasImage = () => {
     }
   });
 
-  // 將 canvas 轉換為 Blob 對象
   return new Promise((resolve) => {
     offscreenCanvas.toBlob(resolve, "image/png");
   });
@@ -284,12 +270,9 @@ const sendCanvasImageToBackend = async () => {
         },
       }
     );
-
     console.log("Image sent successfully:", response.data);
-
     const res = response.data;
 
-    // 如果有返回結果，則觸發 autoDetect 事件
     if (res && res.confidence > 0.8) {
       emit("autoDetect", res.predicted_hiragana);
     }
@@ -329,15 +312,14 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("resize", handleResize);
-  // 確保在組件卸載時清除計時器
   if (drawingTimer) {
     clearTimeout(drawingTimer);
   }
 });
 const clearCanvas = () => {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-  userPaths.value = []; // 清除保存的路徑
-  if (showExample.value) {
+  userPaths.value = [];
+  if (props.showExample) {
     drawGrid();
     drawExampleKana();
   }

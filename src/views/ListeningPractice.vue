@@ -1,37 +1,55 @@
 <template>
-  <div class="container learn-container">
+  <div class="container w-[80vw]">
     <div class="flex flex-wrap">
       <!-- 左側50音列表 -->
-      <div class="w-full lg:w-1/2 px-2 mb-4" :key="activeTab">
-        <h2 class="text-xl font-semibold mb-3">
-          <el-tabs v-model="activeTab" class="mb-4">
-            <el-tab-pane
-              v-for="tab in tabs"
-              :key="tab.name"
-              :label="tab.label"
-              :name="tab.name"
-            />
-          </el-tabs>
-        </h2>
-        <div
-          v-for="(row, rowIndex) in groupedSounds"
-          :key="rowIndex"
-          class="flex mb-2"
-        >
-          <div
-            v-for="sound in row"
-            :key="sound.kana"
-            class="flex-1 mx-1 flex items-center"
+      <div class="w-full lg:w-1/2 px-2 mb-4 gap-4 flex flex-col">
+        <div class="flex gap-4">
+          <audio
+            ref="audioPlayer"
+            :src="`/sounds/${selectedSound.romaji}.mp3`"
+            @ended="audioEnded"
+          ></audio>
+          <el-button
+            @click="togglePlay"
+            type="text"
+            style="font-size: 35px; padding: 0; margin: 0; line-height: 1"
           >
-            <el-button
-              @click="selectSound(sound)"
-              :type="isSelectedSound(sound) ? 'primary' : ''"
-              :style="{ visibility: sound.kana ? 'visible' : 'hidden' }"
-              class="flex-grow"
-            >
-              {{ sound.kana }}
-            </el-button>
-          </div>
+            {{ isPlaying ? "⏸" : "▶️" }}
+          </el-button>
+          <el-button @click="changeSound('prev')" type="warning" circle>
+            <el-icon size="30" color="white"><CaretLeft /></el-icon>
+          </el-button>
+          <el-button @click="changeSound('next')" type="warning" circle>
+            <el-icon size="30" color="white"><CaretRight /></el-icon>
+          </el-button>
+
+          <el-switch
+            v-model="isRandomMode"
+            active-text="隨機"
+            inactive-text="循序"
+            @change="handleModeChange"
+          />
+
+          <el-button @click="showCurrentWord = !showCurrentWord" type="text">
+            {{ showCurrentWord ? "隱藏" : "顯示" }}答案
+          </el-button>
+        </div>
+
+        <div>
+          <el-button
+            @click="handwritingCanvas.sendCanvasImageToBackend()"
+            type="primary"
+            class="w-full h-12"
+          >
+            自動辨識
+          </el-button>
+        </div>
+
+        <div v-if="showCurrentWord" class="mt-4 p-4 bg-gray-100 rounded-lg">
+          <h3 class="text-xl font-bold mb-2">當前單字信息：</h3>
+          <p><strong>假名：</strong>{{ selectedSound.kana }}</p>
+          <p><strong>羅馬字：</strong>{{ selectedSound.romaji }}</p>
+          <p><strong>漢字：</strong>{{ selectedSound.evo }}</p>
         </div>
       </div>
       <!-- 右側手寫區 -->
@@ -41,42 +59,13 @@
           class="h-full"
           body-style="height: 100%; display: flex; flex-direction: column; gap: 15px"
         >
-          <div class="h-12 flex items-center gap-10">
-            <div class="flex-grow flex gap-4 self-center items-center">
-              <div class="text-5xl font-bold w-max">
-                {{ selectedSound.kana }}
-              </div>
-              <div class="text-4xl font-bold">{{ selectedSound.romaji }}</div>
-              <div class="text-4xl font-bold">{{ selectedSound.evo }}</div>
-            </div>
-
-            <div class="flex gap-4">
-              <audio
-                ref="audioPlayer"
-                :src="`/sounds/${selectedSound.romaji}.mp3`"
-                @ended="audioEnded"
-              ></audio>
-              <el-button
-                @click="togglePlay"
-                type="text"
-                style="font-size: 35px; padding: 0; margin: 0; line-height: 1"
-              >
-                {{ isPlaying ? "⏸" : "▶️" }}
-              </el-button>
-              <el-button @click="changeSound('prev')" type="warning" circle>
-                <el-icon size="30" color="white"><CaretLeft /></el-icon>
-              </el-button>
-              <el-button @click="changeSound('next')" type="warning" circle>
-                <el-icon size="30" color="white"><CaretRight /></el-icon>
-              </el-button>
-            </div>
-          </div>
           <div class="flex-grow">
             <HandwritingCanvas
               ref="handwritingCanvas"
               @clear="clearSelectedSound"
               @auto-detect="autoDetect"
               :example-kana="selectedSound.kana"
+              :show-example="false"
             />
           </div>
         </el-card>
@@ -99,35 +88,19 @@ const selectedSound = ref({ kana: "あ", romaji: "a", evo: "安" });
 const handwritingCanvas = ref(null);
 const audioPlayer = ref(null);
 const isPlaying = ref(false);
-
-const tabs = [
-  { name: "hiragana", label: "(清音)平假名" },
-  { name: "katakana", label: "(清音)片假名" },
-  { name: "dakuon", label: "濁音" },
-  { name: "handakuon", label: "半濁音" },
-  { name: "yoon", label: "拗音" },
-];
+const isRandomMode = ref(false);
+const showCurrentWord = ref(false);
 
 const currentSounds = computed(() =>
   fiftySounds.value ? fiftySounds.value[activeTab.value] : []
 );
-
-const groupedSounds = computed(() => {
-  const groups = [];
-  const groupSize = activeTab.value === "yoon" ? 3 : 5;
-  for (let i = 0; i < currentSounds.value.length; i += groupSize) {
-    groups.push(currentSounds.value.slice(i, i + groupSize));
-  }
-  return groups;
-});
 
 watch(
   selectedSound,
   (newSound, oldSound) => {
     if (newSound !== oldSound) {
       if (audioPlayer.value) {
-        audioPlayer.value.load(); // 加载新的音频文件
-        // 使用 nextTick 确保音频加载完成后再播放
+        audioPlayer.value.load();
         nextTick(() => {
           playSound();
         });
@@ -157,18 +130,31 @@ const findNextValidKana = (currentIndex, direction) => {
   return null;
 };
 
+const handleModeChange = () => {
+  ElMessage.info(isRandomMode.value ? "已切換到隨機模式" : "已切換到循序模式");
+};
+
+const getRandomSound = () => {
+  const validSounds = currentSounds.value.filter((sound) => sound.kana);
+  return validSounds[Math.floor(Math.random() * validSounds.length)];
+};
+
 const changeSound = (type) => {
-  const currentIndex = currentSounds.value.findIndex(
-    (sound) => sound.kana === selectedSound.value.kana
-  );
+  if (isRandomMode.value) {
+    selectSound(getRandomSound());
+  } else {
+    const currentIndex = currentSounds.value.findIndex(
+      (sound) => sound.kana === selectedSound.value.kana
+    );
 
-  const nextSound =
-    type === "next"
-      ? findNextValidKana(currentIndex, 1)
-      : findNextValidKana(currentIndex, -1);
+    const nextSound =
+      type === "next"
+        ? findNextValidKana(currentIndex, 1)
+        : findNextValidKana(currentIndex, -1);
 
-  if (nextSound) {
-    selectSound(nextSound);
+    if (nextSound) {
+      selectSound(nextSound);
+    }
   }
 };
 
@@ -199,7 +185,6 @@ const selectSound = (sound) => {
   if (sound.kana) {
     selectedSound.value = sound;
     handwritingCanvas.value?.clearCanvas();
-    // 不在这里直接播放音频，而是通过 watch 来触发
   }
 };
 
@@ -209,38 +194,19 @@ const clearSelectedSound = () => {
 
 const autoDetect = (predictKana) => {
   if (predictKana === selectedSound.value.kana) {
-    ElMessage({
-      type: "success",
-      message: predictKana,
-    });
+    ElMessage.success("正確！: " + predictKana);
     changeSound("next");
+  } else {
+    ElMessage.error("錯誤！: " + predictKana);
   }
 };
 
 const isSelectedSound = (sound) =>
   selectedSound.value && selectedSound.value.kana === sound.kana;
 
-const handleKeydown = (event) => {
-  if (event.key === "ArrowLeft") {
-    changeSound("prev");
-  } else if (event.key === "ArrowRight") {
-    changeSound("next");
-  }
-};
-
 onMounted(() => {
-  window.addEventListener("keydown", handleKeydown);
-  // 初始加载时播放第一个音频
   nextTick(() => {
     playSound();
   });
-});
-
-onUnmounted(() => {
-  window.removeEventListener("keydown", handleKeydown);
-  if (audioPlayer.value) {
-    audioPlayer.value.pause();
-    audioPlayer.value.src = "";
-  }
 });
 </script>
