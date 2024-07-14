@@ -113,8 +113,8 @@ const initCanvas = () => {
 
 const redrawCanvas = () => {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  drawGrid();
   if (props.showExample) {
-    drawGrid();
     drawExampleKana();
   }
   drawUserPaths();
@@ -322,8 +322,8 @@ onUnmounted(() => {
 const clearCanvas = () => {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   userPaths.value = [];
+  drawGrid();
   if (props.showExample) {
-    drawGrid();
     drawExampleKana();
   }
 };
