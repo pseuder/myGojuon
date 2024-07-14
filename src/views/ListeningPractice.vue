@@ -2,7 +2,7 @@
   <div class="container w-[80vw]">
     <div class="flex flex-wrap">
       <!-- 左側50音列表 -->
-      <div class="w-full lg:w-1/2 px-2 mb-4 gap-4 flex flex-col">
+      <div class="w-full lg:w-1/2 px-2 mb-4 gap-8 flex flex-col">
         <div class="flex gap-4">
           <audio
             ref="audioPlayer"
@@ -40,9 +40,15 @@
             @click="handwritingCanvas.sendCanvasImageToBackend()"
             type="primary"
             class="w-full h-12"
+            v-loading="handwritingCanvas?.isSending"
           >
-            自動辨識
+            自動辨識(實驗性)
           </el-button>
+        </div>
+
+        <div class="flex gap-4">
+          <div>預測值：{{ predictKana }}</div>
+          <div>信心值：{{ predictConfidence.toString().slice(0, 5) }}</div>
         </div>
 
         <div v-if="showCurrentWord" class="mt-4 p-4 bg-gray-100 rounded-lg">
@@ -90,6 +96,9 @@ const audioPlayer = ref(null);
 const isPlaying = ref(false);
 const isRandomMode = ref(false);
 const showCurrentWord = ref(false);
+
+const predictKana = ref("");
+const predictConfidence = ref(0);
 
 const currentSounds = computed(() =>
   fiftySounds.value ? fiftySounds.value[activeTab.value] : []
@@ -192,12 +201,17 @@ const clearSelectedSound = () => {
   selectedSound.value = null;
 };
 
-const autoDetect = (predictKana) => {
-  if (predictKana === selectedSound.value.kana) {
-    ElMessage.success("正確！: " + predictKana);
+const autoDetect = (predict_res) => {
+  const { predicted_hiragana, confidence } = predict_res;
+
+  predictKana.value = predicted_hiragana;
+  predictConfidence.value = confidence;
+
+  if (predicted_hiragana === selectedSound.value.kana) {
+    ElMessage.success("正確！: " + predicted_hiragana);
     changeSound("next");
   } else {
-    ElMessage.error("錯誤！: " + predictKana);
+    ElMessage.error("錯誤！: " + predicted_hiragana);
   }
 };
 

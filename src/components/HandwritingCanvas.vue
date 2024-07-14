@@ -80,6 +80,8 @@ const canvasWrapper = ref(null);
 
 let drawingTimer = null;
 
+const isSending = ref(false);
+
 const userPaths = ref([]);
 
 const updatePenStyle = () => {
@@ -257,6 +259,7 @@ const generateCanvasImage = () => {
 
 const sendCanvasImageToBackend = async () => {
   try {
+    isSending.value = true;
     const imageBlob = await generateCanvasImage();
     const formData = new FormData();
     formData.append("image", imageBlob, "handwriting.png");
@@ -272,12 +275,12 @@ const sendCanvasImageToBackend = async () => {
     );
     console.log("Image sent successfully:", response.data);
     const res = response.data;
+    isSending.value = false;
 
-    if (res && res.confidence > 0.8) {
-      emit("autoDetect", res.predicted_hiragana);
-    }
+    emit("autoDetect", res);
   } catch (error) {
     console.error("Error sending image to backend:", error);
+    isSending.value = false;
   }
 };
 
@@ -325,7 +328,7 @@ const clearCanvas = () => {
   }
 };
 
-defineExpose({ clearCanvas, sendCanvasImageToBackend });
+defineExpose({ clearCanvas, sendCanvasImageToBackend, isSending });
 </script>
 
 <style scoped>
