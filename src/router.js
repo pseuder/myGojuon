@@ -6,7 +6,9 @@ import ListeningPractice from '@/views/ListeningPractice.vue'
 const routes = [
     { path: '/', component: Home },
     { path: '/writing', component: WritingPractice },
-    { path: '/listening', component: ListeningPractice }
+    { path: '/listening', component: ListeningPractice },
+    // 添加一個 catch-all 路由
+    { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
 const router = createRouter({
