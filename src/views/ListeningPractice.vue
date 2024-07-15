@@ -157,7 +157,23 @@ const handleModeChange = () => {
 
 const getRandomSound = () => {
   const validSounds = currentSounds.value.filter((sound) => sound.kana);
-  return validSounds[Math.floor(Math.random() * validSounds.length)];
+
+  // 使用當前時間的毫秒數作為隨機種子
+  const seed = Date.now();
+
+  // 使用簡單的線性同余生成器來生成偽隨機數
+  const random = () => {
+    let x = seed;
+    return () => {
+      x = (x * 1664525 + 1013904223) % 4294967296;
+      return x / 4294967296;
+    };
+  };
+
+  const randomGenerator = random();
+  const randomIndex = Math.floor(randomGenerator() * validSounds.length);
+
+  return validSounds[randomIndex];
 };
 
 const changeSound = (type) => {
