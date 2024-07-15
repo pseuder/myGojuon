@@ -1,6 +1,6 @@
 <!-- pages/index.vue -->
 <template>
-  <div class="container w-[80vw] mx-auto px-4">
+  <div class="container w-[90vw] md:w-[80vw] mx-auto px-4">
     <header class="text-center py-10">
       <h1 class="text-4xl font-bold text-indigo-700">日語 50 音學習</h1>
       <p class="mt-2 text-xl text-gray-600">互動式日語假名學習平台</p>

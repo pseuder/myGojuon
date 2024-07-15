@@ -1,5 +1,5 @@
 <template>
-  <div class="container w-[80vw]">
+  <div class="container w-[90vw] md:w-[80vw]">
     <div class="flex flex-wrap">
       <!-- 左側50音列表 -->
       <div class="w-full lg:w-1/2 px-2 mb-4" :key="activeTab">

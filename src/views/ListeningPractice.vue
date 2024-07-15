@@ -1,8 +1,8 @@
 <template>
-  <div class="container w-[80vw]">
+  <div class="container w-[90vw] md:w-[80vw]">
     <div class="flex flex-wrap">
       <!-- 左側50音列表 -->
-      <div class="w-full lg:w-1/2 px-2 mb-4 gap-8 flex flex-col">
+      <div class="w-full lg:w-1/2 px-2 gap-4 flex flex-col">
         <div class="flex gap-4">
           <audio
             ref="audioPlayer"
@@ -72,7 +72,7 @@
         </div>
       </div>
       <!-- 右側手寫區 -->
-      <div class="w-full h-[500px] lg:w-1/2 px-2">
+      <div class="w-full h-[400px] lg:w-1/2 px-2">
         <el-card
           v-if="selectedSound"
           class="h-full"
