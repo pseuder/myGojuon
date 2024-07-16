@@ -35,7 +35,7 @@
         </div>
       </div>
       <!-- 右側手寫區 -->
-      <div class="w-full h-[500px] lg:w-1/2 px-2">
+      <div class="w-full lg:w-1/2 aspect-square px-2">
         <el-card
           v-if="selectedSound"
           class="h-full"
