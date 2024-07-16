@@ -3,7 +3,7 @@
     <div class="flex flex-wrap">
       <!-- 左側50音列表 -->
       <div class="w-full lg:w-1/2 px-2 gap-4 flex flex-col">
-        <div class="flex gap-4">
+        <div class="flex gap-4 items-center">
           <audio
             ref="audioPlayer"
             :src="`/sounds/${selectedSound.romaji}.mp3`"
@@ -55,9 +55,27 @@
           </el-button>
         </div>
 
-        <div class="flex gap-4">
+        <div class="flex gap-4 items-center">
           <div>預測值：{{ predictKana }}</div>
           <div>信心值：{{ predictConfidence.toString().slice(0, 5) }}</div>
+          <el-popover placement="bottom" :width="300" trigger="click">
+            <template #reference>
+              <el-button type="text">Hover to activate</el-button>
+            </template>
+
+            <div class="sound-grid">
+              <div
+                v-for="(count, sound) in soundCounts"
+                :key="sound"
+                class="sound-item"
+              >
+                <span class="sound">{{ sound }}</span>
+                <span class="count" :class="{ active: count > 0 }">{{
+                  count
+                }}</span>
+              </div>
+            </div>
+          </el-popover>
         </div>
 
         <el-button @click="showCurrentWord = !showCurrentWord" type="text">
@@ -72,7 +90,7 @@
         </div>
       </div>
       <!-- 右側手寫區 -->
-      <div class="w-full h-[400px] lg:w-1/2 px-2">
+      <div class="w-full aspect-square lg:w-1/2 px-2">
         <el-card
           v-if="selectedSound"
           class="h-full"
@@ -94,7 +112,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
+import { ref, computed, onMounted, reactive, watch, nextTick } from "vue";
 import { CaretLeft, CaretRight } from "@element-plus/icons-vue";
 import { ElMessageBox, ElMessage } from "element-plus";
 import HandwritingCanvas from "@/components/HandwritingCanvas.vue";
@@ -112,9 +130,29 @@ const showCurrentWord = ref(false);
 const predictKana = ref("");
 const predictConfidence = ref(0);
 
+const soundCounts = reactive({});
+const round = ref(1);
+
 const currentSounds = computed(() =>
   fiftySounds.value ? fiftySounds.value[activeTab.value] : []
 );
+
+// 監聽 currentSounds 的變化，如果變化則重新初始化計數器
+watch(currentSounds, () => {
+  initializeCounts();
+  round.value = 1;
+});
+
+// 初始化計數器
+const initializeCounts = () => {
+  currentSounds.value.forEach((sound) => {
+    if (sound.kana) {
+      soundCounts[sound.kana] = 0;
+    }
+  });
+};
+
+initializeCounts();
 
 watch(
   selectedSound,
@@ -157,23 +195,24 @@ const handleModeChange = () => {
 
 const getRandomSound = () => {
   const validSounds = currentSounds.value.filter((sound) => sound.kana);
+  const availableSounds = validSounds.filter(
+    (sound) => soundCounts[sound.kana] < round.value
+  );
 
-  // 使用當前時間的毫秒數作為隨機種子
-  const seed = Date.now();
+  if (availableSounds.length === 0) {
+    // 所有音都已經出現了 round.value 次，開始新的一輪
+    round.value++;
+    console.log(`Starting round ${round.value}`);
+    return getRandomSound(); // 遞迴調用以獲取新一輪的聲音
+  }
 
-  // 使用簡單的線性同余生成器來生成偽隨機數
-  const random = () => {
-    let x = seed;
-    return () => {
-      x = (x * 1664525 + 1013904223) % 4294967296;
-      return x / 4294967296;
-    };
-  };
+  const randomIndex = Math.floor(Math.random() * availableSounds.length);
+  const selectedSound = availableSounds[randomIndex];
+  soundCounts[selectedSound.kana]++;
 
-  const randomGenerator = random();
-  const randomIndex = Math.floor(randomGenerator() * validSounds.length);
+  console.log("Current counts:", JSON.parse(JSON.stringify(soundCounts)));
 
-  return validSounds[randomIndex];
+  return selectedSound;
 };
 
 const changeSound = (type) => {
@@ -252,3 +291,56 @@ onMounted(() => {
   });
 });
 </script>
+
+<style scoped>
+.sound-counts-container {
+  font-family: Arial, sans-serif;
+  width: 300px;
+  padding: 10px;
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h3 {
+  margin: 0 0 10px;
+  text-align: center;
+  color: #333;
+  font-size: 16px;
+}
+
+.sound-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 5px;
+}
+
+.sound-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #fff;
+  padding: 3px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.sound {
+  font-weight: bold;
+}
+
+.count {
+  margin-top: 2px;
+  background-color: #e0e0e0;
+  color: #666;
+  padding: 1px 4px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+
+.count.active {
+  background-color: #4caf50;
+  color: white;
+}
+</style>
