@@ -7,12 +7,12 @@
         inactive-text="觸控"
         @change="handleModeChange"
       />
-      <el-color-picker
+      <!-- <el-color-picker
         v-model="penColor"
         popper-class="my-color-picker"
         size="medium"
         @change="updatePenStyle"
-      />
+      /> -->
       <el-select
         v-model="penSize"
         placeholder="筆觸粗細"
