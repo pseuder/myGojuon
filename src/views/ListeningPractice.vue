@@ -102,6 +102,7 @@
               @auto-detect="autoDetect"
               :example-kana="selectedSound.kana"
               :show-example="false"
+              :current-type="activeTab"
             />
           </div>
         </el-card>
@@ -170,7 +171,7 @@ watch(
 );
 
 watch(activeTab, () => {
-  handwritingCanvas.value?.clearCanvas();
+  selectedSound.value = currentSounds.value[0];
 });
 
 const findNextValidKana = (currentIndex, direction) => {
@@ -260,7 +261,6 @@ const playSound = () => {
 const selectSound = (sound) => {
   if (sound.kana) {
     selectedSound.value = sound;
-    handwritingCanvas.value?.clearCanvas();
   }
 };
 

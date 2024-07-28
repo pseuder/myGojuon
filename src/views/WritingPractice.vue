@@ -1,6 +1,6 @@
 <template>
-  <div class="container w-[90vw] md:w-[80vw]">
-    <div class="flex flex-wrap">
+  <div class="container w-[90vw] md:w-[80vw] h-[70vh]">
+    <div class="flex flex-wrap h-full">
       <!-- 左側50音列表 -->
       <div class="w-full lg:w-1/2 px-2 mb-4" :key="activeTab">
         <h2 class="text-xl font-semibold mb-3">
@@ -35,13 +35,13 @@
         </div>
       </div>
       <!-- 右側手寫區 -->
-      <div class="w-full lg:w-1/2 aspect-square px-2">
+      <div class="w-full lg:w-1/2 h-full px-2">
         <el-card
           v-if="selectedSound"
           class="h-full"
           body-style="height: 100%; display: flex; flex-direction: column; gap: 15px"
         >
-          <div class="h-12 flex items-center gap-10">
+          <div class="h-12 flex items-center">
             <div class="flex-grow flex gap-4 self-center items-center">
               <div class="text-5xl font-bold w-max">
                 {{ selectedSound.kana }}
@@ -50,7 +50,7 @@
               <div class="text-4xl font-bold">{{ selectedSound.evo }}</div>
             </div>
 
-            <div class="flex gap-4">
+            <div class="flex gap-2">
               <audio
                 ref="audioPlayer"
                 :src="`/sounds/${selectedSound.romaji}.mp3`"
@@ -137,7 +137,7 @@ watch(
 );
 
 watch(activeTab, () => {
-  handwritingCanvas.value?.clearCanvas();
+  selectedSound.value = currentSounds.value[0];
 });
 
 const findNextValidKana = (currentIndex, direction) => {
@@ -197,8 +197,6 @@ const playSound = () => {
 const selectSound = (sound) => {
   if (sound.kana) {
     selectedSound.value = sound;
-    handwritingCanvas.value?.clearCanvas();
-    // 不在这里直接播放音频，而是通过 watch 来触发
   }
 };
 
