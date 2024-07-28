@@ -67,6 +67,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  currentType: {
+    type: String,
+    default: "hiragana",
+  },
 });
 
 const emit = defineEmits(["autoDetect"]);
@@ -138,10 +142,12 @@ const sendCanvasImageToBackend = async () => {
     isSending.value = true;
     const imageBlob = await generateCanvasImage();
     const formData = new FormData();
+    formData.append("char_type", props.currentType);
     formData.append("image", imageBlob, "handwriting.png");
 
     const response = await axios.post(
       "https://cs_prod.chainsea.com.tw:9641/predict",
+      // "http://192.168.31.62:5000/predict",
       formData,
       {
         headers: {
