@@ -1,19 +1,14 @@
 <template>
-  <div class="handwriting-canvas" ref="canvasContainer">
-    <div class="mb-2 flex justify-between items-center flex-wrap">
+  <div class="" ref="canvasContainer">
+    <div class="flex justify-between items-center my-2">
       <el-switch
         v-model="penMode"
         active-text="觸控筆"
         inactive-text="觸控"
         @change="handleModeChange"
       />
-      <!-- <el-color-picker
-        v-model="penColor"
-        popper-class="my-color-picker"
-        size="medium"
-        @change="updatePenStyle"
-      /> -->
-      <el-select
+
+      <!-- <el-select
         v-model="penSize"
         placeholder="筆觸粗細"
         size="small"
@@ -26,13 +21,18 @@
           :label="option.label"
           :value="option.value"
         />
-      </el-select>
+      </el-select> -->
       <el-button
         @click="handleClear"
         type="text"
         style="font-size: 35px; padding: 0; margin: 0; line-height: 1"
       >
-        🧹
+        <img
+          src="/images/broom.png"
+          alt=""
+          class="w-10 h-10 cursor-pointer"
+          :class="{ 'rotate-animation': isRotating }"
+        />
       </el-button>
     </div>
     <div class="canvas-wrapper" ref="canvasWrapper">
@@ -110,6 +110,7 @@ const {
 } = useDrawing(canvas, penMode, penColor, penSize, ctx);
 
 const isSending = ref(false);
+const isRotating = ref(false);
 
 const generateCanvasImage = async () => {
   const offscreenCanvas = document.createElement("canvas");
@@ -165,6 +166,13 @@ const sendCanvasImageToBackend = async () => {
 };
 
 const handleClear = () => {
+  debugger;
+  if (!isRotating.value) {
+    isRotating.value = true;
+    setTimeout(() => {
+      isRotating.value = false;
+    }, 500);
+  }
   clearUserDrawing();
   clearUserPaths();
 };
@@ -206,25 +214,24 @@ defineExpose({ clearCanvas, sendCanvasImageToBackend, isSending });
 </script>
 
 <style scoped>
-.handwriting-canvas {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.canvas-wrapper {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-
 canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 1 / 1;
   touch-action: none;
+}
+@keyframes rotateLeftRight {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-45deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.rotate-animation {
+  animation: rotateLeftRight 0.5s ease;
 }
 </style>

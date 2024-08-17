@@ -2,10 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-.my-color-picker {
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5) !important;
+body,
+html,
+#app {
+  margin: 0;
+  padding: 0;
+  height: 100%;
 }
 
-.el-tabs, .el-menu {
+.el-tabs,
+.el-menu {
   user-select: none;
 }

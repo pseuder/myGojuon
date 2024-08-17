@@ -1,86 +1,91 @@
 <template>
-  <div class="container w-[90vw] md:w-[80vw] h-[70vh]">
-    <div class="flex flex-wrap h-full">
-      <!-- 左側50音列表 -->
-      <div class="w-full lg:w-1/2 px-2 mb-4" :key="activeTab">
-        <h2 class="text-xl font-semibold mb-3">
-          <el-tabs v-model="activeTab" class="mb-4">
-            <el-tab-pane
-              v-for="tab in tabs"
-              :key="tab.name"
-              :label="tab.label"
-              :name="tab.name"
-            />
-          </el-tabs>
-        </h2>
+  <div class="flex flex-col md:flex-row h-full px-4 py-4 gap-4">
+    <!-- 50音列表 -->
+    <div class="w-full" :key="activeTab">
+      <h2 class="text-xl font-semibold mb-3">
+        <el-tabs v-model="activeTab" class="mb-4">
+          <el-tab-pane
+            v-for="tab in tabs"
+            :key="tab.name"
+            :label="tab.label"
+            :name="tab.name"
+          />
+        </el-tabs>
+      </h2>
+      <div
+        v-for="(row, rowIndex) in groupedSounds"
+        :key="rowIndex"
+        class="flex mb-2"
+      >
         <div
-          v-for="(row, rowIndex) in groupedSounds"
-          :key="rowIndex"
-          class="flex mb-2"
+          v-for="sound in row"
+          :key="sound.kana"
+          class="flex-1 mx-1 flex items-center"
         >
-          <div
-            v-for="sound in row"
-            :key="sound.kana"
-            class="flex-1 mx-1 flex items-center"
+          <el-button
+            @click="selectSound(sound)"
+            :type="isSelectedSound(sound) ? 'primary' : ''"
+            :style="{ visibility: sound.kana ? 'visible' : 'hidden' }"
+            class="flex-grow"
           >
-            <el-button
-              @click="selectSound(sound)"
-              :type="isSelectedSound(sound) ? 'primary' : ''"
-              :style="{ visibility: sound.kana ? 'visible' : 'hidden' }"
-              class="flex-grow"
-            >
-              {{ sound.kana }}
-            </el-button>
-          </div>
+            {{ sound.kana }}
+          </el-button>
         </div>
       </div>
-      <!-- 右側手寫區 -->
-      <div class="w-full lg:w-1/2 h-full px-2">
-        <el-card
-          v-if="selectedSound"
-          class="h-full"
-          body-style="height: 100%; display: flex; flex-direction: column; gap: 15px"
-        >
-          <div class="h-12 flex items-center">
-            <div class="flex-grow flex gap-4 self-center items-center">
-              <div class="text-5xl font-bold w-max">
-                {{ selectedSound.kana }}
-              </div>
-              <div class="text-4xl font-bold">{{ selectedSound.romaji }}</div>
-              <div class="text-4xl font-bold">{{ selectedSound.evo }}</div>
-            </div>
+    </div>
+    <!-- 手寫互動區 -->
+    <div class="w-full content-center">
+      <!-- body-style="display: flex; flex-direction: column; gap: 15px" -->
+      <el-card>
+        <!-- 功能列 -->
+        <div class="w-full flex items-center justify-between">
+          <!-- 日文 -->
+          <div class="text-5xl font-bold">{{ selectedSound.kana }}</div>
+          <!-- 羅馬字 -->
+          <div class="text-4xl font-bold">{{ selectedSound.romaji }}</div>
+          <!-- 漢字來源 -->
+          <div class="text-4xl font-bold">{{ selectedSound.evo }}</div>
 
-            <div class="flex gap-2">
-              <audio
-                ref="audioPlayer"
-                :src="`/sounds/${selectedSound.romaji}.mp3`"
-                @ended="audioEnded"
-              ></audio>
-              <el-button
-                @click="togglePlay"
-                type="text"
-                style="font-size: 35px; padding: 0; margin: 0; line-height: 1"
-              >
-                {{ isPlaying ? "⏸" : "▶️" }}
-              </el-button>
-              <el-button @click="changeSound('prev')" type="warning" circle>
-                <el-icon size="30" color="white"><CaretLeft /></el-icon>
-              </el-button>
-              <el-button @click="changeSound('next')" type="warning" circle>
-                <el-icon size="30" color="white"><CaretRight /></el-icon>
-              </el-button>
-            </div>
-          </div>
-          <div class="flex-grow">
-            <HandwritingCanvas
-              ref="handwritingCanvas"
-              :example-kana="selectedSound.kana"
-              :show-example="true"
+          <!-- 音檔播放控制 -->
+          <audio
+            ref="audioPlayer"
+            :src="`/sounds/${selectedSound.romaji}.mp3`"
+            @ended="audioEnded"
+          ></audio>
+          <el-button @click="togglePlay" type="text">
+            <img
+              v-if="isPlaying"
+              src="/images/pause.svg"
+              alt="暫停"
+              class="w-8 h-8"
+            />
+            <img v-else src="/images/play.svg" alt="播放" class="w-8 h-8" />
+          </el-button>
+
+          <!-- 上一個、下一個按鈕 -->
+          <div class="flex items-center gap-4">
+            <img
+              src="/images/arrow-circle-left-solid.svg"
+              alt="上一個"
+              class="w-8 h-8 cursor-pointer"
+              @click="changeSound('prev')"
+            />
+            <img
+              src="/images/arrow-circle-right-solid.svg"
+              alt="下一個"
+              class="w-8 h-8 cursor-pointer"
+              @click="changeSound('next')"
             />
           </div>
-        </el-card>
-        <el-empty v-else description="請選擇一個音節" />
-      </div>
+        </div>
+
+        <!-- 手寫區 -->
+        <HandwritingCanvas
+          ref="handwritingCanvas"
+          :example-kana="selectedSound.kana"
+          :show-example="true"
+        />
+      </el-card>
     </div>
   </div>
 </template>
@@ -100,8 +105,8 @@ const audioPlayer = ref(null);
 const isPlaying = ref(false);
 
 const tabs = [
-  { name: "hiragana", label: "(清音)平假名" },
-  { name: "katakana", label: "(清音)片假名" },
+  { name: "hiragana", label: "平假名" },
+  { name: "katakana", label: "片假名" },
   { name: "dakuon", label: "濁音" },
   { name: "handakuon", label: "半濁音" },
   { name: "yoon", label: "拗音" },
