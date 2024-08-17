@@ -1,27 +1,26 @@
-<!-- pages/index.vue -->
 <template>
-  <div class="container w-[90vw] md:w-[80vw] mx-auto px-4">
-    <header class="text-center py-10">
+  <div class="h-full flex flex-col px-4 py-4 gap-4">
+    <div class="text-center py-10">
       <h1 class="text-4xl font-bold text-indigo-700">日語50音練習網站</h1>
       <p class="mt-2 text-xl text-gray-600">快速且提供即時書寫功能的功能</p>
-    </header>
+    </div>
 
-    <main>
+    <div>
       <!-- 特色區塊 -->
-      <section class="grid md:grid-cols-3 gap-6 my-10">
+      <div class="grid md:grid-cols-3 gap-6 my-10">
         <div class="feature-card">
           <h2 class="text-2xl font-semibold text-indigo-600">50 音學習</h2>
           <p>全面學習日語常見音節</p>
         </div>
         <div class="feature-card">
           <h2 class="text-2xl font-semibold text-indigo-600">書寫友善</h2>
-          <p>提供觸控筆使用者友善的練習環境</p>
+          <p>觸控筆友善的練習環境</p>
         </div>
         <div class="feature-card">
           <h2 class="text-2xl font-semibold text-indigo-600">隨機檢測</h2>
           <p>隨機挑選50音檢測熟悉程度</p>
         </div>
-      </section>
+      </div>
 
       <!-- 開始學習按鈕 -->
       <div class="text-center my-10">
@@ -40,22 +39,19 @@
         </el-button>
       </div>
 
-      <!-- 學習進度 -->
-      <!-- <section v-if="isLoggedIn" class="my-10">
-        <h2 class="text-2xl font-bold text-indigo-700 mb-4">您的學習進度</h2>
-        <p>您已經掌握了 XX% 的假名</p>
-      </section> -->
-
       <!-- 最近更新 -->
       <section class="my-10">
         <h2 class="text-2xl font-bold text-indigo-700 mb-4">最近更新</h2>
         <ul class="list-disc list-inside">
+          <li>加入單字發音</li>
           <li>針對平板使用者做了優化</li>
           <li>新增聽寫練習</li>
-          <li>加入自動辨識功能(實驗性)</li>
+          <li>加入AI自動辨識功能(實驗性)</li>
+          <li>針對辨識功能逕行優化</li>
+          <li>優化RWD效果</li>
         </ul>
       </section>
-    </main>
+    </div>
   </div>
 </template>
 
@@ -64,12 +60,22 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
-
-const isLoggedIn = ref(true);
 </script>
 
 <style scoped>
 .feature-card {
-  @apply bg-white p-6 rounded-lg shadow-md text-center;
+  @apply bg-white p-6 rounded-lg shadow-md text-center transition-all duration-300 ease-in-out;
+}
+
+.feature-card:hover {
+  @apply scale-105;
+}
+
+.feature-card:hover h2 {
+  @apply scale-110;
+}
+
+.feature-card:hover p {
+  @apply scale-110;
 }
 </style>
