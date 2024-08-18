@@ -3,7 +3,7 @@
     <!-- 總攬頁面 -->
     <div v-show="currentDiv === 'overview'" key="overview">
       <div class="flex gap-4 items-center">
-        <el-space wrap>
+        <el-space wrap class="justify-center">
           <template v-for="video in allVideos" :key="video.UID">
             <el-card class="w-full max-w-[380px]" shadow="hover">
               <img
@@ -12,15 +12,16 @@
                 alt="video thumbnail"
               />
               <div class="p-4">
-                <button
-                  class="cursor-pointer text-lg text-blue-400 hover:underline hover:text-blue-600"
+                <el-text
+                  class="cursor-pointer text-lg text-blue-400 hover:underline hover:text-blue-600 w-full mb-2"
+                  truncated
                   @click="
                     videoId = video.video_id;
                     switchToPractice(video);
                   "
                 >
                   {{ video.video_name }}
-                </button>
+                </el-text>
               </div>
             </el-card>
           </template>
