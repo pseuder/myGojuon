@@ -23,6 +23,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
+import axios from "@/utils/axios";
 
 const videoId = ref("SDk1RA4g8CA");
 const timeInput = ref(0);
@@ -85,13 +86,11 @@ const formatTime = (seconds) => {
 };
 
 onMounted(async () => {
-  // Load lyrics
-  try {
-    const response = await fetch("/1.lrc");
-    lyrics.value = await response.text();
-  } catch (error) {
-    console.error("Failed to load lyrics:", error);
-  }
+  // Load lyrics with axios
+  axios.get("/get_video/" + videoId.value).then((data) => {
+    const allVideo = data;
+    lyrics.value = allVideo[0].lyrics;
+  });
 
   // Load YouTube IFrame API
   const tag = document.createElement("script");
@@ -101,9 +100,13 @@ onMounted(async () => {
 
   window.onYouTubeIframeAPIReady = () => {
     player = new YT.Player(playerRef.value, {
-      height: "360",
-      width: "640",
       videoId: videoId.value,
+      height: "390",
+      width: "100%",
+      playerVars: {
+        autoplay: 0,
+        playsinline: 1,
+      },
       events: {
         onReady: (event) => {
           console.log("Player is ready");
