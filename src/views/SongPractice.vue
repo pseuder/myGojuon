@@ -1,47 +1,127 @@
 <template>
-  <div class="container w-[90vw] md:w-[80vw]">
-    <h1>YouTube 日文歌曲字幕播放器</h1>
-    <SearchBar @search="handleSearch" />
-    <YouTubePlayer :videoId="videoId" @ready="onPlayerReady" />
-    <Subtitles :subtitles="subtitles" @subtitle-click="handleSubtitleClick" />
+  <div>
+    <div class="text-3xl">
+      <label for="videoId">YouTube Video ID:</label>
+      <input id="videoId" v-model="videoId" @input="loadVideo" />
+    </div>
+    <div id="player" ref="playerRef"></div>
+    <div class="lyrics">
+      <span class="text-3xl">歌詞</span>
+      <div
+        v-for="(line, index) in parsedLyrics"
+        :key="index"
+        class="lyric-line"
+      >
+        <el-button type="primary" @click="jumpToTime(line.time)" plain>
+          {{ formatTime(line.time) }}
+        </el-button>
+        <span>{{ line.text }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
-import SearchBar from "@/components/SearchBar.vue";
-import YouTubePlayer from "@/components/YouTubePlayer.vue";
-import Subtitles from "@/components/Subtitles.vue";
+import { ref, onMounted, computed } from "vue";
 
-const videoId = ref("-LwBbLa_Vhc");
-const subtitles = ref([]);
-const player = ref(null);
+const videoId = ref("SDk1RA4g8CA");
+const timeInput = ref(0);
+const playerRef = ref(null);
+let player = null;
 
-const handleSearch = async (query) => {
-  // TODO: 使用 YouTube API 搜索視頻
-  // 這裡應該調用您已有的 YouTube API 功能
-  // const searchResult = await searchYouTubeVideos(query);
-  // videoId.value = searchResult.items[0].id.videoId;
-};
+const lyrics = ref("");
+const parsedLyrics = computed(() => {
+  return lyrics.value
+    .split("\n")
+    .filter((line) => {
+      // 過濾掉不需要顯示的標記行
+      const trimmedLine = line.trim();
+      return (
+        trimmedLine !== "" &&
+        trimmedLine.startsWith("[") &&
+        trimmedLine.includes("]") &&
+        !trimmedLine.startsWith("[length:") &&
+        !trimmedLine.startsWith("[re:") &&
+        !trimmedLine.startsWith("[ve:")
+      );
+    })
+    .map((line) => {
+      const [time, text] = line.split("]");
+      const seconds = parseTimeToSeconds(time.slice(1));
+      return { time: seconds, text: text.trim() };
+    })
+    .sort((a, b) => a.time - b.time);
+});
 
-const onPlayerReady = (event) => {
-  player.value = event.target;
-};
-
-const handleSubtitleClick = (time) => {
-  if (player.value) {
-    player.value.seekTo(time);
+const loadVideo = () => {
+  if (player && videoId.value) {
+    player.loadVideoById(videoId.value);
   }
 };
 
-watch(videoId, async () => {
-  if (videoId.value) {
-    // TODO: 獲取字幕
-    // 這裡應該調用您已有的 YouTube API 功能來獲取字幕
-    // const fetchedSubtitles = await getSubtitles(videoId.value);
-    // subtitles.value = fetchedSubtitles;
+const setVideoTime = () => {
+  if (player) {
+    player.seekTo(timeInput.value);
   }
+};
+
+const jumpToTime = (time) => {
+  if (player) {
+    player.seekTo(time);
+  }
+};
+
+const parseTimeToSeconds = (timeString) => {
+  const [minutes, seconds] = timeString.split(":").map(Number);
+  return minutes * 60 + seconds;
+};
+
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins.toString().padStart(2, "0")}:${secs
+    .toString()
+    .padStart(2, "0")}`;
+};
+
+onMounted(async () => {
+  // Load lyrics
+  try {
+    const response = await fetch("/src/data/BTR.lrc");
+    lyrics.value = await response.text();
+  } catch (error) {
+    console.error("Failed to load lyrics:", error);
+  }
+
+  // Load YouTube IFrame API
+  const tag = document.createElement("script");
+  tag.src = "https://www.youtube.com/iframe_api";
+  const firstScriptTag = document.getElementsByTagName("script")[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+  window.onYouTubeIframeAPIReady = () => {
+    player = new YT.Player(playerRef.value, {
+      height: "360",
+      width: "640",
+      videoId: videoId.value,
+      events: {
+        onReady: (event) => {
+          console.log("Player is ready");
+        },
+      },
+    });
+  };
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+.lyrics {
+  margin-top: 20px;
+}
+.lyric-line {
+  margin-bottom: 5px;
+}
+button {
+  margin-right: 10px;
+}
+</style>

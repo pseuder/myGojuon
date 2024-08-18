@@ -10,7 +10,7 @@
         <el-menu-item index="/">首頁</el-menu-item>
         <el-menu-item index="/writing">手寫練習</el-menu-item>
         <el-menu-item index="/listening">聽寫練習</el-menu-item>
-        <!-- <el-menu-item index="/song">歌曲練習</el-menu-item> -->
+        <el-menu-item index="/song">歌曲練習</el-menu-item>
       </el-menu>
     </nav>
 
