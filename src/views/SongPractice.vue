@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="flex flex-col px-10 py-4 gap-4">
     <div class="text-3xl">
       <label for="videoId">YouTube Video ID:</label>
       <input id="videoId" v-model="videoId" @input="loadVideo" />
@@ -87,7 +87,7 @@ const formatTime = (seconds) => {
 onMounted(async () => {
   // Load lyrics
   try {
-    const response = await fetch("/src/data/BTR.lrc");
+    const response = await fetch("/1.lrc");
     lyrics.value = await response.text();
   } catch (error) {
     console.error("Failed to load lyrics:", error);
