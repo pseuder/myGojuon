@@ -56,7 +56,7 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useCanvas } from "@/composables/useCanvas";
 import { usePen } from "@/composables/usePen";
 import { useDrawing } from "@/composables/useDrawing";
-import axios from "axios";
+import axios from "@/utils/axios";
 
 const props = defineProps({
   exampleKana: {
@@ -146,18 +146,13 @@ const sendCanvasImageToBackend = async () => {
     formData.append("char_type", props.currentType);
     formData.append("image", imageBlob, "handwriting.png");
 
-    const response = await axios.post(
-      "https://cs_prod.chainsea.com.tw:9641/predict",
-      // "http://192.168.31.62:5000/predict",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-    console.log("Image sent successfully:", response.data);
-    emit("autoDetect", response.data);
+    const response = await axios.post("/predict", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    console.log("Image sent successfully:", response);
+    emit("autoDetect", response);
   } catch (error) {
     console.error("Error sending image to backend:", error);
   } finally {
