@@ -35,18 +35,43 @@
         <img
           src="/images/music-solid.svg"
           alt="回到音樂總覽"
-          class="w-8 h-8 cursor-pointer"
+          class="w-8 h-8 cursor-pointer m-4"
           @click="currentDiv = 'overview'"
         />
       </div>
       <div id="player" ref="playerRef"></div>
       <div class="flex flex-col gap-4">
-        <span class="text-3xl">歌詞</span>
+        <div class="flex flex-col md:flex-row items-center gap-10 my-4">
+          <el-radio-group
+            v-model="lyrics_mode"
+            @change="lyrics_mode_change"
+            size="large"
+          >
+            <el-radio value="origin" size="large">原文</el-radio>
+            <el-radio value="hiragana" size="large">平假名</el-radio>
+            <el-radio value="romaji" size="large">羅馬拼音</el-radio>
+          </el-radio-group>
+
+          <div class="flex items-center gap-4">
+            <el-slider
+              v-model="playbackRate"
+              :min="0.25"
+              :max="2"
+              :step="0.25"
+              :format-tooltip="formatPlaybackRate"
+              @change="changePlaybackRate"
+              class="w-64"
+              show-input
+            />
+          </div>
+        </div>
+
         <div
           v-for="(line, index) in parsedLyrics"
           :key="index"
           class="flex items-center gap-4"
           :class="{ 'bg-yellow-200': currentLyricIndex === index }"
+          id="lyrics"
         >
           <el-button type="primary" @click="jumpToTime(line.time)" plain>
             {{ formatTime(line.time) }}
@@ -68,6 +93,8 @@ const prevVideoId = ref("");
 const playerRef = ref(null);
 let player = null;
 const currentDiv = ref("overview");
+
+const currentVideo = ref({});
 
 const allVideos = ref([]);
 const currentLyricIndex = ref(-1);
@@ -93,6 +120,23 @@ const parsedLyrics = computed(() => {
     })
     .sort((a, b) => a.time - b.time);
 });
+
+const lyrics_mode = ref("origin");
+
+const lyrics_mode_change = (value) => {
+  lyrics_mode.value = value;
+  switch (value) {
+    case "origin":
+      lyrics.value = currentVideo.value.lyrics;
+      break;
+    case "hiragana":
+      lyrics.value = currentVideo.value.hiragana_lyrics;
+      break;
+    case "romaji":
+      lyrics.value = currentVideo.value.romaji_lyrics;
+      break;
+  }
+};
 
 const jumpToTime = (time) => {
   if (player) {
@@ -127,6 +171,19 @@ const loadYouTubeAPI = () => {
   });
 };
 
+// 新增：播放速度相關變數和函數
+const playbackRate = ref(1);
+
+const formatPlaybackRate = (value) => {
+  return `${value}x`;
+};
+
+const changePlaybackRate = (value) => {
+  if (player && player.setPlaybackRate) {
+    player.setPlaybackRate(value);
+  }
+};
+
 const initializePlayer = async () => {
   await loadYouTubeAPI();
   player = new YT.Player(playerRef.value, {
@@ -141,6 +198,8 @@ const initializePlayer = async () => {
       onReady: (event) => {
         console.log("Player is ready");
         setInterval(updateCurrentLyric, 100); // Check every 100ms
+        // 設置初始播放速度
+        event.target.setPlaybackRate(playbackRate.value);
       },
     },
   });
@@ -165,6 +224,7 @@ const updateCurrentLyric = () => {
 
 const switchToPractice = (video_info) => {
   currentDiv.value = "practice";
+  currentVideo.value = video_info;
   lyrics.value = video_info.lyrics;
 };
 
@@ -194,5 +254,11 @@ onMounted(async () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+#lyrics {
+  font-family: "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
+    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  font-size: 20px;
 }
 </style>
