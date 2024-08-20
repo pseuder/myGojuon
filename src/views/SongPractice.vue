@@ -9,8 +9,12 @@
       />
       {{ currentVideo ? currentVideo.video_name : "Loading..." }}
     </div>
-    <div id="player-container" ref="playerContainerRef">
-      <div id="player" ref="playerRef" :class="{ floating: isFloating }"></div>
+    <div
+      id="player-container"
+      ref="playerContainerRef"
+      :class="{ floating: isFloating }"
+    >
+      <div id="player" ref="playerRef"></div>
     </div>
     <div class="flex flex-col gap-4">
       <div class="flex flex-col md:flex-row items-center gap-10 my-4">
@@ -112,6 +116,7 @@ const lyrics_mode = ref("origin");
 const playbackRate = ref(1);
 const playerContainerRef = ref(null);
 const isFloating = ref(false);
+const floatingThreshold = ref(0);
 
 const autoScroll = ref(true);
 
@@ -194,7 +199,7 @@ const initializePlayer = async () => {
   await loadYouTubeAPI();
   player = new YT.Player(playerRef.value, {
     videoId: videoId.value,
-    height: "390",
+    height: "350",
     width: "100%",
     playerVars: {
       autoplay: 0,
@@ -203,8 +208,7 @@ const initializePlayer = async () => {
     events: {
       onReady: (event) => {
         console.log("Player is ready");
-        setInterval(updateCurrentLyric, 100); // Check every 100ms
-        // 設置初始播放速度
+        setInterval(updateCurrentLyric, 100);
         event.target.setPlaybackRate(playbackRate.value);
       },
     },
@@ -242,12 +246,75 @@ const scrollToCurrentLyric = (index) => {
   }
 };
 
+const checkFloating = () => {
+  if (playerContainerRef.value) {
+    let mainElement = document.querySelector("main");
+    if (mainElement.scrollTop < 70) {
+      isFloating.value = false;
+    } else {
+      const rect = playerContainerRef.value.getBoundingClientRect();
+      const shouldFloat = rect.bottom < floatingThreshold.value;
+
+      // Only update isFloating if the new state is different
+      if (shouldFloat !== isFloating.value) {
+        isFloating.value = shouldFloat;
+      }
+    }
+  }
+};
+
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
+
+const debouncedCheckFloating = debounce(checkFloating, 100);
+
+const throttle = (func, limit) => {
+  let inThrottle;
+  return function () {
+    const args = arguments;
+    const context = this;
+    if (!inThrottle) {
+      func.apply(context, args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+};
+
+const throttledCheckFloating = throttle(checkFloating, 100);
+
+window.addEventListener(
+  "scroll",
+  () => {
+    throttledCheckFloating();
+  },
+  true
+);
+
 onMounted(async () => {
   await fetchVideo();
   await initializePlayer();
+
+  // Calculate and set the floating threshold
+  if (playerContainerRef.value) {
+    const rect = playerContainerRef.value.getBoundingClientRect();
+    floatingThreshold.value = rect.height / 2; // Set threshold to half the player height
+  }
+
+  window.addEventListener("scroll", debouncedCheckFloating, { passive: true });
 });
 
 onUnmounted(() => {
+  window.removeEventListener("scroll", debouncedCheckFloating);
   if (player) {
     player.destroy();
   }
@@ -269,5 +336,23 @@ onUnmounted(() => {
   font-family: "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
     "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   font-size: 20px;
+}
+
+#player {
+  transition: all 0.3s ease;
+}
+
+#player-container {
+  transition: all 0.3s ease;
+}
+
+.floating {
+  position: fixed;
+  top: 0px;
+  right: 20px;
+  width: 250px;
+  height: 80px;
+  z-index: 1000;
+  transition: all 0.3s ease;
 }
 </style>
