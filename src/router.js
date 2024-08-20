@@ -2,8 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import WritingPractice from '@/views/WritingPractice.vue'
 import ListeningPractice from '@/views/ListeningPractice.vue'
-import SongPractice from '@/views/SongPractice.vue'
 import Backend from '@/views/Backend.vue'
+import SongOverview from '@/views/SongOverview.vue'
+import SongPractice from '@/views/SongPractice.vue'
 
 const routes = [
     { path: '/', component: Home },
@@ -11,7 +12,8 @@ const routes = [
     { path: '/listening', component: ListeningPractice },
     { path: '/song', component: SongPractice },
     { path: '/sdsdwewdewe2wde@@we222', component: Backend },
-
+    { path: '/songOverview', name: 'songOverview', component: SongOverview },
+    { path: '/songPractice/:id', name: 'songPractice', component: SongPractice },
 
     // 添加一個 catch-all 路由
     { path: '/:pathMatch(.*)*', redirect: '/' }

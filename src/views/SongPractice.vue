@@ -1,102 +1,89 @@
 <template>
   <div class="flex flex-col px-10 py-4 gap-4">
-    <!-- 總攬頁面 -->
-    <div v-show="currentDiv === 'overview'" key="overview">
-      <div class="flex gap-4 items-center">
-        <el-space wrap class="justify-center">
-          <template v-for="video in allVideos" :key="video.UID">
-            <el-card class="w-full max-w-[380px]" shadow="hover">
-              <img
-                :src="video.video_thumbnail"
-                class="w-full h-48 object-cover"
-                alt="video thumbnail"
-              />
-              <div class="p-4">
-                <el-text
-                  class="cursor-pointer text-lg text-blue-400 hover:underline hover:text-blue-600 w-full mb-2"
-                  truncated
-                  @click="
-                    videoId = video.video_id;
-                    switchToPractice(video);
-                  "
-                >
-                  {{ video.video_name }}
-                </el-text>
-              </div>
-            </el-card>
-          </template>
-        </el-space>
-      </div>
+    <div class="text-3xl flex items-center">
+      <img
+        src="/images/music-solid.svg"
+        alt="回到音樂總覽"
+        class="w-8 h-8 cursor-pointer m-4"
+        @click="navigateToOverview"
+      />
+      {{ currentVideo ? currentVideo.video_name : "Loading..." }}
     </div>
-
-    <!-- 練習頁面 -->
-    <div v-show="currentDiv === 'practice'" key="practice">
-      <div class="text-3xl">
-        <img
-          src="/images/music-solid.svg"
-          alt="回到音樂總覽"
-          class="w-8 h-8 cursor-pointer m-4"
-          @click="currentDiv = 'overview'"
-        />
-      </div>
-      <div id="player" ref="playerRef"></div>
-      <div class="flex flex-col gap-4">
-        <div class="flex flex-col md:flex-row items-center gap-10 my-4">
-          <el-radio-group
-            v-model="lyrics_mode"
-            @change="lyrics_mode_change"
-            size="large"
-          >
-            <el-radio value="origin" size="large">原文</el-radio>
-            <el-radio value="hiragana" size="large">平假名</el-radio>
-            <el-radio value="romaji" size="large">羅馬拼音</el-radio>
-          </el-radio-group>
-
-          <div class="flex items-center gap-4">
-            <el-slider
-              v-model="playbackRate"
-              :min="0.25"
-              :max="2"
-              :step="0.25"
-              :format-tooltip="formatPlaybackRate"
-              @change="changePlaybackRate"
-              class="w-64"
-              show-input
-            />
-          </div>
-        </div>
-
-        <div
-          v-for="(line, index) in parsedLyrics"
-          :key="index"
-          class="flex items-center gap-4"
-          :class="{ 'bg-yellow-200': currentLyricIndex === index }"
-          id="lyrics"
+    <div id="player-container" ref="playerContainerRef">
+      <div id="player" ref="playerRef" :class="{ floating: isFloating }"></div>
+    </div>
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-col md:flex-row items-center gap-10 my-4">
+        <el-radio-group
+          v-model="lyrics_mode"
+          @change="lyrics_mode_change"
+          size="large"
         >
-          <el-button type="primary" @click="jumpToTime(line.time)" plain>
-            {{ formatTime(line.time) }}
-          </el-button>
-          <span>{{ line.text }}</span>
+          <el-radio value="origin" size="large">原文</el-radio>
+          <el-radio value="hiragana" size="large">平假名</el-radio>
+          <el-radio value="romaji" size="large">羅馬拼音</el-radio>
+        </el-radio-group>
+
+        <div class="flex items-center gap-4">
+          <el-input v-model="playbackRate" class="w-full max-w-[150px]">
+            <template #prepend>
+              <el-button
+                size="small"
+                @click="changePlaybackRate((playbackRate -= 0.25))"
+                >-</el-button
+              >
+            </template>
+            <template #append
+              ><el-button
+                size="small"
+                @click="changePlaybackRate((playbackRate += 0.25))"
+                >+</el-button
+              ></template
+            >
+          </el-input>
+
+          <el-checkbox v-model="autoScroll">自動滾動</el-checkbox>
         </div>
+      </div>
+
+      <div
+        v-for="(line, index) in parsedLyrics"
+        :key="index"
+        :id="`lyric-${index}`"
+        :class="{ 'bg-yellow-200': currentLyricIndex === index }"
+        class="flex items-center gap-4"
+      >
+        <div class="flex items-center">
+          <el-button type="text" plain @click="startVideo(line.time)">
+            <el-icon :size="25"><VideoPlay /></el-icon>
+          </el-button>
+          <el-button type="text" plain @click="pauseVideo">
+            <el-icon :size="25"><VideoPause /></el-icon>
+          </el-button>
+        </div>
+        <span
+          class="cursor-pointer hover:underline"
+          @click="jumpToTime(line.time)"
+          >{{ line.text }}</span
+        >
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { VideoPlay, VideoPause } from "@element-plus/icons-vue";
+import { useRouter } from "vue-router";
 import axios from "@/utils/axios";
 
-const videoId = ref("x1FV6IrjZCY");
-const prevVideoId = ref("");
+const router = useRouter();
+
+const videoId = ref(router.currentRoute.value.params.id);
+const currentVideo = ref(null);
 
 const playerRef = ref(null);
 let player = null;
-const currentDiv = ref("overview");
-
-const currentVideo = ref({});
-
-const allVideos = ref([]);
 const currentLyricIndex = ref(-1);
 const lyrics = ref("");
 const parsedLyrics = computed(() => {
@@ -122,6 +109,19 @@ const parsedLyrics = computed(() => {
 });
 
 const lyrics_mode = ref("origin");
+const playbackRate = ref(1);
+const playerContainerRef = ref(null);
+const isFloating = ref(false);
+
+const autoScroll = ref(true);
+
+const fetchVideo = async () => {
+  const data = await axios.get("/get_video/" + videoId.value);
+  if (data.length > 0) {
+    currentVideo.value = data[0];
+    lyrics.value = currentVideo.value.lyrics;
+  }
+};
 
 const lyrics_mode_change = (value) => {
   lyrics_mode.value = value;
@@ -141,6 +141,19 @@ const lyrics_mode_change = (value) => {
 const jumpToTime = (time) => {
   if (player) {
     player.seekTo(time);
+  }
+};
+
+const startVideo = (time) => {
+  if (player) {
+    jumpToTime(time);
+    player.playVideo();
+  }
+};
+
+const pauseVideo = () => {
+  if (player) {
+    player.pauseVideo();
   }
 };
 
@@ -171,13 +184,6 @@ const loadYouTubeAPI = () => {
   });
 };
 
-// 新增：播放速度相關變數和函數
-const playbackRate = ref(1);
-
-const formatPlaybackRate = (value) => {
-  return `${value}x`;
-};
-
 const changePlaybackRate = (value) => {
   if (player && player.setPlaybackRate) {
     player.setPlaybackRate(value);
@@ -203,7 +209,6 @@ const initializePlayer = async () => {
       },
     },
   });
-  prevVideoId.value = videoId.value;
 };
 
 const updateCurrentLyric = () => {
@@ -219,29 +224,33 @@ const updateCurrentLyric = () => {
 
   if (newIndex !== -1 && newIndex !== currentLyricIndex.value) {
     currentLyricIndex.value = newIndex;
+    if (autoScroll.value) scrollToCurrentLyric(newIndex);
   }
 };
 
-const switchToPractice = (video_info) => {
-  currentDiv.value = "practice";
-  currentVideo.value = video_info;
-  lyrics.value = video_info.lyrics;
+const navigateToOverview = () => {
+  router.push({ name: "songOverview" });
 };
 
-watch(currentDiv, async (newValue) => {
-  if (newValue === "practice" && prevVideoId.value !== videoId.value) {
-    await initializePlayer();
+const scrollToCurrentLyric = (index) => {
+  const lyricElement = document.getElementById(`lyric-${index}`);
+  if (lyricElement) {
+    lyricElement.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
   }
-
-  if (newValue === "overview") {
-    player.destroy();
-  }
-});
+};
 
 onMounted(async () => {
-  axios.get("/get_video").then((data) => {
-    allVideos.value = data;
-  });
+  await fetchVideo();
+  await initializePlayer();
+});
+
+onUnmounted(() => {
+  if (player) {
+    player.destroy();
+  }
 });
 </script>
 
