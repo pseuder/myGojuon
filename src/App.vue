@@ -1,12 +1,7 @@
 <template>
   <div class="h-full">
     <nav class="navbar">
-      <el-menu
-        :default-active="activeIndex"
-        class="w-full user-select-none overflow-hidden"
-        mode="horizontal"
-        router
-      >
+      <el-menu :default-active="activeIndex" class="w-full user-select-none overflow-hidden" mode="horizontal" router>
         <el-menu-item index="/">首頁</el-menu-item>
         <el-menu-item index="/writing">手寫練習</el-menu-item>
         <el-menu-item index="/listening">聽寫練習</el-menu-item>
@@ -44,6 +39,7 @@ watch(
   position: relative;
   z-index: 2;
 }
+
 .content {
   height: calc(100% - 60px);
 
@@ -53,6 +49,7 @@ watch(
   background-size: cover;
   background-position: center;
 }
+
 .content::before {
   content: "";
   position: fixed;
@@ -63,6 +60,7 @@ watch(
   background-color: rgba(255, 255, 255, 0.5);
   z-index: 1;
 }
+
 .main-component {
   position: relative;
   background-color: rgba(255, 255, 255, 0.9);

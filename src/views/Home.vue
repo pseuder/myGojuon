@@ -24,17 +24,13 @@
 
       <!-- 開始學習按鈕 -->
       <div class="text-center my-10">
-        <el-button
-          @click="router.push('/writing')"
-          class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
-        >
+        <el-button @click="router.push('/writing')"
+          class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300">
           開始手寫練習
         </el-button>
 
-        <el-button
-          @click="router.push('/listening')"
-          class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
-        >
+        <el-button @click="router.push('/listening')"
+          class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300">
           開始聽寫練習
         </el-button>
       </div>
@@ -49,8 +45,14 @@
           <li>加入AI自動辨識功能(實驗性)</li>
           <li>針對辨識功能逕行優化</li>
           <li>優化RWD效果</li>
+          <li>2024-08-18新增歌曲練習</li>
+          <li>2024-08-25歌曲練習新增漢字對照假名</li>
         </ul>
       </section>
+
+      <span class="w-[98%] absolute bottom-0 text-end  z-10 text-sm text-gray-500">
+        侵權通知: iop890520@gmail.com
+      </span>
     </div>
   </div>
 </template>
