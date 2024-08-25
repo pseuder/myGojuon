@@ -24,16 +24,27 @@
 
       <!-- 開始學習按鈕 -->
       <div class="text-center my-10">
-        <el-button @click="router.push('/writing')"
-          class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300">
+        <el-button
+          @click="router.push('/writing')"
+          class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
+        >
           開始手寫練習
         </el-button>
 
-        <el-button @click="router.push('/listening')"
-          class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300">
+        <el-button
+          @click="router.push('/listening')"
+          class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
+        >
           開始聽寫練習
         </el-button>
       </div>
+
+      <section class="my-10">
+        <h2 class="text-2xl font-bold text-indigo-700 mb-4">
+          登入以獲得更佳體驗
+        </h2>
+        <GoogleLogin />
+      </section>
 
       <!-- 最近更新 -->
       <section class="my-10">
@@ -49,8 +60,9 @@
           <li>2024-08-25歌曲練習新增漢字對照假名</li>
         </ul>
       </section>
-
-      <span class="w-[98%] absolute bottom-0 text-end  z-10 text-sm text-gray-500">
+      <span
+        class="w-[98%] absolute bottom-0 text-end z-10 text-sm text-gray-500"
+      >
         侵權通知: iop890520@gmail.com
       </span>
     </div>
@@ -60,6 +72,7 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import GoogleLogin from "@/components/GoogleLogin.vue";
 
 const router = useRouter();
 </script>
