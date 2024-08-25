@@ -1,7 +1,12 @@
 <template>
-  <div class="flex flex-col px-10 py-4 gap-4">
+  <div class="flex flex-col px-4 sm:px-10 py-4 gap-4">
     <div class="text-3xl flex items-center">
-      <img src="/images/music-solid.svg" alt="回到音樂總覽" class="w-8 h-8 cursor-pointer m-4" @click="navigateToOverview" />
+      <img
+        src="/images/music-solid.svg"
+        alt="回到音樂總覽"
+        class="w-8 h-8 cursor-pointer m-4"
+        @click="navigateToOverview"
+      />
       {{ currentVideo ? currentVideo.video_name : "Loading..." }}
     </div>
     <div id="player-container" ref="playerContainerRef">
@@ -18,41 +23,86 @@
         <div class="flex items-center gap-4">
           <el-input v-model="playbackRate" class="w-full max-w-[150px]">
             <template #prepend>
-              <el-button size="small" @click="changePlaybackRate((playbackRate -= 0.25))">-</el-button>
+              <el-button
+                size="small"
+                @click="changePlaybackRate((playbackRate -= 0.25))"
+                >-</el-button
+              >
             </template>
             <template #append>
-              <el-button size="small" @click="changePlaybackRate((playbackRate += 0.25))">+</el-button>
+              <el-button
+                size="small"
+                @click="changePlaybackRate((playbackRate += 0.25))"
+                >+</el-button
+              >
             </template>
           </el-input>
 
           <el-checkbox v-model="autoScroll">自動滾動</el-checkbox>
         </div>
       </div>
+    </div>
 
-      <div v-for="(line, index) in lyrics" :key="index" :id="`lyric-${index}`"
-        :class="{ 'bg-yellow-200': currentLyricIndex === index }" class="flex items-center gap-4">
-        <div class="flex items-center">
-          <el-button type="text" plain @click="startVideo(line.timestamp)">
-            <el-icon :size="25">
-              <VideoPlay />
-            </el-icon>
-          </el-button>
-          <el-button type="text" plain @click="pauseVideo">
-            <el-icon :size="25">
-              <VideoPause />
-            </el-icon>
-          </el-button>
-        </div>
-        <div class="flex gap-2 cursor-pointer" @click="jumpToTime(line.timestamp)">
-          <!-- <div class="flex items-center">
-            {{ line.timestamp }}
+    <div class="lyrics-container overflow-x-auto">
+      <div class="min-w-[768px]">
+        <!-- 設置最小寬度 -->
+        <div
+          v-for="(line, index) in lyrics"
+          :key="index"
+          :id="`lyric-${index}`"
+          :class="{ 'bg-yellow-200': currentLyricIndex === index }"
+          class="flex items-center gap-4 py-2"
+        >
+          <!-- <div class="flex-shrink-0 flex items-center">
+            <el-button type="text" plain @click="startVideo(line.timestamp)">
+              <el-icon :size="25">
+                <VideoPlay />
+              </el-icon>
+            </el-button>
+            <el-button type="text" plain @click="pauseVideo">
+              <el-icon :size="25">
+                <VideoPause />
+              </el-icon>
+            </el-button>
           </div> -->
-          <template v-for="(ly, index) in line.lyrics">
-            <div class="flex flex-col items-center justify-center">
-              <div class="text-sm h-3 ">{{ ly.cvt }}</div>
-              <div class="text-xl">{{ ly.ori }}</div>
-            </div>
-          </template>
+          <!-- <div
+            class="flex flex-wrap gap-2 cursor-pointer"
+            @click="jumpToTime(line.timestamp)"
+          > -->
+          <div class="flex flex-wrap gap-2 cursor-pointer">
+            <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
+              <el-popover
+                placement="bottom"
+                trigger="click"
+                :width="100"
+                popper-style="min-width: 100px"
+              >
+                <template #reference>
+                  <div class="flex flex-col items-center justify-center">
+                    <div class="text-sm h-3">{{ ly.cvt }}</div>
+                    <div class="text-xl">{{ ly.ori }}</div>
+                  </div>
+                </template>
+
+                <div class="flex items-center w-[100px]">
+                  <el-button
+                    type="text"
+                    plain
+                    @click="startVideo(line.timestamp)"
+                  >
+                    <el-icon :size="25">
+                      <VideoPlay />
+                    </el-icon>
+                  </el-button>
+                  <el-button type="text" plain @click="pauseVideo">
+                    <el-icon :size="25">
+                      <VideoPause />
+                    </el-icon>
+                  </el-button>
+                </div>
+              </el-popover>
+            </template>
+          </div>
         </div>
       </div>
     </div>
@@ -171,11 +221,15 @@ const updateCurrentLyric = () => {
   if (player && player.getCurrentTime) {
     const currentTime = player.getCurrentTime();
     for (let i = 0; i < lyrics.value.length; i++) {
-      const nextTime = i < lyrics.value.length - 1
-        ? parseTimeToSeconds(lyrics.value[i + 1].timestamp)
-        : Infinity;
+      const nextTime =
+        i < lyrics.value.length - 1
+          ? parseTimeToSeconds(lyrics.value[i + 1].timestamp)
+          : Infinity;
 
-      if (currentTime >= parseTimeToSeconds(lyrics.value[i].timestamp) && currentTime < nextTime) {
+      if (
+        currentTime >= parseTimeToSeconds(lyrics.value[i].timestamp) &&
+        currentTime < nextTime
+      ) {
         if (currentLyricIndex.value !== i) {
           currentLyricIndex.value = i;
           if (autoScroll.value) {
@@ -187,7 +241,6 @@ const updateCurrentLyric = () => {
     }
   }
 };
-
 
 const navigateToOverview = () => {
   router.push({ name: "songOverview" });
@@ -239,5 +292,16 @@ onUnmounted(() => {
 .cvt {
   color: #666;
   margin-left: 10px;
+}
+
+.lyrics-container {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .lyrics-container > div {
+    min-width: 100%;
+  }
 }
 </style>
