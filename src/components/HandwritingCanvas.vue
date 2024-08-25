@@ -1,12 +1,7 @@
 <template>
   <div class="" ref="canvasContainer">
     <div class="flex justify-between items-center my-2">
-      <el-switch
-        v-model="penMode"
-        active-text="觸控筆"
-        inactive-text="觸控"
-        @change="handleModeChange"
-      />
+      <el-switch v-model="penMode" active-text="觸控筆" inactive-text="觸控" @change="handleModeChange" />
 
       <!-- <el-select
         v-model="penSize"
@@ -22,31 +17,15 @@
           :value="option.value"
         />
       </el-select> -->
-      <el-button
-        @click="handleClear"
-        type="text"
-        style="font-size: 35px; padding: 0; margin: 0; line-height: 1"
-      >
-        <img
-          src="/images/broom.png"
-          alt=""
-          class="w-10 h-10 cursor-pointer"
-          :class="{ 'rotate-animation': isRotating }"
-        />
+      <el-button @click="handleClear" type="text" style="font-size: 35px; padding: 0; margin: 0; line-height: 1">
+        <img src="/images/broom.png" alt="" class="w-10 h-10 cursor-pointer"
+          :class="{ 'rotate-animation': isRotating }" />
       </el-button>
     </div>
     <div class="canvas-wrapper" ref="canvasWrapper">
-      <canvas
-        ref="canvas"
-        @pointerdown="startDrawing"
-        @pointermove="draw"
-        @pointerup="stopDrawing"
-        @pointerout="stopDrawing"
-        @touchstart.prevent="handleTouch"
-        @touchmove.prevent="handleTouch"
-        @touchend.prevent="handleTouch"
-        :style="{ cursor: penMode ? 'default' : 'crosshair' }"
-      ></canvas>
+      <canvas ref="canvas" @pointerdown="startDrawing" @pointermove="draw" @pointerup="stopDrawing"
+        @pointerout="stopDrawing" @touchstart.prevent="handleTouch" @touchmove.prevent="handleTouch"
+        @touchend.prevent="handleTouch" :style="{ cursor: penMode ? 'default' : 'crosshair' }"></canvas>
     </div>
   </div>
 </template>
@@ -56,7 +35,7 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useCanvas } from "@/composables/useCanvas";
 import { usePen } from "@/composables/usePen";
 import { useDrawing } from "@/composables/useDrawing";
-import axios from "@/utils/axios";
+import axios, { isTokenExpired } from "@/utils/axios";
 
 const props = defineProps({
   exampleKana: {
@@ -70,6 +49,10 @@ const props = defineProps({
   currentType: {
     type: String,
     default: "hiragana",
+  },
+  learningModule: {
+    type: String,
+    default: "",
   },
 });
 
@@ -152,7 +135,6 @@ const sendCanvasImageToBackend = async () => {
         "Content-Type": "multipart/form-data",
       },
     });
-    console.log("Image sent successfully:", response);
     emit("autoDetect", response);
   } catch (error) {
     console.error("Error sending image to backend:", error);
@@ -183,29 +165,23 @@ async function handleDrawingStop(duration) {
 
     const dataToSend = {
       duration: duration,
-      currentType: props.currentType,
-      exampleKana: props.exampleKana,
-      // 其他相關信息...
+      learningType: props.currentType,
+      learningKana: props.exampleKana,
+      learningModule: props.learningModule,
     };
 
-    console.log("dataToSend:", dataToSend);
 
     // 發送數據到後端
-    // const response = await fetch("/api/save-drawing", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify(dataToSend),
-    // });
-
-    // if (!response.ok) {
-    //   throw new Error("Failed to save drawing data");
-    // }
-
-    console.log("Drawing data saved successfully");
+    let token_expired = isTokenExpired();
+    if (!token_expired) {
+      axios
+        .post("/record_activity", dataToSend)
+        .catch((error) => {
+          console.error("Error recording activity:", error);
+        });
+    }
   } catch (error) {
-    console.error("Error saving drawing data:", error);
+    console.error("Error recording activity:", error);
   }
 }
 
@@ -247,13 +223,16 @@ canvas {
   aspect-ratio: 1 / 1;
   touch-action: none;
 }
+
 @keyframes rotateLeftRight {
   0% {
     transform: rotate(0deg);
   }
+
   50% {
     transform: rotate(-45deg);
   }
+
   100% {
     transform: rotate(0deg);
   }

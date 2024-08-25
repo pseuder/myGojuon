@@ -22,7 +22,7 @@ export function useDrawing(canvas, penMode, penColor, penSize, ctx, onDrawingSto
     const y = event.clientY - rect.top
 
     userPaths.value.push([{ x, y }])
-    
+
     ctx.value.beginPath()
     ctx.value.moveTo(x, y)
     updatePenStyle()
@@ -50,7 +50,6 @@ export function useDrawing(canvas, penMode, penColor, penSize, ctx, onDrawingSto
       ctx.value.beginPath()
       const endTime = Date.now()
       drawingDuration.value = endTime - drawingStartTime.value
-      console.log(drawingDuration.value)
       onDrawingStop(drawingDuration.value)
     }
   }

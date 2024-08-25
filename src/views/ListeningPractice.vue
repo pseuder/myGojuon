@@ -3,27 +3,14 @@
     <!-- 左側50音列表 -->
     <div class="w-full flex flex-col gap-4">
       <div class="flex gap-4 items-center">
-        <audio
-          ref="audioPlayer"
-          :src="`/sounds/${selectedSound.romaji}.mp3`"
-          @ended="audioEnded"
-        ></audio>
+        <audio ref="audioPlayer" :src="`/sounds/${selectedSound.romaji}.mp3`" @ended="audioEnded"></audio>
         <el-button @click="togglePlay" type="text">
-          <img
-            v-if="isPlaying"
-            src="/images/pause.svg"
-            alt="暫停"
-            class="w-8 h-8"
-          />
+          <img v-if="isPlaying" src="/images/pause.svg" alt="暫停" class="w-8 h-8" />
           <img v-else src="/images/play.svg" alt="播放" class="w-8 h-8" />
         </el-button>
 
         <!-- 選擇字符集 -->
-        <el-select
-          v-model="activeTab"
-          placeholder="選擇字符集"
-          style="width: 100px"
-        >
+        <el-select v-model="activeTab" placeholder="選擇字符集" style="width: 100px">
           <el-option key="hiragana" label="平假名" value="hiragana" />
           <el-option key="katakana" label="片假名" value="katakana" />
           <el-option key="dakuon" label="濁音" value="dakuon" />
@@ -32,36 +19,19 @@
         </el-select>
 
         <!-- 隨機、循序模式切換 -->
-        <el-switch
-          v-model="isRandomMode"
-          active-text="隨機"
-          inactive-text="循序"
-          @change="handleModeChange"
-        />
+        <el-switch v-model="isRandomMode" active-text="隨機" inactive-text="循序" @change="handleModeChange" />
 
         <!-- 上一個、下一個按鈕 -->
         <div class="flex items-center gap-4">
-          <img
-            src="/images/arrow-circle-left-solid.svg"
-            alt="上一個"
-            class="w-8 h-8 cursor-pointer"
-            @click="changeSound('prev')"
-          />
-          <img
-            src="/images/arrow-circle-right-solid.svg"
-            alt="下一個"
-            class="w-8 h-8 cursor-pointer"
-            @click="changeSound('next')"
-          />
+          <img src="/images/arrow-circle-left-solid.svg" alt="上一個" class="w-8 h-8 cursor-pointer"
+            @click="changeSound('prev')" />
+          <img src="/images/arrow-circle-right-solid.svg" alt="下一個" class="w-8 h-8 cursor-pointer"
+            @click="changeSound('next')" />
         </div>
       </div>
 
-      <el-button
-        @click="handwritingCanvas.sendCanvasImageToBackend()"
-        type="primary"
-        class="w-full h-12"
-        v-loading="handwritingCanvas?.isSending"
-      >
+      <el-button @click="handwritingCanvas.sendCanvasImageToBackend()" type="primary" class="w-full h-12"
+        v-loading="handwritingCanvas?.isSending">
         自動辨識(實驗性)
       </el-button>
 
@@ -74,22 +44,14 @@
           </template>
 
           <div class="sound-grid">
-            <div
-              v-for="(count, sound) in soundCounts"
-              :key="sound"
-              class="sound-item"
-            >
+            <div v-for="(count, sound) in soundCounts" :key="sound" class="sound-item">
               <span class="sound">{{ sound }}</span>
-              <span
-                class="count"
-                :class="{
-                  active1: count == 1,
-                  active2: count == 2,
-                  active3: count == 3,
-                  active: count > 3,
-                }"
-                >{{ count }}</span
-              >
+              <span class="count" :class="{
+                active1: count == 1,
+                active2: count == 2,
+                active3: count == 3,
+                active: count > 3,
+              }">{{ count }}</span>
             </div>
           </div>
         </el-popover>
@@ -109,13 +71,8 @@
     <!-- 右側手寫區 -->
     <div class="w-full content-center">
       <el-card>
-        <HandwritingCanvas
-          ref="handwritingCanvas"
-          @auto-detect="autoDetect"
-          :example-kana="selectedSound.kana"
-          :show-example="false"
-          :current-type="activeTab"
-        />
+        <HandwritingCanvas ref="handwritingCanvas" @auto-detect="autoDetect" :example-kana="selectedSound.kana"
+          :show-example="false" :current-type="activeTab" :learning-module="'listening'" />
       </el-card>
     </div>
   </div>
@@ -354,14 +311,17 @@ h3 {
   background-color: #4caf50;
   color: white;
 }
+
 .count.active2 {
   background-color: #2196f3;
   color: white;
 }
+
 .count.active3 {
   background-color: #ff9800;
   color: white;
 }
+
 .count.active {
   background-color: #f44336;
   color: white;

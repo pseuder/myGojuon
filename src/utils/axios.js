@@ -21,17 +21,18 @@ export function getToken() {
 }
 
 // 檢查 token 是否過期
-export function isTokenExpired(token) {
-    if (!token) {
-        return true;
+export function isTokenExpired() {
+    try {
+        const token = getToken();
+        if (!token) {
+            return true;
+        }
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        return decoded.exp < Date.now() / 1000;
     }
-
-    const payloadBase64 = token.split('.')[1];
-    const decodedJson = atob(payloadBase64);
-    const decoded = JSON.parse(decodedJson);
-    const exp = decoded.exp;
-
-    return Date.now() >= exp * 1000;
+    catch (e) {
+        return false;
+    }
 }
 
 // 登出功能

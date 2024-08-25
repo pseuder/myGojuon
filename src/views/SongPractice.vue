@@ -1,12 +1,7 @@
 <template>
   <div class="flex flex-col px-4 sm:px-10 py-4 gap-4">
     <div class="text-3xl flex items-center">
-      <img
-        src="/images/music-solid.svg"
-        alt="回到音樂總覽"
-        class="w-8 h-8 cursor-pointer m-4"
-        @click="navigateToOverview"
-      />
+      <img src="/images/music-solid.svg" alt="回到音樂總覽" class="w-8 h-8 cursor-pointer m-4" @click="navigateToOverview" />
       {{ currentVideo ? currentVideo.video_name : "Loading..." }}
     </div>
     <div id="player-container" ref="playerContainerRef">
@@ -23,18 +18,10 @@
         <div class="flex items-center gap-4">
           <el-input v-model="playbackRate" class="w-full max-w-[150px]">
             <template #prepend>
-              <el-button
-                size="small"
-                @click="changePlaybackRate((playbackRate -= 0.25))"
-                >-</el-button
-              >
+              <el-button size="small" @click="changePlaybackRate((playbackRate -= 0.25))">-</el-button>
             </template>
             <template #append>
-              <el-button
-                size="small"
-                @click="changePlaybackRate((playbackRate += 0.25))"
-                >+</el-button
-              >
+              <el-button size="small" @click="changePlaybackRate((playbackRate += 0.25))">+</el-button>
             </template>
           </el-input>
 
@@ -46,13 +33,8 @@
     <div class="lyrics-container overflow-x-auto">
       <div class="min-w-[768px]">
         <!-- 設置最小寬度 -->
-        <div
-          v-for="(line, index) in lyrics"
-          :key="index"
-          :id="`lyric-${index}`"
-          :class="{ 'bg-yellow-200': currentLyricIndex === index }"
-          class="flex items-center gap-4 py-2"
-        >
+        <div v-for="(line, index) in lyrics" :key="index" :id="`lyric-${index}`"
+          :class="{ 'bg-yellow-200': currentLyricIndex === index }" class="flex items-center gap-4 py-2">
           <!-- <div class="flex-shrink-0 flex items-center">
             <el-button type="text" plain @click="startVideo(line.timestamp)">
               <el-icon :size="25">
@@ -71,12 +53,7 @@
           > -->
           <div class="flex flex-wrap gap-2 cursor-pointer">
             <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
-              <el-popover
-                placement="bottom"
-                trigger="click"
-                :width="100"
-                popper-style="min-width: 100px"
-              >
+              <el-popover placement="bottom" trigger="click" :width="100" popper-style="min-width: 100px">
                 <template #reference>
                   <div class="flex flex-col items-center justify-center">
                     <div class="text-sm h-3">{{ ly.cvt }}</div>
@@ -85,11 +62,7 @@
                 </template>
 
                 <div class="flex items-center w-[100px]">
-                  <el-button
-                    type="text"
-                    plain
-                    @click="startVideo(line.timestamp)"
-                  >
+                  <el-button type="text" plain @click="startVideo(line.timestamp)">
                     <el-icon :size="25">
                       <VideoPlay />
                     </el-icon>
@@ -145,14 +118,12 @@ const fetchVideo = async () => {
 };
 
 const jumpToTime = (time1) => {
-  console.log("Jump to time:", time1);
   if (player) {
     player.seekTo(parseTimeToSeconds(time1));
   }
 };
 
 const startVideo = (time2) => {
-  console.log("Start video at time:", time2);
   if (player) {
     player.seekTo(parseTimeToSeconds(time2));
     player.playVideo();
@@ -208,7 +179,6 @@ const initializePlayer = async () => {
     },
     events: {
       onReady: (event) => {
-        console.log("Player is ready");
         setInterval(updateCurrentLyric, 100); // Check every 100ms
         // 設置初始播放速度
         event.target.setPlaybackRate(playbackRate.value);
@@ -300,7 +270,7 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .lyrics-container > div {
+  .lyrics-container>div {
     min-width: 100%;
   }
 }
