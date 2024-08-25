@@ -107,7 +107,8 @@ const {
   stopDrawing,
   drawUserPaths,
   clearUserPaths,
-} = useDrawing(canvas, penMode, penColor, penSize, ctx);
+  getDrawingDuration,
+} = useDrawing(canvas, penMode, penColor, penSize, ctx, handleDrawingStop);
 
 const isSending = ref(false);
 const isRotating = ref(false);
@@ -175,6 +176,38 @@ const handleClear = () => {
 const handleTouch = (event) => {
   event.preventDefault();
 };
+
+async function handleDrawingStop(duration) {
+  try {
+    // 這裡可以添加其他你想要傳送到後端的信息
+
+    const dataToSend = {
+      duration: duration,
+      currentType: props.currentType,
+      exampleKana: props.exampleKana,
+      // 其他相關信息...
+    };
+
+    console.log("dataToSend:", dataToSend);
+
+    // 發送數據到後端
+    // const response = await fetch("/api/save-drawing", {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify(dataToSend),
+    // });
+
+    // if (!response.ok) {
+    //   throw new Error("Failed to save drawing data");
+    // }
+
+    console.log("Drawing data saved successfully");
+  } catch (error) {
+    console.error("Error saving drawing data:", error);
+  }
+}
 
 onMounted(() => {
   initCanvas();

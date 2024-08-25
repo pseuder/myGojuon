@@ -1,11 +1,14 @@
 import { ref } from 'vue'
 
-export function useDrawing(canvas, penMode, penColor, penSize, ctx) {
+export function useDrawing(canvas, penMode, penColor, penSize, ctx, onDrawingStop) {
   const isDrawing = ref(false)
   const userPaths = ref([])
+  const drawingStartTime = ref(null)
+  const drawingDuration = ref(0)
 
   const clearUserPaths = () => {
     userPaths.value = []
+    drawingDuration.value = 0
   }
 
   const startDrawing = (event) => {
@@ -13,6 +16,7 @@ export function useDrawing(canvas, penMode, penColor, penSize, ctx) {
     if (!penMode.value && event.pointerType !== 'touch' && event.pointerType !== 'mouse') return
 
     isDrawing.value = true
+    drawingStartTime.value = Date.now()
     const rect = canvas.value.getBoundingClientRect()
     const x = event.clientX - rect.left
     const y = event.clientY - rect.top
@@ -22,6 +26,7 @@ export function useDrawing(canvas, penMode, penColor, penSize, ctx) {
     ctx.value.beginPath()
     ctx.value.moveTo(x, y)
     updatePenStyle()
+
   }
 
   const draw = (event) => {
@@ -40,8 +45,14 @@ export function useDrawing(canvas, penMode, penColor, penSize, ctx) {
   }
 
   const stopDrawing = () => {
-    isDrawing.value = false
-    ctx.value.beginPath()
+    if (isDrawing.value) {
+      isDrawing.value = false
+      ctx.value.beginPath()
+      const endTime = Date.now()
+      drawingDuration.value = endTime - drawingStartTime.value
+      console.log(drawingDuration.value)
+      onDrawingStop(drawingDuration.value)
+    }
   }
 
   const drawUserPaths = () => {
@@ -69,6 +80,10 @@ export function useDrawing(canvas, penMode, penColor, penSize, ctx) {
     ctx.value.lineJoin = 'round'
   }
 
+  const getDrawingDuration = () => {
+    return drawingDuration.value
+  }
+
   return {
     isDrawing,
     userPaths,
@@ -76,6 +91,7 @@ export function useDrawing(canvas, penMode, penColor, penSize, ctx) {
     draw,
     stopDrawing,
     drawUserPaths,
-    clearUserPaths
+    clearUserPaths,
+    getDrawingDuration
   }
 }

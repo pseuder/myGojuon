@@ -83,6 +83,7 @@
         <HandwritingCanvas
           ref="handwritingCanvas"
           :example-kana="selectedSound.kana"
+          :current-type="activeTab"
           :show-example="true"
         />
       </el-card>
