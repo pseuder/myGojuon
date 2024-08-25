@@ -15,9 +15,16 @@ export function storeToken(token) {
     localStorage.setItem('jwtToken', token);
 }
 
+export function storeUserInfo(userinfo) {
+    localStorage.setItem('userinfo', JSON.stringify(userinfo));
+}
+
 // 從儲存中獲取 token
 export function getToken() {
     return localStorage.getItem('jwtToken');
+}
+export function getUserInfo() {
+    return JSON.parse(localStorage.getItem('userinfo'));
 }
 
 // 檢查 token 是否過期
@@ -38,8 +45,7 @@ export function isTokenExpired() {
 // 登出功能
 export function logout() {
     localStorage.removeItem('jwtToken');
-    // 重定向到登錄頁面或執行其他登出後的操作
-    // 例如：window.location.href = '/login';
+    localStorage.removeItem('userinfo');
 }
 
 // 請求攔截器
