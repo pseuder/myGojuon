@@ -49,6 +49,9 @@
       <el-form-item label="影片名稱" prop="video_name">
         <el-input v-model="formData.video_name"></el-input>
       </el-form-item>
+      <el-form-item label="作者" prop="author">
+        <el-input v-model="formData.author"></el-input>
+      </el-form-item>
       <el-form-item label="影片ID" prop="video_id">
         <el-input v-model="formData.video_id"></el-input>
       </el-form-item>
@@ -84,6 +87,7 @@ const form = ref(null);
 const formData = ref({
   video_id: "",
   video_name: "",
+  author: "",
   video_thumbnail: "",
   lyrics: "",
 });
@@ -168,6 +172,7 @@ const resetForm = () => {
   formData.value = {
     video_id: "",
     video_name: "",
+    author: "",
     video_thumbnail: "",
     lyrics: "",
   };
