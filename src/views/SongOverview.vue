@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col px-10 py-4 gap-4">
     <div class="flex gap-4 items-center">
-      <el-space wrap class="justify-center">
+      <el-space class="justify-center" style="width: 100%" wrap>
         <template v-for="video in allVideos" :key="video.UID">
           <el-card class="w-full max-w-[380px]" shadow="hover">
             <img
