@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col px-10 py-4 gap-4">
-    <div class="flex gap-4 items-center mb-4 select-none">
+    <el-space class="w-full flex gap-4 items-center mb-4 select-none" wrap>
       <el-tag
         class="cursor-pointer text-blue-400 hover:underline hover:text-blue-600"
         @click="resetFilter"
@@ -15,7 +15,7 @@
       >
         {{ author.author }}
       </el-tag>
-    </div>
+    </el-space>
     <div class="flex gap-4 items-center">
       <el-space class="justify-center" style="width: 100%" wrap>
         <template v-for="video in filteredVideos" :key="video.UID">

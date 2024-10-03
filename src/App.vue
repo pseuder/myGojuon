@@ -11,11 +11,20 @@
         <el-menu-item index="/writing">手寫練習</el-menu-item>
         <el-menu-item index="/listening">聽寫練習</el-menu-item>
         <el-menu-item index="/songOverview">歌曲總覽</el-menu-item>
-        <el-menu-item index="/backend">
+        <el-menu-item
+          index="/backend"
+          v-if="user?.email === 'iop890520@gmail.com'"
+        >
           <el-icon><Setting /></el-icon>
           <span>後台管理</span>
         </el-menu-item>
       </el-menu>
+
+      <div class="max-w-64 p-4">
+        <el-text class="text-blue-400" truncated>
+          {{ user?.name }}
+        </el-text>
+      </div>
     </nav>
 
     <main class="content">
@@ -30,9 +39,11 @@
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { Setting } from "@element-plus/icons-vue";
+import { getUserInfo } from "@/utils/axios";
 
 const route = useRoute();
 const activeIndex = ref("/");
+const user = getUserInfo();
 
 watch(
   () => route.path,
@@ -48,6 +59,7 @@ watch(
   height: fit-content;
   position: relative;
   z-index: 2;
+  display: flex;
 }
 
 .content {

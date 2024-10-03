@@ -12,7 +12,7 @@ const routes = [
     { path: '/writing', component: WritingPractice },
     { path: '/listening', component: ListeningPractice },
     { path: '/song', component: SongPractice },
-    { path: '/sdsdwewdewe2wde@@we222', component: Backend },
+    { path: '/backend', component: Backend },
     { path: '/songOverview', name: 'songOverview', component: SongOverview },
     { path: '/songPractice/:id', name: 'songPractice', component: SongPractice },
     { path: '/analysis', component: Analysis },
