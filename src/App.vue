@@ -1,11 +1,20 @@
 <template>
   <div class="h-full">
     <nav class="navbar">
-      <el-menu :default-active="activeIndex" class="w-full user-select-none overflow-hidden" mode="horizontal" router>
+      <el-menu
+        :default-active="activeIndex"
+        class="w-full user-select-none overflow-hidden"
+        mode="horizontal"
+        router
+      >
         <el-menu-item index="/">首頁</el-menu-item>
         <el-menu-item index="/writing">手寫練習</el-menu-item>
         <el-menu-item index="/listening">聽寫練習</el-menu-item>
         <el-menu-item index="/songOverview">歌曲總覽</el-menu-item>
+        <el-menu-item index="/backend">
+          <el-icon><Setting /></el-icon>
+          <span>後台管理</span>
+        </el-menu-item>
       </el-menu>
     </nav>
 
@@ -20,6 +29,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
+import { Setting } from "@element-plus/icons-vue";
 
 const route = useRoute();
 const activeIndex = ref("/");
@@ -42,23 +52,24 @@ watch(
 
 .content {
   height: calc(100% - 60px);
-
   overflow-y: auto;
   padding: 20px;
   background-image: url("/images/gojuon-writing.jpg");
   background-size: cover;
   background-position: center;
+  position: relative;
 }
 
 .content::before {
   content: "";
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   background-color: rgba(255, 255, 255, 0.5);
   z-index: 1;
+  pointer-events: none;
 }
 
 .main-component {
