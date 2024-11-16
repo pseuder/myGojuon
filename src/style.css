@@ -10,9 +10,6 @@ html,
   height: 100%;
   touch-action: manipulation;
   -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .el-tabs,
