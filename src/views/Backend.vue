@@ -163,8 +163,8 @@ const update_video = () => {
 };
 
 const fetchData = () => {
-  axios.get("/get_video").then((data) => {
-    tableData.value = data;
+  axios.get("/get_all_videos").then((data) => {
+    tableData.value = data["videos"];
   });
 };
 
