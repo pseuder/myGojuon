@@ -40,9 +40,7 @@
       </div>
 
       <section class="my-10">
-        <h2 class="text-2xl font-bold text-indigo-700 mb-4">
-          登入以獲得更佳體驗
-        </h2>
+        <h2 class="text-2xl font-bold text-indigo-700 mb-4">登入</h2>
         <GoogleLogin />
       </section>
 
