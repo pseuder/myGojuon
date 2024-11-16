@@ -4,13 +4,30 @@
     <div class="w-full" :key="activeTab">
       <h2 class="text-xl font-semibold mb-3">
         <el-tabs v-model="activeTab" class="mb-4">
-          <el-tab-pane v-for="tab in tabs" :key="tab.name" :label="tab.label" :name="tab.name" />
+          <el-tab-pane
+            v-for="tab in tabs"
+            :key="tab.name"
+            :label="tab.label"
+            :name="tab.name"
+          />
         </el-tabs>
       </h2>
-      <div v-for="(row, rowIndex) in groupedSounds" :key="rowIndex" class="flex mb-2">
-        <div v-for="sound in row" :key="sound.kana" class="flex-1 mx-1 flex items-center">
-          <el-button @click="selectSound(sound)" :type="isSelectedSound(sound) ? 'primary' : ''"
-            :style="{ visibility: sound.kana ? 'visible' : 'hidden' }" class="flex-grow">
+      <div
+        v-for="(row, rowIndex) in groupedSounds"
+        :key="rowIndex"
+        class="flex mb-2"
+      >
+        <div
+          v-for="sound in row"
+          :key="sound.kana"
+          class="flex-1 mx-1 flex items-center"
+        >
+          <el-button
+            @click="selectSound(sound)"
+            :type="isSelectedSound(sound) ? 'primary' : ''"
+            :style="{ visibility: sound.kana ? 'visible' : 'hidden' }"
+            class="flex-grow"
+          >
             {{ sound.kana }}
           </el-button>
         </div>
@@ -30,24 +47,46 @@
           <div class="text-4xl font-bold">{{ selectedSound.evo }}</div>
 
           <!-- 音檔播放控制 -->
-          <audio ref="audioPlayer" :src="`/sounds/${selectedSound.romaji}.mp3`" @ended="audioEnded"></audio>
+          <audio
+            ref="audioPlayer"
+            :src="`/sounds/${selectedSound.romaji}.mp3`"
+            @ended="audioEnded"
+          ></audio>
           <el-button @click="togglePlay" type="text">
-            <img v-if="isPlaying" src="/images/pause.svg" alt="暫停" class="w-8 h-8" />
+            <img
+              v-if="isPlaying"
+              src="/images/pause.svg"
+              alt="暫停"
+              class="w-8 h-8"
+            />
             <img v-else src="/images/play.svg" alt="播放" class="w-8 h-8" />
           </el-button>
 
           <!-- 上一個、下一個按鈕 -->
           <div class="flex items-center gap-4">
-            <img src="/images/arrow-circle-left-solid.svg" alt="上一個" class="w-8 h-8 cursor-pointer"
-              @click="changeSound('prev')" />
-            <img src="/images/arrow-circle-right-solid.svg" alt="下一個" class="w-8 h-8 cursor-pointer"
-              @click="changeSound('next')" />
+            <img
+              src="/images/arrow-circle-left-solid.svg"
+              alt="上一個"
+              class="w-8 h-8 cursor-pointer"
+              @click="changeSound('prev')"
+            />
+            <img
+              src="/images/arrow-circle-right-solid.svg"
+              alt="下一個"
+              class="w-8 h-8 cursor-pointer"
+              @click="changeSound('next')"
+            />
           </div>
         </div>
 
         <!-- 手寫區 -->
-        <HandwritingCanvas ref="handwritingCanvas" :example-kana="selectedSound.kana" :current-type="activeTab"
-          :show-example="true" :learning-module="'writing'" />
+        <HandwritingCanvas
+          ref="handwritingCanvas"
+          :example-kana="selectedSound.kana"
+          :current-type="activeTab"
+          :show-example="true"
+          :learning-module="'writing'"
+        />
       </el-card>
     </div>
   </div>
@@ -88,21 +127,21 @@ const groupedSounds = computed(() => {
   return groups;
 });
 
-watch(
-  selectedSound,
-  (newSound, oldSound) => {
-    if (newSound !== oldSound) {
-      if (audioPlayer.value) {
-        audioPlayer.value.load(); // 加载新的音频文件
-        // 使用 nextTick 确保音频加载完成后再播放
-        nextTick(() => {
-          playSound();
-        });
-      }
-    }
-  },
-  { deep: true }
-);
+// watch(
+//   selectedSound,
+//   (newSound, oldSound) => {
+//     if (newSound !== oldSound) {
+//       if (audioPlayer.value) {
+//         audioPlayer.value.load(); // 加载新的音频文件
+//         // 使用 nextTick 确保音频加载完成后再播放
+//         nextTick(() => {
+//           playSound();
+//         });
+//       }
+//     }
+//   },
+//   { deep: true }
+// );
 
 watch(activeTab, () => {
   selectedSound.value = currentSounds.value[0];
@@ -136,6 +175,9 @@ const changeSound = (type) => {
 
   if (nextSound) {
     selectSound(nextSound);
+
+    // 重製播放器圖示
+    isPlaying.value = false;
   }
 };
 
@@ -182,9 +224,9 @@ const handleKeydown = (event) => {
 onMounted(() => {
   window.addEventListener("keydown", handleKeydown);
   // 初始加载时播放第一个音频
-  nextTick(() => {
-    playSound();
-  });
+  // nextTick(() => {
+  //   playSound();
+  // });
 });
 
 onUnmounted(() => {

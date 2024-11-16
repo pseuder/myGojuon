@@ -67,7 +67,13 @@ export function useCanvas(props) {
   const drawExampleKana = () => {
     if (!ctx.value || !canvas.value) return
     ctx.value.save()
-    ctx.value.font = `${canvas.value.height * 0.8}px serif`
+
+    // 根據 currentType 調整字體大小
+    const fontSize = props.currentType === 'yoon'
+      ? canvas.value.height * 0.5  // yoon 時使用較小的字體
+      : canvas.value.height * 0.8  // 其他情況維持原來的大小
+
+    ctx.value.font = `${fontSize}px serif`
     ctx.value.fillStyle = 'rgba(200, 200, 200, 0.5)'
     ctx.value.textAlign = 'center'
     ctx.value.textBaseline = 'middle'
