@@ -1,11 +1,11 @@
 import axios from 'axios';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-// const baseURL = 'http://192.168.31.62:5001';
+// const baseURL = 'http://172.20.10.14:5001';
 
 const instance = axios.create({
     baseURL,
-    timeout: 5000,
+    timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
     },

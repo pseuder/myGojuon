@@ -1,7 +1,12 @@
 <template>
   <div class="" ref="canvasContainer">
     <div class="flex justify-between items-center my-2">
-      <el-switch v-model="penMode" active-text="觸控筆" inactive-text="觸控" @change="handleModeChange" />
+      <el-switch
+        v-model="penMode"
+        active-text="觸控筆"
+        inactive-text="觸控"
+        @change="handleModeChange"
+      />
 
       <!-- <el-select
         v-model="penSize"
@@ -17,15 +22,31 @@
           :value="option.value"
         />
       </el-select> -->
-      <el-button @click="handleClear" type="text" style="font-size: 35px; padding: 0; margin: 0; line-height: 1">
-        <img src="/images/broom.png" alt="" class="w-10 h-10 cursor-pointer"
-          :class="{ 'rotate-animation': isRotating }" />
+      <el-button
+        @click="handleClear"
+        type="text"
+        style="font-size: 35px; padding: 0; margin: 0; line-height: 1"
+      >
+        <img
+          src="/images/broom.png"
+          alt=""
+          class="w-10 h-10 cursor-pointer"
+          :class="{ 'rotate-animation': isRotating }"
+        />
       </el-button>
     </div>
     <div class="canvas-wrapper" ref="canvasWrapper">
-      <canvas ref="canvas" @pointerdown="startDrawing" @pointermove="draw" @pointerup="stopDrawing"
-        @pointerout="stopDrawing" @touchstart.prevent="handleTouch" @touchmove.prevent="handleTouch"
-        @touchend.prevent="handleTouch" :style="{ cursor: penMode ? 'default' : 'crosshair' }"></canvas>
+      <canvas
+        ref="canvas"
+        @pointerdown="startDrawing"
+        @pointermove="draw"
+        @pointerup="stopDrawing"
+        @pointerout="stopDrawing"
+        @touchstart.prevent="handleTouch"
+        @touchmove.prevent="handleTouch"
+        @touchend.prevent="handleTouch"
+        :style="{ cursor: penMode ? 'default' : 'crosshair' }"
+      ></canvas>
     </div>
   </div>
 </template>
@@ -144,7 +165,6 @@ const sendCanvasImageToBackend = async () => {
 };
 
 const handleClear = () => {
-  debugger;
   if (!isRotating.value) {
     isRotating.value = true;
     setTimeout(() => {
@@ -161,25 +181,17 @@ const handleTouch = (event) => {
 
 async function handleDrawingStop(duration) {
   try {
-    // 這裡可以添加其他你想要傳送到後端的信息
-
     const dataToSend = {
       duration: duration,
-      learningType: props.currentType,
-      learningKana: props.exampleKana,
+      learningMethod: props.currentType,
+      learningItem: props.exampleKana,
       learningModule: props.learningModule,
     };
 
-
     // 發送數據到後端
-    let token_expired = isTokenExpired();
-    if (!token_expired) {
-      axios
-        .post("/record_activity", dataToSend)
-        .catch((error) => {
-          console.error("Error recording activity:", error);
-        });
-    }
+    axios.post("/record_activity", dataToSend).catch((error) => {
+      console.error("Error recording activity:", error);
+    });
   } catch (error) {
     console.error("Error recording activity:", error);
   }

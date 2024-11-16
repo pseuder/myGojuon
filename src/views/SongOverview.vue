@@ -72,17 +72,12 @@ const resetFilter = () => {
 };
 
 const fetchVideos = async () => {
-  const data = await axios.get("/get_video");
-  allVideos.value = data;
-};
-
-const fetchAuthors = async () => {
-  const data = await axios.get("/get_authors");
-  allAuthors.value = data;
+  const data = await axios.get("/get_all_videos");
+  allVideos.value = data["videos"];
+  allAuthors.value = data["authors"];
 };
 
 onMounted(() => {
   fetchVideos();
-  fetchAuthors();
 });
 </script>

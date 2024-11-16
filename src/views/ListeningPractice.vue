@@ -128,6 +128,7 @@ import { ref, computed, onMounted, reactive, watch, nextTick } from "vue";
 import { ElMessageBox, ElMessage } from "element-plus";
 import HandwritingCanvas from "@/components/HandwritingCanvas.vue";
 import fiftySoundsData from "@/data/fifty-sounds.json";
+import axios from "@/utils/axios";
 
 const fiftySounds = ref(fiftySoundsData);
 const activeTab = ref("hiragana");
@@ -304,6 +305,22 @@ const autoDetect = (predict_res) => {
     handleCorrectPrediction(currentKana);
   } else {
     handleIncorrectPrediction(predicted_hiragana);
+  }
+
+  try {
+    const dataToSend = {
+      learningModule: "listening",
+      learningMethod: "predict",
+      learningItem: currentKana,
+      correctness: isCorrect,
+    };
+
+    // 發送數據到後端
+    axios.post("/record_activity", dataToSend).catch((error) => {
+      console.error("Error recording activity:", error);
+    });
+  } catch (error) {
+    console.error("Error recording activity:", error);
   }
 };
 
