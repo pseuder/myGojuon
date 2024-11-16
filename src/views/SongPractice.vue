@@ -111,11 +111,12 @@
   <!-- 切換播放/暫停按鈕 -->
   <el-button
     class="fixed-play-button"
+    style="width: 50px; height: 50px"
     type="primary"
     circle
     @click="togglePlayPause"
   >
-    <el-icon :size="24">
+    <el-icon :size="40">
       <VideoPause v-if="isPlaying" />
       <VideoPlay v-else />
     </el-icon>

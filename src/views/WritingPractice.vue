@@ -55,11 +55,11 @@
           <el-button @click="togglePlay" type="text">
             <img
               v-if="isPlaying"
-              src="/images/pause.svg"
+              src="/images/volume2.png"
               alt="暫停"
               class="w-8 h-8"
             />
-            <img v-else src="/images/play.svg" alt="播放" class="w-8 h-8" />
+            <img v-else src="/images/volume.png" alt="播放" class="w-8 h-8" />
           </el-button>
 
           <!-- 上一個、下一個按鈕 -->
