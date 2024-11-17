@@ -26,10 +26,8 @@
         </el-menu-item>
       </el-menu>
 
-      <div class="max-w-64 p-4">
-        <el-text class="text-blue-400" truncated>
-          {{ user?.name }}
-        </el-text>
+      <div class="">
+        <myGoogleLogin />
       </div>
     </nav>
 
@@ -46,6 +44,7 @@ import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { Setting } from "@element-plus/icons-vue";
 import { getUserInfo } from "@/utils/axios";
+import myGoogleLogin from "@/components/myGoogleLogin.vue";
 
 const route = useRoute();
 const activeIndex = ref("/");

@@ -1,17 +1,38 @@
 <template>
-  <div>
+  <div class="h-full w-full flex items-center mr-2 overflow-hidden">
     <template v-if="isLogin">
-      <p class="text-2xl">
-        Welcome <el-button @click="handleLogout">登出</el-button>
-      </p>
-      <p>{{ user.name }}{{ user.email }}</p>
-      <img :src="user.picture" alt="user avatar" />
+      <div class="flex items-center">
+        <el-popover
+          placement="bottom"
+          :width="100"
+          trigger="click"
+          popper-class="logout-popover"
+        >
+          <template #reference>
+            <div class="w-20 cursor-pointer text-blue-400 hover:text-blue-600">
+              {{ user.name }}
+            </div>
+          </template>
+          <div class="flex flex-col items-center">
+            <el-button
+              @click="handleLogout"
+              type="danger"
+              plain
+              size="small"
+              class="w-full"
+            >
+              登出
+            </el-button>
+          </div>
+        </el-popover>
+      </div>
     </template>
     <template v-else>
       <GoogleLogin :callback="callback" />
     </template>
   </div>
 </template>
+
 
 <script setup>
 import { ref, onMounted } from "vue";
@@ -63,6 +84,9 @@ const callback = (response) => {
 const handleLogout = () => {
   logout();
   isLogin.value = false;
+
+  // refresh
+  location.reload();
 };
 
 onMounted(() => {

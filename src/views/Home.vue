@@ -49,11 +49,6 @@
         </el-button>
       </div>
 
-      <section class="my-10">
-        <h2 class="text-2xl font-bold text-indigo-700 mb-4">登入</h2>
-        <GoogleLogin />
-      </section>
-
       <!-- 最近更新 -->
       <section class="my-10">
         <h2 class="text-2xl font-bold text-indigo-700 mb-4">最近更新</h2>
@@ -202,8 +197,6 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElementPlus } from "@element-plus/icons-vue";
-
-import GoogleLogin from "@/components/GoogleLogin.vue";
 
 const router = useRouter();
 </script>

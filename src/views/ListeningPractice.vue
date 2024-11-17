@@ -57,6 +57,7 @@
       </div>
 
       <el-button
+        v-if="user"
         @click="handwritingCanvas.sendCanvasImageToBackend()"
         type="primary"
         class="w-full h-12"
@@ -64,6 +65,9 @@
         :disabled="activeTab === 'yoon'"
       >
         AI辨識(實驗性)
+      </el-button>
+      <el-button v-else type="primary" class="w-full h-12" :disabled="true">
+        點擊右上角登入以啟用AI辨識
       </el-button>
 
       <div class="flex gap-4 items-center">
@@ -128,7 +132,9 @@ import { ref, computed, onMounted, reactive, watch, nextTick } from "vue";
 import { ElMessageBox, ElMessage } from "element-plus";
 import HandwritingCanvas from "@/components/HandwritingCanvas.vue";
 import fiftySoundsData from "@/data/fifty-sounds.json";
-import axios from "@/utils/axios";
+import axios, { getUserInfo } from "@/utils/axios";
+
+const user = getUserInfo();
 
 const fiftySounds = ref(fiftySoundsData);
 const activeTab = ref("hiragana");
@@ -142,7 +148,7 @@ const showCurrentWord = ref(false);
 const predictKana = ref("");
 const predictConfidence = ref(0);
 
-const soundCounts = reactive({});
+let soundCounts = reactive({});
 const round = ref(1);
 
 const currentSounds = computed(() =>
@@ -157,6 +163,8 @@ watch(currentSounds, () => {
 
 // 初始化計數器
 const initializeCounts = () => {
+  // reset soundCounts
+  soundCounts = {};
   currentSounds.value.forEach((sound) => {
     if (sound.kana) {
       soundCounts[sound.kana] = 0;
@@ -183,6 +191,9 @@ watch(
 
 watch(activeTab, () => {
   selectedSound.value = currentSounds.value[0];
+
+  // 重置soundCounts
+  initializeCounts();
 });
 
 const findNextValidKana = (currentIndex, direction) => {
@@ -221,7 +232,7 @@ const getRandomSound = () => {
 
   const randomIndex = Math.floor(Math.random() * availableSounds.length);
   const selectedSound = availableSounds[randomIndex];
-  soundCounts[selectedSound.kana]++;
+  // soundCounts[selectedSound.kana]++;
 
   return selectedSound;
 };
@@ -241,7 +252,7 @@ const changeSound = (type) => {
 
     if (nextSound) {
       // Increment the count for the current sound before moving to the next
-      soundCounts[selectedSound.value.kana]++;
+      // soundCounts[selectedSound.value.kana]++;
       selectSound(nextSound);
     }
   }
