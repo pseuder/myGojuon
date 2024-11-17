@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full flex flex-col px-4 py-4 gap-4">
+  <div class="w-full h-[80vh] flex flex-col px-4 py-4 gap-4">
     <!-- 搜尋框 -->
     <div>
       <el-input
@@ -20,7 +20,7 @@
       <el-table-column prop="user_id" label="ID" />
       <el-table-column prop="username" label="使用者名稱" min-width="100" />
       <el-table-column prop="learningModule" label="學習模組" />
-      <el-table-column prop="learningMethod" label="學習方式" />
+      <el-table-column prop="learningMethod" label="學習方式" min-width="120" />
       <el-table-column prop="learningItem" label="學習項目" min-width="150">
         <template #default="scope">
           <span v-if="scope.row.learningMethod === 'get_video'">{{
@@ -33,7 +33,7 @@
       <el-table-column prop="correctness" label="正確性" />
       <el-table-column prop="duration" label="耗時" />
       <el-table-column prop="ip_address" label="IP" min-width="120" />
-      <el-table-column label="建立" min-width="160">
+      <el-table-column label="建立" min-width="200">
         <template #default="scope">
           {{ formatDate(scope.row.created_at) }}
         </template>
@@ -47,7 +47,7 @@
         v-model:page-size="pageSize"
         :page-sizes="[10, 20, 50, 100]"
         :total="filteredData.length"
-        layout="total, sizes, prev, pager, next, jumper"
+        layout="total, prev, pager, next"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
       />
@@ -65,7 +65,7 @@ import axios from "@/utils/axios";
 const tableData = ref([]);
 const searchUserId = ref("");
 const currentPage = ref(1);
-const pageSize = ref(10);
+const pageSize = ref(50);
 
 // 日期格式化函數
 const formatDate = (dateString) => {
