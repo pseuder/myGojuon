@@ -1,10 +1,11 @@
 <template>
   <div>
     <template v-if="isLogin">
-      <p class=" text-2xl">Welcome <el-button @click="handleLogout">登出</el-button> </p>
+      <p class="text-2xl">
+        Welcome <el-button @click="handleLogout">登出</el-button>
+      </p>
       <p>{{ user.name }}{{ user.email }}</p>
       <img :src="user.picture" alt="user avatar" />
-
     </template>
     <template v-else>
       <GoogleLogin :callback="callback" />
@@ -15,7 +16,13 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { GoogleLogin, decodeCredential } from "vue3-google-login";
-import axios, { isTokenExpired, storeToken, storeUserInfo, getUserInfo, logout } from "@/utils/axios";
+import axios, {
+  isTokenExpired,
+  storeToken,
+  storeUserInfo,
+  getUserInfo,
+  logout,
+} from "@/utils/axios";
 
 const user = ref(null);
 const isLogin = ref(false);
@@ -44,6 +51,9 @@ const callback = (response) => {
       });
       isLogin.value = true;
       user.value = getUserInfo();
+
+      // refresh
+      location.reload();
     })
     .catch((error) => {
       console.error("Error logging in:", error);

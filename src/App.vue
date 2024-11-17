@@ -12,6 +12,12 @@
         <el-menu-item index="/listening">聽寫練習</el-menu-item>
         <el-menu-item index="/songOverview">歌曲練習</el-menu-item>
         <el-menu-item
+          index="/analysis"
+          v-if="user?.email === 'iop890520@gmail.com'"
+        >
+          <span>分析</span>
+        </el-menu-item>
+        <el-menu-item
           index="/backend"
           v-if="user?.email === 'iop890520@gmail.com'"
         >

@@ -17,11 +17,11 @@
 
     <!-- 表格 -->
     <el-table :data="paginatedData" style="width: 100%">
-      <el-table-column prop="user_id" label="ID" />
+      <!-- <el-table-column prop="user_id" label="ID" min-width="50" /> -->
       <el-table-column prop="username" label="使用者名稱" min-width="100" />
       <el-table-column prop="learningModule" label="學習模組" />
       <el-table-column prop="learningMethod" label="學習方式" min-width="120" />
-      <el-table-column prop="learningItem" label="學習項目" min-width="150">
+      <el-table-column prop="learningItem" label="學習項目" min-width="120">
         <template #default="scope">
           <span v-if="scope.row.learningMethod === 'get_video'">{{
             scope.row.video_name
@@ -30,9 +30,9 @@
         </template>
       </el-table-column>
 
-      <el-table-column prop="correctness" label="正確性" />
+      <el-table-column prop="correctness" label="正確性" min-width="80" />
       <el-table-column prop="duration" label="耗時" />
-      <el-table-column prop="ip_address" label="IP" min-width="120" />
+      <el-table-column prop="ip_address" label="IP" min-width="140" />
       <el-table-column label="建立" min-width="200">
         <template #default="scope">
           {{ formatDate(scope.row.created_at) }}
@@ -47,9 +47,10 @@
         v-model:page-size="pageSize"
         :page-sizes="[10, 20, 50, 100]"
         :total="filteredData.length"
-        layout="total, prev, pager, next"
+        layout="sizes, total, prev, pager, next"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
+        class="w-full overflow-auto"
       />
     </div>
   </div>
