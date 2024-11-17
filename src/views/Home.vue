@@ -75,7 +75,33 @@
       <section class="my-10">
         <h2 class="text-2xl font-bold text-indigo-700 mb-4">聯絡方式</h2>
         <ul class="list-disc list-inside">
-          <div>信箱: iop890520@gmail.com</div>
+          <div class="flex flex-col gap-4">
+            <!-- gmail -->
+            <div class="flex items-center gap-4">
+              <img
+                src="/images/gmail.png"
+                alt="gmail"
+                class="w-8 h-8 text-red-400 hover:opacity-80 transition-opacity"
+              />
+              <span>iop890520@gmail.com</span>
+            </div>
+
+            <!-- github -->
+            <div class="flex items-center gap-4">
+              <img
+                src="/images/github.png"
+                alt="github"
+                class="w-8 h-8 text-red-400 hover:opacity-80 transition-opacity"
+              />
+              <a
+                href="https://github.com/pseuder"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>https://github.com/pseuder</span>
+              </a>
+            </div>
+          </div>
         </ul>
       </section>
 
