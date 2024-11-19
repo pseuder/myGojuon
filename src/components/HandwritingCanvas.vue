@@ -150,6 +150,7 @@ const sendCanvasImageToBackend = async () => {
     const formData = new FormData();
     formData.append("char_type", props.currentType);
     formData.append("image", imageBlob, "handwriting.png");
+    formData.append("learning_item", props.exampleKana);
 
     const response = await axios.post("/predict", formData, {
       headers: {
