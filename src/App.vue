@@ -15,7 +15,7 @@
           index="/analysis"
           v-if="user?.email === 'iop890520@gmail.com'"
         >
-          <span>分析</span>
+          <span>活動分析</span>
         </el-menu-item>
         <el-menu-item
           index="/backend"

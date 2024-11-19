@@ -16,8 +16,19 @@
     </div>
 
     <!-- 表格 -->
-    <el-table :data="paginatedData" style="width: 100%">
-      <!-- <el-table-column prop="user_id" label="ID" min-width="50" /> -->
+    <el-table :data="paginatedData" style="width: 100%" highlight-current-row>
+      <!-- 新增的按鈕欄位 -->
+      <el-table-column label="操作" width="100">
+        <template #default="scope">
+          <el-button
+            type="primary"
+            size="small"
+            @click="showUserDetail(scope.row)"
+          >
+            詳情
+          </el-button>
+        </template>
+      </el-table-column>
       <el-table-column prop="username" label="使用者名稱" min-width="100" />
       <el-table-column prop="learningModule" label="學習模組" />
       <el-table-column prop="learningMethod" label="學習方式" min-width="120" />
@@ -29,7 +40,6 @@
           <span v-else>{{ scope.row.learningItem }}</span>
         </template>
       </el-table-column>
-
       <el-table-column prop="correctness" label="正確性" min-width="80" />
       <el-table-column prop="duration" label="耗時" />
       <el-table-column prop="ip_address" label="IP" min-width="140" />
@@ -53,6 +63,45 @@
         class="w-full overflow-auto"
       />
     </div>
+
+    <!-- 使用者詳情對話框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      title="使用者活動詳情"
+      width="80%"
+      class="user-detail-dialog"
+    >
+      <div style="width: 100%; height: 80vh">
+        <el-table
+          :data="userDetailData"
+          style="width: 100%; height: 80vh"
+          highlight-current-row
+        >
+          <el-table-column prop="username" label="使用者名稱" min-width="100" />
+          <el-table-column prop="learningModule" label="學習模組" />
+          <el-table-column
+            prop="learningMethod"
+            label="學習方式"
+            min-width="120"
+          />
+          <el-table-column prop="learningItem" label="學習項目" min-width="120">
+            <template #default="scope">
+              <span v-if="scope.row.learningMethod === 'get_video'">{{
+                scope.row.video_name
+              }}</span>
+              <span v-else>{{ scope.row.learningItem }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="correctness" label="正確性" min-width="80" />
+          <el-table-column prop="duration" label="耗時" />
+          <el-table-column label="建立" min-width="200">
+            <template #default="scope">
+              {{ formatDate(scope.row.created_at) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -62,33 +111,27 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
 import axios from "@/utils/axios";
 
-// 數據相關
 const tableData = ref([]);
 const searchUserId = ref("");
 const currentPage = ref(1);
 const pageSize = ref(50);
+const dialogVisible = ref(false);
+const userDetailData = ref([]);
 
-// 日期格式化函數
 const formatDate = (dateString) => {
   if (!dateString) return "";
-
   const date = new Date(dateString);
-
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");
   const day = String(date.getUTCDate()).padStart(2, "0");
   const hours = date.getUTCHours();
   const minutes = String(date.getUTCMinutes()).padStart(2, "0");
   const seconds = String(date.getUTCSeconds()).padStart(2, "0");
-
-  // 處理上午/下午
   const period = hours >= 12 ? "下午" : "上午";
-  const hours12 = hours % 12 || 12; // 轉換為12小時制
-
+  const hours12 = hours % 12 || 12;
   return `${year}-${month}-${day} ${period}${hours12}:${minutes}:${seconds}`;
 };
 
-// 過濾後的數據
 const filteredData = computed(() => {
   if (!searchUserId.value) {
     return tableData.value;
@@ -101,30 +144,41 @@ const filteredData = computed(() => {
   );
 });
 
-// 分頁後的數據
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
   return filteredData.value.slice(start, end);
 });
 
-// 處理搜尋
-const handleSearch = () => {
-  currentPage.value = 1; // 重置為第一頁
+const showUserDetail = async (row) => {
+  try {
+    // 使用user_id+ip_address查詢使用者詳情
+    const response = await axios.get("/fetch_user_activity", {
+      params: {
+        user_id: row.user_id,
+        ip_address: row.ip_address,
+      },
+    });
+    userDetailData.value = response;
+    dialogVisible.value = true;
+  } catch (error) {
+    ElMessage.error("獲取使用者詳情失敗");
+  }
 };
 
-// 處理分頁大小變化
+const handleSearch = () => {
+  currentPage.value = 1;
+};
+
 const handleSizeChange = (val) => {
   pageSize.value = val;
   currentPage.value = 1;
 };
 
-// 處理頁碼變化
 const handleCurrentChange = (val) => {
   currentPage.value = val;
 };
 
-// 獲取數據
 const fetchData = () => {
   axios.get("/fetch_all_user_activity").then((data) => {
     tableData.value = data;
@@ -136,9 +190,19 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
+<style>
 .el-pagination {
   justify-content: center;
   margin-top: 20px;
+}
+
+.user-detail-dialog {
+  height: 95vh;
+  margin-top: 10vh !important;
+}
+
+.user-detail-dialog {
+  height: calc(95vh - 120px);
+  overflow: hidden;
 }
 </style>
