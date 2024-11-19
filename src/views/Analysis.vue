@@ -1,5 +1,8 @@
 <template>
-  <div class="w-full h-[80vh] flex flex-col px-4 py-4 gap-4">
+  <div
+    class="w-full h-[90vh] flex flex-col px-4 py-4 gap-4"
+    style="width: 99vw !important; left: 10px; position: fixed"
+  >
     <!-- 搜尋框 -->
     <div>
       <el-input
