@@ -78,7 +78,13 @@
                 alt="gmail"
                 class="w-8 h-8 text-red-400 hover:opacity-80 transition-opacity"
               />
-              <span>iop890520@gmail.com</span>
+              <a
+                href="mailto:iop890520@gmail.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>iop890520@gmail.com</span>
+              </a>
             </div>
 
             <!-- github -->
