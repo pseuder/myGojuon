@@ -150,10 +150,8 @@ const isPlaying = ref(false);
 const fetchVideo = async () => {
   try {
     const response = await axios.get("/get_video/" + videoId.value);
-    if (response.length > 0) {
-      currentVideo.value = response[0];
-      lyrics.value = JSON.parse(currentVideo.value.converted_lyrics);
-    }
+    currentVideo.value = response;
+    lyrics.value = JSON.parse(currentVideo.value.converted_lyrics);
   } catch (error) {
     console.error("Error fetching video:", error);
   }
