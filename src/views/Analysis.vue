@@ -183,7 +183,7 @@ const handleCurrentChange = (val) => {
 };
 
 const fetchData = () => {
-  axios.get("/fetch_all_user_activity").then((data) => {
+  axios.get("/fetch_user_activity").then((data) => {
     tableData.value = data;
   });
 };

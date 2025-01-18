@@ -26,26 +26,22 @@
       <el-table-column label="操作" width="180">
         <template #header>
           <div class="text-center">
-            <el-button type="warning" @click="handleAdd">新增</el-button>
+            <el-button type="primary" @click="handleAdd">新增</el-button>
           </div>
         </template>
 
         <template #default="scope">
           <div class="text-center">
-            <el-button type="danger" @click="handleDelete(scope.row)"
-              >刪除</el-button
-            >
-            <el-button type="primary" @click="handleEdit(scope.row)"
-              >編輯</el-button
-            >
+            <el-button type="danger" @click="handleDelete(scope.row)">刪除</el-button>
+            <el-button type="primary" @click="handleEdit(scope.row)">編輯</el-button>
           </div>
         </template>
       </el-table-column>
     </el-table>
   </div>
 
-  <el-dialog title="編輯歌曲" v-model="dialogVisible" width="80%">
-    <el-form :model="form" ref="form" label-width="80px" label-position="left">
+  <el-dialog :title="dialogTitle" v-model="dialogVisible" width="80%">
+    <el-form :model="formData" ref="form" label-width="80px" label-position="left">
       <el-form-item label="影片名稱" prop="video_name">
         <el-input v-model="formData.video_name"></el-input>
       </el-form-item>
@@ -67,21 +63,22 @@
       </el-form-item>
     </el-form>
     <div slot="footer" class="text-right">
-      <el-button type="primary" @click="update_video">更 新</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
-      <el-button type="success" @click="add_video">增 加</el-button>
+      <el-button type="primary" @click="saveVideo">{{ isEdit ? '更新' : '新增' }}</el-button>
+      <el-button @click="dialogVisible = false">取消</el-button>
     </div>
   </el-dialog>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import axios from "@/utils/axios";
 
 const tableData = ref([]);
-
 const dialogVisible = ref(false);
+const isEdit = ref(false);
+
+const dialogTitle = computed(() => isEdit.value ? '編輯歌曲' : '新增歌曲');
 
 const form = ref(null);
 const formData = ref({
@@ -94,12 +91,14 @@ const formData = ref({
 
 const handleAdd = () => {
   resetForm();
+  isEdit.value = false;
   dialogVisible.value = true;
 };
 
 const handleEdit = (row) => {
   resetForm();
   formData.value = { ...row };
+  isEdit.value = true;
   dialogVisible.value = true;
 };
 
@@ -130,31 +129,15 @@ const handleDelete = (row) => {
     });
 };
 
-const add_video = () => {
+const saveVideo = () => {
   axios
-    .post("/add_video", formData.value)
+    .post("/upsert_video", formData.value)
     .then((data) => {
       fetchData();
       dialogVisible.value = false;
       ElMessage({
         type: "success",
-        message: "新增成功",
-      });
-    })
-    .catch((err) => {
-      console.error(err);
-    });
-};
-
-const update_video = () => {
-  axios
-    .put("/update_video", formData.value)
-    .then((data) => {
-      fetchData();
-      dialogVisible.value = false;
-      ElMessage({
-        type: "success",
-        message: "更新成功",
+        message: isEdit.value ? "更新成功" : "新增成功",
       });
     })
     .catch((err) => {

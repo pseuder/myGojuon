@@ -40,8 +40,9 @@
         >
           開始聽寫練習
         </el-button>
+
         <el-button
-          @click="router.push('/songOverview')"
+          @click="openNewPage('https://www.marumaru-x.com/japanese-song')"
           style="margin-left: 0px"
           class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
         >
@@ -53,7 +54,6 @@
       <section class="my-10">
         <h2 class="text-2xl font-bold text-indigo-700 mb-4">最近更新</h2>
         <ul class="list-disc list-inside">
-          <li>❤️あたらよ❤️あたらよ❤️あたらよ❤️</li>
           <li>加入單字發音</li>
           <li>針對平板使用者做了優化</li>
           <li>新增聽寫練習</li>
@@ -68,7 +68,7 @@
 
       <!-- 聯絡方式 -->
       <section class="my-10">
-        <h2 class="text-2xl font-bold text-indigo-700 mb-4">聯絡方式</h2>
+        <h2 class="text-2xl font-bold text-indigo-700 mb-4">問題回報</h2>
         <ul class="list-disc list-inside">
           <div class="flex flex-col gap-4">
             <!-- gmail -->
@@ -88,7 +88,7 @@
             </div>
 
             <!-- github -->
-            <div class="flex items-center gap-4">
+            <!-- <div class="flex items-center gap-4">
               <img
                 src="/images/github.png"
                 alt="github"
@@ -101,7 +101,7 @@
               >
                 <span>https://github.com/pseuder</span>
               </a>
-            </div>
+            </div> -->
           </div>
         </ul>
       </section>
@@ -110,6 +110,7 @@
       <section class="my-10">
         <h2 class="text-2xl font-bold text-indigo-700 mb-4">Powered by</h2>
         <div class="flex flex-col gap-4">
+          <!-- あたらよ -->
           <a
             href="https://www.youtube.com/channel/UCgrtbLQsox2EYtF0iVclZjA"
             target="_blank"
@@ -117,6 +118,25 @@
           >
             <span class="gradient-text-animated">あたらよ - Atarayo</span>
           </a>
+
+          <!-- Mygo -->
+          <a
+            href="https://ani.gamer.com.tw/animeVideo.php?sn=34030"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="gradient-text-animated">BanG Dream! It's MyGO!!!!!</span>
+          </a>
+
+          <!-- Girls band Cry -->
+          <a
+            href="https://ani.gamer.com.tw/animeVideo.php?sn=40645"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="gradient-text-animated">Girls band Cry</span>
+          </a>
+
 
           <div class="flex gap-2 items-center">
             <a
@@ -205,6 +225,11 @@ import { useRouter } from "vue-router";
 import { ElementPlus } from "@element-plus/icons-vue";
 
 const router = useRouter();
+
+const openNewPage = (url) => {
+  window.open(url, "_blank");
+};
+
 </script>
 
 <style scoped>
