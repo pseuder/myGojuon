@@ -10,7 +10,11 @@
         <el-menu-item index="/">首頁</el-menu-item>
         <el-menu-item index="/writing">手寫練習</el-menu-item>
         <el-menu-item index="/listening">聽寫練習</el-menu-item>
-        <el-menu-item index="/songOverview" v-if="user?.email === 'iop890520@gmail.com'">歌曲練習</el-menu-item>
+        <el-menu-item
+          index="/songOverview"
+          v-if="user?.email === 'iop890520@gmail.com'"
+          >歌曲練習</el-menu-item
+        >
         <el-menu-item
           index="/analysis"
           v-if="user?.email === 'iop890520@gmail.com'"
