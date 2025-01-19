@@ -65,20 +65,20 @@ export function useCanvas(props) {
   }
 
   const drawExampleKana = () => {
-    if (!ctx.value || !canvas.value) return
-    ctx.value.save()
+      if (!ctx.value || !canvas.value) return
+      ctx.value.save()
 
-    // 根據 currentType 調整字體大小
-    const fontSize = props.currentType === 'yoon'
-      ? canvas.value.height * 0.5  // yoon 時使用較小的字體
-      : canvas.value.height * 0.8  // 其他情況維持原來的大小
+      const fontSize = props.currentType === 'yoon'
+        ? canvas.value.height * 0.5
+        : canvas.value.height * 0.8
 
-    ctx.value.font = `${fontSize}px serif`
-    ctx.value.fillStyle = 'rgba(200, 200, 200, 0.5)'
-    ctx.value.textAlign = 'center'
-    ctx.value.textBaseline = 'middle'
-    ctx.value.fillText(props.exampleKana, canvas.value.width / 2, canvas.value.height / 2)
-    ctx.value.restore()
+      // 使用字體堆疊，從最優先到備用字體
+      ctx.value.font = `${fontSize}px "UDDigiKyokasho N-R", "Yu Gothic", "MS Gothic", sans-serif`
+      ctx.value.fillStyle = 'rgba(200, 200, 200, 0.5)'
+      ctx.value.textAlign = 'center'
+      ctx.value.textBaseline = 'middle'
+      ctx.value.fillText(props.exampleKana, canvas.value.width / 2, canvas.value.height / 2)
+      ctx.value.restore()
   }
 
   const handleResize = () => {
