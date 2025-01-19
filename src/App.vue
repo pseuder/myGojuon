@@ -37,10 +37,7 @@
 
     <main class="content">
       <div class="main-component" :class="{ 'wide-layout': isInSongPractice }">
-        <router-view v-slot="{ Component }">
-          <keep-alive>
-            <component :is="Component" />
-          </keep-alive>
+        <router-view >
         </router-view>
       </div>
     </main>
