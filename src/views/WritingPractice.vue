@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col md:flex-row h-full px-4 py-4 gap-4">
+  <div class="flex flex-col md:flex-row h-full px-4 py-4 gap-4" >
     <!-- 50音列表 -->
     <div class="w-full" :key="activeTab">
       <h2 class="text-xl font-semibold mb-3">
@@ -52,7 +52,7 @@
             :src="`/sounds/${selectedSound.romaji}.mp3`"
             @ended="audioEnded"
           ></audio>
-          <el-button @click="togglePlay" type="text">
+          <div class="hover:cursor-pointer" @click="togglePlay">
             <img
               v-if="isPlaying"
               src="/images/volume2.png"
@@ -60,7 +60,7 @@
               class="w-8 h-8"
             />
             <img v-else src="/images/volume.png" alt="播放" class="w-8 h-8" />
-          </el-button>
+          </div>
 
           <!-- 上一個、下一個按鈕 -->
           <div class="flex items-center gap-4">

@@ -8,7 +8,8 @@
           :src="`/sounds/${selectedSound.romaji}.mp3`"
           @ended="audioEnded"
         ></audio>
-        <el-button @click="togglePlay" type="text">
+
+        <div class="hover:cursor-pointer" @click="togglePlay">
           <img
             v-if="isPlaying"
             src="/images/volume2.png"
@@ -16,7 +17,7 @@
             class="w-8 h-8"
           />
           <img v-else src="/images/volume.png" alt="播放" class="w-8 h-8" />
-        </el-button>
+        </div>
 
         <!-- 選擇字符集 -->
         <el-select
@@ -75,7 +76,7 @@
         <div>信心值：{{ predictConfidence.toString().slice(0, 5) }}</div>
         <el-popover placement="bottom" :width="300" trigger="click">
           <template #reference>
-            <el-button type="text" class="text-lg">第{{ round }}輪</el-button>
+            <el-tag type="success" class="text-lg hover:cursor-pointer">第{{ round }}輪</el-tag>
           </template>
 
           <div class="sound-grid">
@@ -100,9 +101,9 @@
         </el-popover>
       </div>
 
-      <el-button @click="showCurrentWord = !showCurrentWord" type="text">
+      <el-tag class="hover:cursor-pointer" @click="showCurrentWord = !showCurrentWord" type="danger">
         {{ showCurrentWord ? "隱藏" : "顯示" }}答案
-      </el-button>
+      </el-tag>
 
       <div v-if="showCurrentWord" class="mt-4 p-4 bg-gray-100 rounded-lg">
         <h3 class="text-xl font-bold mb-2">當前單字信息：</h3>

@@ -36,15 +36,19 @@
     </nav>
 
     <main class="content">
-      <div class="main-component">
-        <router-view></router-view>
+      <div class="main-component" :class="{ 'wide-layout': isInSongPractice }">
+        <router-view v-slot="{ Component }">
+          <keep-alive>
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </div>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, computed  } from "vue";
 import { useRoute } from "vue-router";
 import { Setting } from "@element-plus/icons-vue";
 import { getUserInfo } from "@/utils/axios";
@@ -61,6 +65,11 @@ watch(
   },
   { immediate: true }
 );
+
+const isInSongPractice = computed(() => {
+  return route.path.includes('/songPractice');
+});
+
 </script>
 
 <style scoped>
@@ -88,5 +97,9 @@ watch(
   z-index: 2;
   max-width: 1000px;
   margin: auto;
+}
+
+.wide-layout {
+  max-width: 90vw !important;
 }
 </style>

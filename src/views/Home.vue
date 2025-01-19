@@ -249,17 +249,6 @@ const openNewPage = (url) => {
   @apply scale-110;
 }
 
-.gradient-text-tech-animated {
-  background: linear-gradient(120deg, #4caf50, #2196f3, #673ab7, #4caf50);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: bold;
-  font-size: 1.5rem;
-  letter-spacing: 0.5px;
-  animation: gradient-move 8s ease infinite;
-}
 
 .gradient-text-animated {
   background: linear-gradient(
