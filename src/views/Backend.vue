@@ -40,7 +40,7 @@
     </el-table>
   </div>
 
-  <el-dialog :title="dialogTitle" v-model="dialogVisible" width="80%">
+  <el-dialog :title="dialogTitle" v-model="dialogVisible" width="80%" top="5vh">
     <el-form :model="formData" ref="form" label-width="80px" label-position="left">
       <el-form-item label="影片名稱" prop="video_name">
         <el-input v-model="formData.video_name"></el-input>
@@ -61,8 +61,16 @@
           rows="10"
         ></el-input>
       </el-form-item>
+      <el-form-item label="converted_lyrics" prop="converted_lyrics">
+        <el-input
+          v-model="formData.converted_lyrics"
+          type="textarea"
+          rows="10"
+        ></el-input>
+      </el-form-item>
     </el-form>
     <div slot="footer" class="text-right">
+      <el-button @click="convert_lyrics">取得轉換歌詞</el-button>
       <el-button type="primary" @click="saveVideo">{{ isEdit ? '更新' : '新增' }}</el-button>
       <el-button @click="dialogVisible = false">取消</el-button>
     </div>
@@ -87,6 +95,7 @@ const formData = ref({
   author: "",
   video_thumbnail: "",
   lyrics: "",
+  converted_lyrics: "",
 });
 
 const handleAdd = () => {
@@ -129,7 +138,30 @@ const handleDelete = (row) => {
     });
 };
 
+function customStringify(obj) {
+  return JSON.stringify(obj, null, 2)
+    // 處理 lyrics 內部的物件格式
+    .replace(/{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)"\s*}/g, '{"cvt": "$1","ori": "$2"}')
+    // 修正最後一個逗號後的換行
+    .replace(/},\s+]/g, '},\n  ]');
+}
+
+const convert_lyrics = () => {
+  axios
+    .post("/convert_lyrics", { lyrics: formData.value.lyrics })
+    .then((data) => {
+      formData.value.converted_lyrics = customStringify(data["data"]);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+};
+
 const saveVideo = () => {
+  let myFromData = JSON.parse(JSON.stringify(formData.value));
+  console.log(myFromData.converted_lyrics);
+  myFromData.converted_lyrics = JSON.parse(myFromData.converted_lyrics);
+  console.log(myFromData.converted_lyrics);
   axios
     .post("/upsert_video", formData.value)
     .then((data) => {
