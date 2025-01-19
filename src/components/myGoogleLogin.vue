@@ -50,7 +50,6 @@ const isLogin = ref(false);
 
 const callback = (response) => {
   user.value = response;
-  console.log("response", response);
   const userData = decodeCredential(response.credential);
   // sub is the unique identifier for the user
   let { name, email, picture, sub } = userData;
@@ -91,7 +90,6 @@ const handleLogout = () => {
 
 onMounted(() => {
   isLogin.value = !isTokenExpired();
-  console.log("isLogin", isLogin.value);
   if (isLogin.value) {
     user.value = getUserInfo();
   }
