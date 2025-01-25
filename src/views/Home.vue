@@ -66,77 +66,62 @@
         </ul>
       </section>
 
-      <!-- 聯絡方式 -->
-      <section class="my-10">
-        <h2 class="text-2xl font-bold text-indigo-700 mb-4">問題回報</h2>
-        <ul class="list-disc list-inside">
-          <div class="flex flex-col gap-4">
-            <!-- gmail -->
-            <div class="flex items-center gap-4">
-              <img
-                src="/images/gmail.png"
-                alt="gmail"
-                class="w-8 h-8 text-red-400 hover:opacity-80 transition-opacity"
-              />
-              <a
-                href="mailto:iop890520@gmail.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span>iop890520@gmail.com</span>
-              </a>
-            </div>
-
-            <!-- github -->
-            <!-- <div class="flex items-center gap-4">
-              <img
-                src="/images/github.png"
-                alt="github"
-                class="w-8 h-8 text-red-400 hover:opacity-80 transition-opacity"
-              />
-              <a
-                href="https://github.com/pseuder"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span>https://github.com/pseuder</span>
-              </a>
-            </div> -->
-          </div>
-        </ul>
-      </section>
 
       <!-- Powered by -->
       <section class="my-10">
-        <h2 class="text-2xl font-bold text-indigo-700 mb-4">Powered by</h2>
+        
         <div class="flex flex-col gap-4">
+          <h2 class="text-2xl font-bold text-indigo-700 mb-4">歌曲推廣</h2>
+
           <!-- あたらよ -->
-          <a
-            href="https://www.youtube.com/channel/UCgrtbLQsox2EYtF0iVclZjA"
-            target="_blank"
-            rel="noopener noreferrer"
+          <router-link
+            :to="{
+              path: '/songOverview',
+              query: { author: 'あたらよ' },
+            }"
+            class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
           >
             <span class="gradient-text-animated">あたらよ - Atarayo</span>
-          </a>
+          </router-link>
 
-          <!-- Mygo -->
-          <a
-            href="https://ani.gamer.com.tw/animeVideo.php?sn=34030"
-            target="_blank"
-            rel="noopener noreferrer"
+          <!-- 孤獨搖滾 -->
+          <router-link
+            :to="{
+              path: '/songOverview',
+              query: { author: '孤獨搖滾' },
+            }"
+            class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
           >
-            <span class="gradient-text-animated">BanG Dream! It's MyGO!!!!!</span>
-          </a>
+            <span class="gradient-text-animated"
+              >孤獨搖滾！ ぼっち・ざ・ろっく！</span
+            >
+          </router-link>
 
           <!-- Girls band Cry -->
-          <a
-            href="https://ani.gamer.com.tw/animeVideo.php?sn=40645"
-            target="_blank"
-            rel="noopener noreferrer"
+          <router-link
+            :to="{
+              path: '/songOverview',
+              query: { author: 'Girls Band Cry' },
+            }"
+            class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
           >
             <span class="gradient-text-animated">Girls band Cry</span>
-          </a>
+          </router-link>
 
+          <!-- Mygo -->
+          <router-link
+            :to="{
+              path: '/songOverview',
+              query: { author: 'MYGO!!!!!' },
+            }"
+            class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
+          >
+            <span class="gradient-text-animated"
+              >BanG Dream! It's MyGO!!!!!</span
+            >
+          </router-link>
+
+          <h2 class="text-2xl font-bold text-indigo-700 mb-4">Powered by</h2>
 
           <div class="flex gap-2 items-center">
             <a
@@ -215,6 +200,30 @@
           </div>
         </div>
       </section>
+
+      <!-- 聯絡方式 -->
+      <section class="my-10">
+        <h2 class="text-2xl font-bold text-indigo-700 mb-4">問題回報</h2>
+        <ul class="list-disc list-inside">
+          <div class="flex flex-col gap-4">
+            <!-- gmail -->
+            <div class="flex items-center gap-4">
+              <img
+                src="/images/gmail.png"
+                alt="gmail"
+                class="w-8 h-8 text-red-400 hover:opacity-80 transition-opacity"
+              />
+              <a
+                href="mailto:iop890520@gmail.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>iop890520@gmail.com</span>
+              </a>
+            </div>
+          </div>
+        </ul>
+      </section>
     </div>
   </div>
 </template>
@@ -229,7 +238,6 @@ const router = useRouter();
 const openNewPage = (url) => {
   window.open(url, "_blank");
 };
-
 </script>
 
 <style scoped>
@@ -248,7 +256,6 @@ const openNewPage = (url) => {
 .feature-card:hover p {
   @apply scale-110;
 }
-
 
 .gradient-text-animated {
   background: linear-gradient(

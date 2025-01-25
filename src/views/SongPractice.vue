@@ -18,25 +18,42 @@
 
         <!-- 功能列 -->
         <div class="flex flex-col gap-2">
-          <div class="flex flex-col items-center gap-2 my-4">
-            <div class="flex flex-row items-center gap-4 justify-between">
-              <div><el-tag>A</el-tag> 跳上一行</div>
-              <div><el-tag>D</el-tag> 跳下一行</div>
-              <div>
+          <div class="w-full flex flex-col items-center gap-2 my-4 ">
+            <div class="w-full flex flex-row items-center gap-4 justify-between">
+              <div
+                class="cursor-pointer hover:text-blue-500"
+                @click="Go_to_previous_lyric()"
+              >
+                <el-tag>A</el-tag> 跳上一行
+              </div>
+              <div
+                class="cursor-pointer hover:text-blue-500"
+                @click="Go_to_next_lyric()"
+              >
+                <el-tag>D</el-tag> 跳下一行
+              </div>
+              <div
+                class="cursor-pointer hover:text-blue-500"
+                @click="toggleLoopCurrentLyric()"
+              >
                 <el-tag>S</el-tag>
-                <span v-if="isLooping" class=" text-red-600">取消循環</span>
-                <span v-else >循環播放</span>
+                <span v-if="isLooping" class="text-red-600">取消循環</span>
+                <span v-else>循環播放</span>
               </div>
             </div>
 
-            <div class="flex items-center gap-2 justify-between">
+            <div class="w-full flex items-center gap-2 justify-between">
               <el-checkbox v-model="autoScroll">滾動</el-checkbox>
 
-              <el-radio-group v-model="display_mode" size="large">
-                <el-radio value="hira" size="large">假名</el-radio>
-                <el-radio value="both" size="large">混和</el-radio>
+              <el-radio-group
+                v-model="display_mode"
+                size="large"
+              >
+                <el-radio value="hira" size="large" style="margin-right: 18px"
+                  >一般</el-radio
+                >
+                <el-radio value="both" size="large">假名</el-radio>
               </el-radio-group>
-
               <el-input v-model="playbackRate" class="w-full max-w-[150px]">
                 <template #prepend>
                   <el-button
@@ -53,8 +70,6 @@
                   >
                 </template>
               </el-input>
-
-              
             </div>
           </div>
         </div>
@@ -81,7 +96,12 @@
                 </el-icon>
               </el-button>
 
-              <el-button type="text" plain @click="togglePlayPause" style="margin-left: 4px">
+              <el-button
+                type="text"
+                plain
+                @click="togglePlayPause"
+                style="margin-left: 4px"
+              >
                 <el-icon :size="25">
                   <VideoPause v-if="isPlaying" />
                   <VideoPlay v-else />
@@ -109,7 +129,12 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
-import { VideoPause, VideoPlay, DArrowRight, Switch } from "@element-plus/icons-vue";
+import {
+  VideoPause,
+  VideoPlay,
+  DArrowRight,
+  Switch,
+} from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
 import axios from "@/utils/axios";
 
@@ -220,8 +245,14 @@ const initializePlayer = async () => {
         event.target.setPlaybackRate(playbackRate.value);
       },
       // Add onStateChange event to update isPlaying
+      // 結束後從頭播放
       onStateChange: (event) => {
         isPlaying.value = event.data === YT.PlayerState.PLAYING;
+
+        if (event.data === YT.PlayerState.ENDED) {
+          event.target.seekTo(0);
+          event.target.playVideo();
+        }
       },
     },
   });
@@ -272,21 +303,26 @@ const scrollToCurrentLyric = (index) => {
 const handleKeyPress = (event) => {
   switch (event.key.toLowerCase()) {
     case "a":
-      // Go to previous lyric
-      if (currentLyricIndex.value > 0) {
-        startVideo(lyrics.value[currentLyricIndex.value - 1].timestamp);
-      }
+      Go_to_previous_lyric();
       break;
     case "d":
-      // Go to next lyric
-      if (currentLyricIndex.value < lyrics.value.length - 1) {
-        startVideo(lyrics.value[currentLyricIndex.value + 1].timestamp);
-      }
+      Go_to_next_lyric();
       break;
     case "s":
-      // Toggle looping current lyric
       toggleLoopCurrentLyric();
       break;
+  }
+};
+
+const Go_to_previous_lyric = () => {
+  if (currentLyricIndex.value > 0) {
+    startVideo(lyrics.value[currentLyricIndex.value - 1].timestamp);
+  }
+};
+
+const Go_to_next_lyric = () => {
+  if (currentLyricIndex.value < lyrics.value.length - 1) {
+    startVideo(lyrics.value[currentLyricIndex.value + 1].timestamp);
   }
 };
 
@@ -391,5 +427,14 @@ onUnmounted(() => {
   100% {
     background-position: 0% 50%;
   }
+}
+
+::v-deep .el-radio__input.is-checked .el-radio__inner {
+  border-color: #67C23A; /* 更改边框颜色 */
+  background-color: #67C23A; /* 更改背景颜色 */
+}
+
+::v-deep .el-radio__input.is-checked + .el-radio__label {
+  color: #67C23A; /* 更改文字颜色 */
 }
 </style>

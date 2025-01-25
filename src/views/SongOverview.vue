@@ -42,10 +42,11 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import axios from "@/utils/axios";
 
 const router = useRouter();
+const route = useRoute();
 const allVideos = ref([]);
 const allAuthors = ref([]);
 const selectedAuthor = ref(null);
@@ -65,10 +66,12 @@ const navigateToPractice = (video) => {
 
 const filterByAuthor = (authorName) => {
   selectedAuthor.value = authorName;
+  router.push({ query: { author: authorName } });
 };
 
 const resetFilter = () => {
   selectedAuthor.value = null;
+  router.push({ query: {} });
 };
 
 const fetchVideos = async () => {
@@ -78,6 +81,11 @@ const fetchVideos = async () => {
 };
 
 onMounted(() => {
-  fetchVideos();
+  fetchVideos().then(() => {
+    const author = route.query.author;
+    if (author) {
+      selectedAuthor.value = author;
+    }
+  });
 });
 </script>
