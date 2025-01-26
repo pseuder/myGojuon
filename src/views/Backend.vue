@@ -1,11 +1,41 @@
 <template>
   <div class="h-full flex flex-col px-4 py-4 gap-4">
-    <el-table :data="tableData" style="width: 100%">
+    <!-- filter bar -->
+    <div class="flex justify-between items-center">
+      <el-input
+        v-model="filterText"
+        placeholder="請輸入影片名稱、作者進行過濾"
+        class="w-full"
+        clearable
+      />
+    </div>
+    <el-table
+      :data="filteredTableData"
+      style="width: 100%"
+      highlight-current-row
+    >
+      <el-table-column prop="UID" label="UID" min-width="50"></el-table-column>
       <el-table-column
         prop="video_name"
         label="影片名稱"
         min-width="180"
       ></el-table-column>
+      <el-table-column
+        prop="author"
+        label="作者"
+        min-width="100"
+      ></el-table-column>
+      <el-table-column prop="tags" label="影片標籤" min-width="200">
+        <template #default="scope">
+          <el-tag
+            v-for="tag in scope.row.tags?.split(',')"
+            :key="tag"
+            type="success"
+            class="mb-1"
+            >{{ tag }}</el-tag
+          >
+        </template>
+      </el-table-column>
       <el-table-column prop="video_thumbnail" label="影片縮圖" min-width="100">
         <template #default="scope">
           <img
@@ -15,7 +45,7 @@
           />
         </template>
       </el-table-column>
-      <el-table-column prop="video_thumbnail" label="歌詞" min-width="180">
+      <el-table-column prop="lyrics" label="歌詞" min-width="180">
         <template #default="scope">
           <el-text class="w-full mb-2" truncated>
             {{ scope.row.lyrics }}
@@ -26,14 +56,18 @@
       <el-table-column label="操作" width="180">
         <template #header>
           <div class="text-center">
-            <el-button type="primary" @click="handleAdd">新增</el-button>
+            <el-button type="success" @click="handleAdd">新增</el-button>
           </div>
         </template>
 
         <template #default="scope">
           <div class="text-center">
-            <el-button type="danger" @click="handleDelete(scope.row)">刪除</el-button>
-            <el-button type="primary" @click="handleEdit(scope.row)">編輯</el-button>
+            <el-button type="danger" @click="handleDelete(scope.row)"
+              >刪除</el-button
+            >
+            <el-button type="primary" @click="handleEdit(scope.row)"
+              >編輯</el-button
+            >
           </div>
         </template>
       </el-table-column>
@@ -41,7 +75,12 @@
   </div>
 
   <el-dialog :title="dialogTitle" v-model="dialogVisible" width="80%" top="5vh">
-    <el-form :model="formData" ref="form" label-width="80px" label-position="left">
+    <el-form
+      :model="formData"
+      ref="form"
+      label-width="80px"
+      label-position="left"
+    >
       <el-form-item label="影片名稱" prop="video_name">
         <el-input v-model="formData.video_name"></el-input>
       </el-form-item>
@@ -53,6 +92,9 @@
       </el-form-item>
       <el-form-item label="影片縮圖" prop="video_thumbnail">
         <el-input v-model="formData.video_thumbnail"></el-input>
+      </el-form-item>
+      <el-form-item label="影片標籤" prop="tags">
+        <el-input v-model="formData.tags" placeholder="請用逗號分隔"></el-input>
       </el-form-item>
       <el-form-item label="歌詞" prop="lyrics">
         <el-input
@@ -71,7 +113,9 @@
     </el-form>
     <div slot="footer" class="text-right">
       <el-button @click="convert_lyrics">取得轉換歌詞</el-button>
-      <el-button type="primary" @click="saveVideo">{{ isEdit ? '更新' : '新增' }}</el-button>
+      <el-button type="primary" @click="saveVideo">{{
+        isEdit ? "更新" : "新增"
+      }}</el-button>
       <el-button @click="dialogVisible = false">取消</el-button>
     </div>
   </el-dialog>
@@ -85,8 +129,9 @@ import axios from "@/utils/axios";
 const tableData = ref([]);
 const dialogVisible = ref(false);
 const isEdit = ref(false);
+const filterText = ref("");
 
-const dialogTitle = computed(() => isEdit.value ? '編輯歌曲' : '新增歌曲');
+const dialogTitle = computed(() => (isEdit.value ? "編輯歌曲" : "新增歌曲"));
 
 const form = ref(null);
 const formData = ref({
@@ -94,8 +139,23 @@ const formData = ref({
   video_name: "",
   author: "",
   video_thumbnail: "",
+  tags: "",
   lyrics: "",
   converted_lyrics: "",
+});
+
+const filteredTableData = computed(() => {
+  if (!filterText.value) {
+    return tableData.value;
+  }
+  const lowerCaseFilter = filterText.value.toLowerCase();
+  return tableData.value.filter((item) => {
+    return (
+      item.video_name.toLowerCase().includes(lowerCaseFilter) ||
+      item.author.toLowerCase().includes(lowerCaseFilter) ||
+      item.tags?.toLowerCase().includes(lowerCaseFilter)
+    );
+  });
 });
 
 const handleAdd = () => {
@@ -139,11 +199,16 @@ const handleDelete = (row) => {
 };
 
 function customStringify(obj) {
-  return JSON.stringify(obj, null, 2)
-    // 處理 lyrics 內部的物件格式
-    .replace(/{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)"\s*}/g, '{"cvt": "$1","ori": "$2"}')
-    // 修正最後一個逗號後的換行
-    .replace(/},\s+]/g, '},\n  ]');
+  return (
+    JSON.stringify(obj, null, 2)
+      // 處理 lyrics 內部的物件格式
+      .replace(
+        /{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)"\s*}/g,
+        '{"cvt": "$1","ori": "$2"}'
+      )
+      // 修正最後一個逗號後的換行
+      .replace(/},\s+]/g, "},\n  ]")
+  );
 }
 
 const convert_lyrics = () => {
@@ -189,6 +254,7 @@ const resetForm = () => {
     video_name: "",
     author: "",
     video_thumbnail: "",
+    tags: "",
     lyrics: "",
   };
 };

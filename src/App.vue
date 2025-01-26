@@ -36,16 +36,18 @@
     </nav>
 
     <main class="content">
-      <div class="main-component" :class="{ 'wide-layout': isInSongPractice }">
-        <router-view >
-        </router-view>
+      <div
+        class="main-component"
+        :class="{ 'wide-layout': isInSongPractice || isInBackend }"
+      >
+        <router-view> </router-view>
       </div>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, computed  } from "vue";
+import { ref, watch, computed } from "vue";
 import { useRoute } from "vue-router";
 import { Setting } from "@element-plus/icons-vue";
 import { getUserInfo } from "@/utils/axios";
@@ -64,9 +66,12 @@ watch(
 );
 
 const isInSongPractice = computed(() => {
-  return route.path.includes('/songPractice');
+  return route.path.includes("/songPractice");
 });
 
+const isInBackend = computed(() => {
+  return route.path.includes("/backend");
+});
 </script>
 
 <style scoped>

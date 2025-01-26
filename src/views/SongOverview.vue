@@ -32,6 +32,15 @@
               >
                 {{ video.video_name }}
               </router-link>
+
+              <div class="flex gap-2">
+                <el-tag
+                  v-for="tag in video.tags?.split(',')"
+                  :key="tag"
+                  type="success"
+                  >{{ tag }}</el-tag
+                >
+              </div>
             </div>
           </el-card>
         </template>
