@@ -21,7 +21,9 @@
         <template v-for="video in filteredVideos" :key="video.UID">
           <el-card class="w-full max-w-[380px]" shadow="hover">
             <img
-              :src="video.video_thumbnail"
+              :src="
+                'https://i.ytimg.com/vi/' + video.video_id + '/hqdefault.jpg'
+              "
               class="w-full h-48 object-cover"
               alt="video thumbnail"
             />

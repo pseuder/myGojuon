@@ -7,7 +7,7 @@
           {{ currentVideo ? currentVideo.video_name : "Loading..." }}
         </div>
         <!-- 影片播放器 -->
-        <div id="player-container" ref="playerContainerRef">
+        <div id="player-container" ref="playerContainerRef" class="h-[70%]">
           <div
             id="player"
             ref="playerRef"
@@ -17,9 +17,11 @@
         </div>
 
         <!-- 功能列 -->
-        <div class="flex flex-col gap-2">
-          <div class="w-full flex flex-col items-center gap-2 my-4 ">
-            <div class="w-full flex flex-row items-center gap-4 justify-between">
+        <div class="h-[10%] flex flex-col gap-2">
+          <div class="w-full flex flex-col items-center gap-2 my-4">
+            <div
+              class="w-full flex flex-row items-center gap-4 justify-between"
+            >
               <div
                 class="cursor-pointer hover:text-blue-500"
                 @click="Go_to_previous_lyric()"
@@ -45,31 +47,20 @@
             <div class="w-full flex items-center gap-2 justify-between">
               <el-checkbox v-model="autoScroll">滾動</el-checkbox>
 
-              <el-radio-group
-                v-model="display_mode"
-                size="large"
-              >
+              <el-radio-group v-model="display_mode" size="large">
                 <el-radio value="hira" size="large" style="margin-right: 18px"
                   >一般</el-radio
                 >
                 <el-radio value="both" size="large">假名</el-radio>
               </el-radio-group>
-              <el-input v-model="playbackRate" class="w-full max-w-[150px]">
-                <template #prepend>
-                  <el-button
-                    size="small"
-                    @click="changePlaybackRate((playbackRate -= 0.1))"
-                    >-</el-button
-                  >
-                </template>
-                <template #append>
-                  <el-button
-                    size="small"
-                    @click="changePlaybackRate((playbackRate += 0.1))"
-                    >+</el-button
-                  >
-                </template>
-              </el-input>
+              <el-input-number
+                v-model="playbackRate"
+                :precision="1"
+                :step="0.1"
+                :max="2"
+                :min="0.3"
+                @change="changePlaybackRate(playbackRate)"
+              />
             </div>
           </div>
         </div>
@@ -430,11 +421,11 @@ onUnmounted(() => {
 }
 
 ::v-deep .el-radio__input.is-checked .el-radio__inner {
-  border-color: #67C23A; /* 更改边框颜色 */
-  background-color: #67C23A; /* 更改背景颜色 */
+  border-color: #67c23a; /* 更改边框颜色 */
+  background-color: #67c23a; /* 更改背景颜色 */
 }
 
 ::v-deep .el-radio__input.is-checked + .el-radio__label {
-  color: #67C23A; /* 更改文字颜色 */
+  color: #67c23a; /* 更改文字颜色 */
 }
 </style>
