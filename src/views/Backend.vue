@@ -45,14 +45,6 @@
           />
         </template>
       </el-table-column>
-      <el-table-column prop="lyrics" label="歌詞" min-width="180">
-        <template #default="scope">
-          <el-text class="w-full mb-2" truncated>
-            {{ scope.row.lyrics }}
-          </el-text>
-        </template>
-      </el-table-column>
-
       <el-table-column label="操作" width="180">
         <template #header>
           <div class="text-center">
@@ -166,9 +158,13 @@ const handleAdd = () => {
 
 const handleEdit = (row) => {
   resetForm();
-  formData.value = { ...row };
-  isEdit.value = true;
-  dialogVisible.value = true;
+  axios.get("/get_video/" + row.video_id).then((data) => {
+    formData.value = { ...row };
+    formData.value.lyrics = data.lyrics;
+    formData.value.converted_lyrics = data.converted_lyrics;
+    isEdit.value = true;
+    dialogVisible.value = true;
+  });  
 };
 
 const handleDelete = (row) => {
@@ -224,9 +220,7 @@ const convert_lyrics = () => {
 
 const saveVideo = () => {
   let myFromData = JSON.parse(JSON.stringify(formData.value));
-  console.log(myFromData.converted_lyrics);
   myFromData.converted_lyrics = JSON.parse(myFromData.converted_lyrics);
-  console.log(myFromData.converted_lyrics);
   axios
     .post("/upsert_video", formData.value)
     .then((data) => {
