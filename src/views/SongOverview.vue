@@ -20,22 +20,23 @@
       <el-space class="justify-center" style="width: 100%" wrap>
         <template v-for="video in filteredVideos" :key="video.UID">
           <el-card class="w-full max-w-[380px]" shadow="hover">
-            <img
+            
+            <div class="p-4">
+              <router-link
+                :to="{ name: 'songPractice', params: { id: video.video_id } }"
+                class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
+              >
+              <img
               :src="
                 'https://i.ytimg.com/vi/' + video.video_id + '/hqdefault.jpg'
               "
               class="w-full h-48 object-cover"
               alt="video thumbnail"
             />
-            <div class="p-4">
-              <router-link
-                :to="{ name: 'songPractice', params: { id: video.video_id } }"
-                class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
-              >
                 {{ video.video_name }}
               </router-link>
 
-              <div class="flex gap-2">
+              <div class="flex gap-2" v-if="video.tags">
                 <el-tag
                   v-for="tag in video.tags?.split(',')"
                   :key="tag"
