@@ -35,7 +35,7 @@
       <el-table-column prop="username" label="使用者名稱" min-width="100" />
       <el-table-column prop="learningModule" label="學習模組" />
       <el-table-column prop="learningMethod" label="學習方式" min-width="120" />
-      <el-table-column prop="learningItem" label="學習項目" min-width="120">
+      <!-- <el-table-column prop="learningItem" label="學習項目" min-width="120">
         <template #default="scope">
           <span v-if="scope.row.learningMethod === 'get_video'">{{
             scope.row.video_name
@@ -43,7 +43,7 @@
           <span v-else>{{ scope.row.learningItem }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="correctness" label="正確性" min-width="80" />
+      <el-table-column prop="correctness" label="正確性" min-width="80" /> -->
       <el-table-column prop="duration" label="耗時" />
       <el-table-column prop="ip_address" label="IP" min-width="140" />
       <el-table-column label="建立" min-width="200">
@@ -81,13 +81,19 @@
           highlight-current-row
         >
           <el-table-column prop="username" label="使用者名稱" min-width="100" />
+          <el-table-column prop="group_date" label="group_date" min-width="100">
+            <template #default="scope">
+              {{ formatDate(scope.row.group_date).split(" ")[0] }}
+            </template>
+          </el-table-column>
+
           <el-table-column prop="learningModule" label="學習模組" />
           <el-table-column
             prop="learningMethod"
             label="學習方式"
             min-width="120"
           />
-          <el-table-column prop="learningItem" label="學習項目" min-width="120">
+          <!-- <el-table-column prop="learningItem" label="學習項目" min-width="120">
             <template #default="scope">
               <span v-if="scope.row.learningMethod === 'get_video'">{{
                 scope.row.video_name
@@ -95,8 +101,13 @@
               <span v-else>{{ scope.row.learningItem }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="correctness" label="正確性" min-width="80" />
-          <el-table-column prop="duration" label="耗時" />
+          <el-table-column prop="correctness" label="正確性" min-width="80" /> -->
+          <el-table-column prop="total_duration" label="耗時">
+            <template #default="scope">
+              {{ scope.row.total_duration }}
+            </template>
+          </el-table-column>
+
           <el-table-column label="建立" min-width="200">
             <template #default="scope">
               {{ formatDate(scope.row.created_at) }}
