@@ -66,10 +66,8 @@
         </ul>
       </section>
 
-
       <!-- Powered by -->
       <section class="my-10">
-        
         <div class="flex flex-col gap-4">
           <h2 class="text-2xl font-bold text-indigo-700 mb-4">歌曲推廣</h2>
 
@@ -203,26 +201,45 @@
 
       <!-- 聯絡方式 -->
       <section class="my-10">
-        <h2 class="text-2xl font-bold text-indigo-700 mb-4">問題回報</h2>
-        <ul class="list-disc list-inside">
-          <div class="flex flex-col gap-4">
-            <!-- gmail -->
-            <div class="flex items-center gap-4">
-              <img
-                src="/images/gmail.png"
-                alt="gmail"
-                class="w-8 h-8 text-red-400 hover:opacity-80 transition-opacity"
-              />
-              <a
-                href="mailto:iop890520@gmail.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span>iop890520@gmail.com</span>
-              </a>
-            </div>
+        <h2 class="text-2xl font-bold text-indigo-700 mb-4">
+          問題回報&功能許願
+        </h2>
+
+        <!-- gmail -->
+        <div class="flex flex-col gap-4 my-4">
+          <div class="flex items-center gap-4">
+            <img
+              src="/images/gmail.png"
+              alt="gmail"
+              class="w-8 h-8 text-red-400 hover:opacity-80 transition-opacity"
+            />
+            <a
+              href="mailto:iop890520@gmail.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>iop890520@gmail.com</span>
+            </a>
           </div>
-        </ul>
+        </div>
+
+        <!-- fb -->
+        <div class="flex flex-col gap-4 my-4">
+          <div class="flex items-center gap-4">
+            <img
+              src="/images/facebook.png"
+              alt="facebook"
+              class="w-8 h-8 text-red-400 hover:opacity-80 transition-opacity"
+            />
+            <a
+              href="https://www.facebook.com/Pseuder/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>https://www.facebook.com/Pseuder/</span>
+            </a>
+          </div>
+        </div>
       </section>
     </div>
   </div>
