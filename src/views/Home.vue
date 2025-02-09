@@ -51,7 +51,7 @@
       </div>
 
       <!-- 最近更新 -->
-      <section class="my-10">
+      <!-- <section class="my-10">
         <h2 class="text-2xl font-bold text-indigo-700 mb-4">最近更新</h2>
         <ul class="list-disc list-inside">
           <li>加入單字發音</li>
@@ -64,7 +64,7 @@
           <li>歌曲練習新增漢字對照假名</li>
           <li>避免使用平板時雙擊放大</li>
         </ul>
-      </section>
+      </section> -->
 
       <!-- Powered by -->
       <section class="my-10">
@@ -103,7 +103,7 @@
             }"
             class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
           >
-            <span class="gradient-text-animated">Girls band Cry</span>
+            <span class="gradient-text-animated">Girls band Cry ガールズバンドクライ</span>
           </router-link>
 
           <!-- Mygo -->
