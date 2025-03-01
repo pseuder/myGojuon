@@ -98,6 +98,7 @@ import { CaretLeft, CaretRight } from "@element-plus/icons-vue";
 import { ElMessageBox, ElMessage } from "element-plus";
 import HandwritingCanvas from "@/components/HandwritingCanvas.vue";
 import fiftySoundsData from "@/data/fifty-sounds.json";
+import axios, { getUserInfo } from "@/utils/axios";
 
 const fiftySounds = ref(fiftySoundsData);
 const activeTab = ref("hiragana");
@@ -207,6 +208,17 @@ const playSound = () => {
 const selectSound = (sound) => {
   if (sound.kana) {
     selectedSound.value = sound;
+
+    const dataToSend = {
+      learningModule: "writing",
+      learningMethod: "selectSound",
+      learningItem: sound.kana,
+    };
+
+    // 發送數據到後端
+    axios.post("/record_activity", dataToSend).catch((error) => {
+      console.error("Error recording activity:", error);
+    });
   }
 };
 

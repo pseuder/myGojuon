@@ -42,29 +42,13 @@
         </el-button>
 
         <el-button
-          @click="openNewPage('https://www.marumaru-x.com/japanese-song')"
+          @click="router.push('/songOverview')"
           style="margin-left: 0px"
           class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
         >
           開始歌曲練習
         </el-button>
       </div>
-
-      <!-- 最近更新 -->
-      <!-- <section class="my-10">
-        <h2 class="text-2xl font-bold text-indigo-700 mb-4">最近更新</h2>
-        <ul class="list-disc list-inside">
-          <li>加入單字發音</li>
-          <li>針對平板使用者做了優化</li>
-          <li>新增聽寫練習</li>
-          <li>加入AI自動辨識功能(實驗性)</li>
-          <li>針對辨識功能逕行優化</li>
-          <li>優化RWD效果</li>
-          <li>新增歌曲練習</li>
-          <li>歌曲練習新增漢字對照假名</li>
-          <li>避免使用平板時雙擊放大</li>
-        </ul>
-      </section> -->
 
       <!-- Powered by -->
       <section class="my-10">

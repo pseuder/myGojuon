@@ -76,7 +76,9 @@
         <div>信心值：{{ predictConfidence.toString().slice(0, 5) }}</div>
         <el-popover placement="bottom" :width="300" trigger="click">
           <template #reference>
-            <el-tag type="success" class="text-lg hover:cursor-pointer">第{{ round }}輪</el-tag>
+            <el-tag type="success" class="text-lg hover:cursor-pointer"
+              >第{{ round }}輪</el-tag
+            >
           </template>
 
           <div class="sound-grid">
@@ -101,7 +103,11 @@
         </el-popover>
       </div>
 
-      <el-tag class="hover:cursor-pointer" @click="showCurrentWord = !showCurrentWord" type="danger">
+      <el-tag
+        class="hover:cursor-pointer"
+        @click="showCurrentWord = !showCurrentWord"
+        type="danger"
+      >
         {{ showCurrentWord ? "隱藏" : "顯示" }}答案
       </el-tag>
 
@@ -285,6 +291,17 @@ const playSound = () => {
 const selectSound = (sound) => {
   if (sound.kana) {
     selectedSound.value = sound;
+
+    const dataToSend = {
+      learningModule: "listening",
+      learningMethod: "changeSound",
+      learningItem: sound.kana,
+    };
+
+    // 發送數據到後端
+    axios.post("/record_activity", dataToSend).catch((error) => {
+      console.error("Error recording activity:", error);
+    });
   }
 };
 

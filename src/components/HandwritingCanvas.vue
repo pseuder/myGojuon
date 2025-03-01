@@ -188,11 +188,6 @@ async function handleDrawingStop(duration) {
       learningItem: props.exampleKana,
       learningModule: props.learningModule,
     };
-
-    // 發送數據到後端
-    axios.post("/record_activity", dataToSend).catch((error) => {
-      console.error("Error recording activity:", error);
-    });
   } catch (error) {
     console.error("Error recording activity:", error);
   }
