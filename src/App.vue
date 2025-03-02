@@ -7,39 +7,72 @@
         mode="horizontal"
         router
       >
-        <el-menu-item index="/">首頁</el-menu-item>
-        <el-menu-item index="/writing">手寫練習</el-menu-item>
-        <el-menu-item index="/listening">聽寫練習</el-menu-item>
+        <el-menu-item index="/">{{ t("home") }}</el-menu-item>
+        <el-menu-item index="/writing">{{
+          t("handwriting_practice")
+        }}</el-menu-item>
+        <el-menu-item index="/listening">{{
+          t("dictation_practice")
+        }}</el-menu-item>
         <el-menu-item
           index="/songOverview"
           v-if="user?.email === 'iop890520@gmail.com'"
-          >歌曲練習</el-menu-item
+          >{{ t("song_practice") }}</el-menu-item
         >
         <el-menu-item
           index="/analysis"
           v-if="user?.email === 'iop890520@gmail.com'"
         >
-          <span>活動分析</span>
+          <span>{{ t("activity_analysis") }}</span>
         </el-menu-item>
         <el-menu-item
           index="/backend"
           v-if="user?.email === 'iop890520@gmail.com'"
         >
           <el-icon><Setting /></el-icon>
-          <span>後台管理</span>
+          <span>{{ t("admin_panel") }}</span>
         </el-menu-item>
       </el-menu>
 
-      <div class="">
+      <div class="flex items-center gap-4 flex-shrink-0">
+        <div>
+          <el-popover placement="bottom" :width="150" trigger="click">
+            <el-menu
+              class="user-select-none"
+              :default-active="user?.locale || 'TW'"
+              @select="handleSelectLocale"
+            >
+              <!-- 繁體中文 -->
+              <el-menu-item index="TW">繁體中文</el-menu-item>
+              <!-- 简体中文 -->
+              <el-menu-item index="CN">简体中文</el-menu-item>
+              <!-- 香港粵語 -->
+              <el-menu-item index="HK">香港粵語</el-menu-item>
+              <!-- English -->
+              <el-menu-item index="EN">English</el-menu-item>
+              <!-- Malaysia -->
+              <el-menu-item index="MY">Melayu</el-menu-item>
+              <!-- Vietnam -->
+              <el-menu-item index="VN">Tiếng Việt</el-menu-item>
+            </el-menu>
+
+            <template #reference>
+              <img
+              title="language"
+                src="/images/language.svg"
+                alt="language"
+                class="w-10 h-10 cursor-pointer transition-transform hover:scale-110"
+              />
+            </template>
+          </el-popover>
+        </div>
         <myGoogleLogin />
       </div>
     </nav>
 
     <main class="content">
-      <!-- 文字瀑布的容器 -->
+      <!-- 文字瀑布 -->
       <div ref="textContainer" class="text-fall-container"></div>
-
-
       <div
         class="main-component relative"
         :class="{ 'wide-layout': isInSongPractice || isInBackend }"
@@ -58,6 +91,9 @@ import { getUserInfo } from "@/utils/axios";
 import myGoogleLogin from "@/components/myGoogleLogin.vue";
 import fiftySoundsData from "@/data/fifty-sounds.json";
 
+import { useI18n } from "vue-i18n";
+const { t, locale } = useI18n();
+
 const route = useRoute();
 const activeIndex = ref("/");
 const user = getUserInfo();
@@ -70,19 +106,33 @@ watch(
   { immediate: true }
 );
 
+watch(locale, (newLocale) => {
+  document.documentElement.setAttribute("lang", newLocale);
+});
+
 const isInSongPractice = computed(() => route.path.includes("/songPractice"));
 const isInBackend = computed(() => route.path.includes("/backend"));
 
-// ===== 文字瀑布的核心部分 =====
+// ===== 文字瀑布 =====
 const textContainer = ref(null);
 
-const textArray = fiftySoundsData.hiragana.map((item) => item.kana) 
+const textArray = fiftySoundsData.hiragana
+  .map((item) => item.kana)
   .concat(fiftySoundsData.katakana.map((item) => item.kana))
   .concat(fiftySoundsData.dakuon.map((item) => item.kana))
   .concat(fiftySoundsData.handakuon.map((item) => item.kana));
 const TEXT_COUNT = 100; // 下落文字數量
 
+// --- 切換語系 ---
+const handleSelectLocale = (lang) => {
+  locale.value = lang;
+
+  localStorage.setItem("myGojuon", JSON.stringify({ locale: lang }));
+};
+
 onMounted(() => {
+  document.documentElement.setAttribute("lang", locale.value);
+
   if (!textContainer.value) return;
 
   for (let i = 0; i < TEXT_COUNT; i++) {
@@ -95,17 +145,17 @@ onMounted(() => {
     textEl.style.left = `${startX}px`;
 
     // --- 垂直位置隨機 (負值 => 讓它在容器頂端以上) ---
-    const randomTop = - (Math.random() * 300 + 100); 
+    const randomTop = -(Math.random() * 300 + 100);
     textEl.style.top = `${randomTop}px`;
 
     // --- 動畫時間＆延遲隨機 ---
     const duration = 3 + Math.random() * 5; // 3 ~ 8 秒
-    const delay = Math.random() * 5;       // 0 ~ 5 秒
+    const delay = Math.random() * 5; // 0 ~ 5 秒
     textEl.style.animationDuration = `${duration}s`;
     textEl.style.animationDelay = `${delay}s`;
 
     // --- 字體大小隨機 ---
-    const fontSize = 16 + Math.random() * 30; 
+    const fontSize = 16 + Math.random() * 30;
     textEl.style.fontSize = `${fontSize}px`;
 
     textContainer.value.appendChild(textEl);
@@ -113,11 +163,7 @@ onMounted(() => {
 });
 </script>
 
-
 <style>
-/* ---------------------------
-   原本 navbar / content 的設定 
----------------------------- */
 .navbar {
   height: fit-content;
   position: relative;
@@ -158,9 +204,9 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;   /* 隱藏超出的文字 */
+  overflow: hidden; /* 隱藏超出的文字 */
   pointer-events: none; /* 不要阻擋滑鼠事件 */
-  z-index: 1;         /* 被 main-component (z-index:2) 蓋住 */
+  z-index: 1; /* 被 main-component (z-index:2) 蓋住 */
 }
 
 /* 下落文字的基本樣式 */

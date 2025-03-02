@@ -26,32 +26,39 @@
                 class="cursor-pointer hover:text-blue-500"
                 @click="Go_to_previous_lyric()"
               >
-                <el-tag>A</el-tag> 跳上一行
+                <el-tag>A</el-tag> {{ t("jump_previous_line") }}
               </div>
               <div
                 class="cursor-pointer hover:text-blue-500"
                 @click="Go_to_next_lyric()"
               >
-                <el-tag>D</el-tag> 跳下一行
+                <el-tag>D</el-tag> {{ t("jump_next_line") }}
               </div>
               <div
                 class="cursor-pointer hover:text-blue-500"
                 @click="toggleLoopCurrentLyric()"
               >
                 <el-tag>S</el-tag>
-                <span v-if="isLooping" class="text-red-600">取消循環</span>
-                <span v-else>循環播放</span>
+                <span v-if="isLooping" class="text-red-600">{{
+                  t("stop_looping")
+                }}</span>
+                <span v-else>{{ t("loop_playback") }}</span>
               </div>
             </div>
 
             <div class="w-full flex items-center gap-2 justify-between">
-              <el-checkbox v-model="autoScroll">滾動</el-checkbox>
+              <el-checkbox v-model="autoScroll">{{
+                t("scrolling")
+              }}</el-checkbox>
 
               <el-radio-group v-model="display_mode" size="large">
-                <el-radio value="hira" size="large" style="margin-right: 18px"
-                  >一般</el-radio
+                <el-radio
+                  value="hira"
+                  size="large"
+                  style="margin-right: 18px"
+                  >{{ t("normal") }}</el-radio
                 >
-                <el-radio value="both" size="large">假名</el-radio>
+                <el-radio value="both" size="large">{{ t("mixed") }}</el-radio>
               </el-radio-group>
               <el-input-number
                 v-model="playbackRate"
@@ -128,6 +135,8 @@ import {
 } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
 import axios from "@/utils/axios";
+import { useI18n } from "vue-i18n";
+const { t, locale } = useI18n();
 
 const router = useRouter();
 

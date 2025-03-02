@@ -23,20 +23,24 @@
         <el-select
           v-model="activeTab"
           placeholder="選擇字符集"
-          style="width: 100px"
+          style="width: 130px"
         >
-          <el-option key="hiragana" label="平假名" value="hiragana" />
-          <el-option key="katakana" label="片假名" value="katakana" />
-          <el-option key="dakuon" label="濁音" value="dakuon" />
-          <el-option key="handakuon" label="半濁音" value="handakuon" />
-          <el-option key="yoon" label="拗音" value="yoon" />
+          <el-option key="hiragana" :label="t('hiragana')" value="hiragana" />
+          <el-option key="katakana" :label="t('katakana')" value="katakana" />
+          <el-option key="dakuon" :label="t('dakuon')" value="dakuon" />
+          <el-option
+            key="handakuon"
+            :label="t('handakuon')"
+            value="handakuon"
+          />
+          <el-option key="yoon" :label="t('yoon')" value="yoon" />
         </el-select>
 
         <!-- 隨機、循序模式切換 -->
         <el-switch
           v-model="isRandomMode"
-          active-text="隨機"
-          inactive-text="循序"
+          :active-text="t('random')"
+          :inactive-text="t('sequential')"
           @change="handleModeChange"
         />
 
@@ -65,19 +69,23 @@
         v-loading="handwritingCanvas?.isSending"
         :disabled="activeTab === 'yoon'"
       >
-        AI辨識(實驗性)
+        {{ t("ai_recognition") }}
       </el-button>
       <el-button v-else type="primary" class="w-full h-12" :disabled="true">
-        點擊右上角登入以啟用AI辨識
+        {{ t("login_to_enable_ai_recognition") }}
       </el-button>
 
       <div class="flex gap-4 items-center">
-        <div>預測值：{{ predictKana }}</div>
-        <div>信心值：{{ predictConfidence.toString().slice(0, 5) }}</div>
+        <div>{{ t("predicted_value") }}：{{ predictKana }}</div>
+        <div>
+          {{ t("confidence_level") }}：{{
+            predictConfidence.toString().slice(0, 5)
+          }}
+        </div>
         <el-popover placement="bottom" :width="300" trigger="click">
           <template #reference>
             <el-tag type="success" class="text-lg hover:cursor-pointer"
-              >第{{ round }}輪</el-tag
+              >Round {{ round }}</el-tag
             >
           </template>
 
@@ -108,14 +116,20 @@
         @click="showCurrentWord = !showCurrentWord"
         type="danger"
       >
-        {{ showCurrentWord ? "隱藏" : "顯示" }}答案
+        {{ showCurrentWord ? t("hide_answer") : t("show_answer") }}
       </el-tag>
 
       <div v-if="showCurrentWord" class="mt-4 p-4 bg-gray-100 rounded-lg">
-        <h3 class="text-xl font-bold mb-2">當前單字信息：</h3>
-        <p><strong>假名：</strong>{{ selectedSound.kana }}</p>
-        <p><strong>羅馬字：</strong>{{ selectedSound.romaji }}</p>
-        <p><strong>漢字：</strong>{{ selectedSound.evo }}</p>
+        <h3 class="text-xl font-bold mb-2">{{ t("") }}</h3>
+        <p>
+          <strong>{{ t("japanese") }}：</strong>{{ selectedSound.kana }}
+        </p>
+        <p>
+          <strong>{{ t("romaji") }}：</strong>{{ selectedSound.romaji }}
+        </p>
+        <p>
+          <strong>{{ t("kanji") }}：</strong>{{ selectedSound.evo }}
+        </p>
       </div>
     </div>
     <!-- 右側手寫區 -->
@@ -140,6 +154,8 @@ import { ElMessageBox, ElMessage } from "element-plus";
 import HandwritingCanvas from "@/components/HandwritingCanvas.vue";
 import fiftySoundsData from "@/data/fifty-sounds.json";
 import axios, { getUserInfo } from "@/utils/axios";
+import { useI18n } from "vue-i18n";
+const { t, locale } = useI18n();
 
 const user = getUserInfo();
 
@@ -221,7 +237,7 @@ const findNextValidKana = (currentIndex, direction) => {
 
 const handleModeChange = () => {
   ElMessage.success(
-    isRandomMode.value ? "已切換到隨機模式" : "已切換到循序模式"
+    isRandomMode.value ? t("switch_to_random") : t("switch_to_sequential")
   );
 };
 
@@ -365,15 +381,15 @@ const checkKanaMatch = (currentKana, predictedKana) => {
 
 // 處理正確預測
 const handleCorrectPrediction = (currentKana) => {
-  predictKana.value = currentKana; // 確保顯示正確的假名
-  ElMessage.success(`正確！: ${currentKana}`);
+  predictKana.value = currentKana;
+  ElMessage.success(t("corrent") + `！: ${currentKana}`);
   soundCounts[currentKana]++;
   changeSound("next");
 };
 
 // 處理錯誤預測
 const handleIncorrectPrediction = (predictedKana) => {
-  ElMessage.error(`錯誤！: ${predictedKana}`);
+  ElMessage.error(t("incorrect") + `！: ${predictedKana}`);
 };
 
 const isSelectedSound = (sound) =>

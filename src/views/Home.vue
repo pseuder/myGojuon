@@ -1,24 +1,30 @@
 <template>
   <div class="h-full flex flex-col px-4 py-4 gap-4">
     <div class="text-center py-10">
-      <h1 class="text-4xl font-bold text-indigo-700">日語50音學習網站</h1>
-      <p class="mt-2 text-xl text-gray-600">快速且提供即時書寫功能的功能</p>
+      <h1 class="text-4xl font-bold text-indigo-700">{{ t("site_title") }}</h1>
+      <p class="mt-2 text-xl text-gray-600">{{ t("feature_description") }}</p>
     </div>
 
     <div>
       <!-- 特色區塊 -->
       <div class="grid md:grid-cols-3 gap-6 my-10">
         <div class="feature-card">
-          <h2 class="text-2xl font-semibold text-indigo-600">50 音學習</h2>
-          <p>全面學習日語常見音節</p>
+          <h2 class="text-2xl font-semibold text-indigo-600">
+            {{ t("syllabary_learning") }}
+          </h2>
+          <p>{{ t("syllabary_description") }}</p>
         </div>
         <div class="feature-card">
-          <h2 class="text-2xl font-semibold text-indigo-600">書寫友善</h2>
-          <p>觸控筆友善的學習環境</p>
+          <h2 class="text-2xl font-semibold text-indigo-600">
+            {{ t("writing_friendly") }}
+          </h2>
+          <p>{{ t("stylus_friendly") }}</p>
         </div>
         <div class="feature-card">
-          <h2 class="text-2xl font-semibold text-indigo-600">隨機檢測</h2>
-          <p>隨機挑選&AI辨識檢測熟悉程度</p>
+          <h2 class="text-2xl font-semibold text-indigo-600">
+            {{ t("random_testing") }}
+          </h2>
+          <p>{{ t("random_selection_ai_assessment") }}</p>
         </div>
       </div>
 
@@ -30,7 +36,7 @@
           @click="router.push('/writing')"
           class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
         >
-          開始手寫練習
+          {{ t("start_handwriting_practice") }}
         </el-button>
 
         <el-button
@@ -38,7 +44,7 @@
           style="margin-left: 0px"
           class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
         >
-          開始聽寫練習
+          {{ t("start_dictation_practice") }}
         </el-button>
 
         <el-button
@@ -46,14 +52,16 @@
           style="margin-left: 0px"
           class="bg-indigo-600 text-white px-6 py-6 rounded-lg text-xl hover:bg-indigo-700 transition duration-300"
         >
-          開始歌曲練習
+          {{ t("start_song_practice") }}
         </el-button>
       </div>
 
       <!-- Powered by -->
       <section class="my-10">
         <div class="flex flex-col gap-4">
-          <h2 class="text-2xl font-bold text-indigo-700 mb-4">歌曲推廣</h2>
+          <h2 class="text-2xl font-bold text-indigo-700 mb-4">
+            {{ t("song_promotion") }}
+          </h2>
 
           <!-- あたらよ -->
           <router-link
@@ -87,7 +95,9 @@
             }"
             class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
           >
-            <span class="gradient-text-animated">Girls band Cry ガールズバンドクライ</span>
+            <span class="gradient-text-animated"
+              >Girls band Cry ガールズバンドクライ</span
+            >
           </router-link>
 
           <!-- Mygo -->
@@ -186,7 +196,7 @@
       <!-- 聯絡方式 -->
       <section class="my-10">
         <h2 class="text-2xl font-bold text-indigo-700 mb-4">
-          問題回報&功能許願
+          {{ t("feedback_and_feature_request") }}
         </h2>
 
         <!-- gmail -->
@@ -230,15 +240,27 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { ElementPlus } from "@element-plus/icons-vue";
 
 const router = useRouter();
 
-const openNewPage = (url) => {
-  window.open(url, "_blank");
+import { useI18n } from "vue-i18n";
+const { t, locale } = useI18n();
+
+const updateMeta = () => {
+  document.title = t("meta.title");
+  document
+    .querySelector('meta[name="description"]')
+    .setAttribute("content", t("meta.description"));
+  document
+    .querySelector('meta[name="keywords"]')
+    .setAttribute("content", t("meta.keywords"));
 };
+
+onMounted(updateMeta);
+watch(locale, updateMeta);
 </script>
 
 <style scoped>

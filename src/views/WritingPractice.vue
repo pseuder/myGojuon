@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col md:flex-row h-full px-4 py-4 gap-4" >
+  <div class="flex flex-col md:flex-row h-full px-4 py-4 gap-4">
     <!-- 50音列表 -->
     <div class="w-full" :key="activeTab">
       <h2 class="text-xl font-semibold mb-3">
@@ -7,7 +7,7 @@
           <el-tab-pane
             v-for="tab in tabs"
             :key="tab.name"
-            :label="tab.label"
+            :label="t(tab.label)"
             :name="tab.name"
           />
         </el-tabs>
@@ -100,6 +100,9 @@ import HandwritingCanvas from "@/components/HandwritingCanvas.vue";
 import fiftySoundsData from "@/data/fifty-sounds.json";
 import axios, { getUserInfo } from "@/utils/axios";
 
+import { useI18n } from "vue-i18n";
+const { t, locale } = useI18n();
+
 const fiftySounds = ref(fiftySoundsData);
 const activeTab = ref("hiragana");
 const selectedSound = ref({ kana: "あ", romaji: "a", evo: "安" });
@@ -108,11 +111,11 @@ const audioPlayer = ref(null);
 const isPlaying = ref(false);
 
 const tabs = [
-  { name: "hiragana", label: "平假名" },
-  { name: "katakana", label: "片假名" },
-  { name: "dakuon", label: "濁音" },
-  { name: "handakuon", label: "半濁音" },
-  { name: "yoon", label: "拗音" },
+  { name: "hiragana", label: "hiragana" },
+  { name: "katakana", label: "katakana" },
+  { name: "dakuon", label: "voiced_sounds" },
+  { name: "handakuon", label: "semi_voiced_sounds" },
+  { name: "yoon", label: "contracted_sounds" },
 ];
 
 const currentSounds = computed(() =>

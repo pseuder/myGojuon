@@ -3,8 +3,8 @@
     <div class="flex justify-between items-center my-2">
       <el-switch
         v-model="penMode"
-        active-text="觸控筆"
-        inactive-text="觸控"
+        :active-text="t('stylus')"
+        :inactive-text="t('touch')"
         @change="handleModeChange"
       />
 
@@ -57,6 +57,8 @@ import { useCanvas } from "@/composables/useCanvas";
 import { usePen } from "@/composables/usePen";
 import { useDrawing } from "@/composables/useDrawing";
 import axios, { isTokenExpired } from "@/utils/axios";
+import { useI18n } from "vue-i18n";
+const { t, locale } = useI18n();
 
 const props = defineProps({
   exampleKana: {
