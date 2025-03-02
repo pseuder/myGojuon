@@ -46,6 +46,8 @@
       <el-table-column prop="correctness" label="正確性" min-width="80" /> -->
       <el-table-column prop="duration" label="耗時" />
       <el-table-column prop="ip_address" label="IP" min-width="140" />
+      <el-table-column prop="country" label="國家" min-width="100" />
+      <el-table-column prop="city" label="城市" min-width="100" />
       <el-table-column label="建立" min-width="200">
         <template #default="scope">
           {{ formatDate(scope.row.created_at) }}
