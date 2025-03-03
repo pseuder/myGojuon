@@ -112,7 +112,7 @@ import axios from "@/utils/axios";
 const tableData = ref([]);
 const searchUserId = ref("");
 const currentPage = ref(1);
-const pageSize = ref(50);
+const pageSize = ref(30);
 const dialogVisible = ref(false);
 const userDetailData = ref([]);
 
