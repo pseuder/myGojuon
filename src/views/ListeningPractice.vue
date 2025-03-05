@@ -128,7 +128,7 @@
           <strong>{{ t("romaji") }}：</strong>{{ selectedSound.romaji }}
         </p>
         <p>
-          <strong>{{ t("kanji") }}：</strong>{{ selectedSound.evo }}
+          <strong>{{ t("kanji_source") }}：</strong>{{ selectedSound.evo }}
         </p>
       </div>
     </div>

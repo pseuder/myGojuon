@@ -7,65 +7,28 @@
         mode="horizontal"
         router
       >
-        <el-menu-item index="/">{{ t("home") }}</el-menu-item>
-        <el-menu-item index="/writing">{{
-          t("handwriting_practice")
-        }}</el-menu-item>
-        <el-menu-item index="/listening">{{
-          t("dictation_practice")
-        }}</el-menu-item>
-        <el-menu-item
+        <MenuItem index="/" :label="t('home')" />
+        <MenuItem index="/writing" :label="t('handwriting_practice')" />
+        <MenuItem index="/listening" :label="t('dictation_practice')" />
+        <MenuItem
           index="/songOverview"
-          v-if="user?.email === 'iop890520@gmail.com'"
-          >{{ t("song_practice") }}</el-menu-item
-        >
-        <el-menu-item
+          :label="t('song_practice')"
+          :condition="isAdmin"
+        />
+        <MenuItem
           index="/analysis"
-          v-if="user?.email === 'iop890520@gmail.com'"
-        >
-          <span>{{ t("activity_analysis") }}</span>
-        </el-menu-item>
-        <el-menu-item
+          :label="t('activity_analysis')"
+          :condition="isAdmin"
+        />
+        <MenuItem
           index="/backend"
-          v-if="user?.email === 'iop890520@gmail.com'"
-        >
-          <el-icon><Setting /></el-icon>
-          <span>{{ t("admin_panel") }}</span>
-        </el-menu-item>
+          :label="t('admin_panel')"
+          :condition="isAdmin"
+        />
       </el-menu>
 
       <div class="flex items-center gap-4 flex-shrink-0">
-        <div>
-          <el-popover placement="bottom" :width="150" trigger="click">
-            <el-menu
-              class="user-select-none"
-              :default-active="user?.locale || 'TW'"
-              @select="handleSelectLocale"
-            >
-              <!-- 繁體中文 -->
-              <el-menu-item index="TW">繁體中文</el-menu-item>
-              <!-- 简体中文 -->
-              <el-menu-item index="CN">简体中文</el-menu-item>
-              <!-- 香港粵語 -->
-              <el-menu-item index="HK">香港粵語</el-menu-item>
-              <!-- English -->
-              <el-menu-item index="EN">English</el-menu-item>
-              <!-- Malaysia -->
-              <el-menu-item index="MY">Melayu</el-menu-item>
-              <!-- Vietnam -->
-              <el-menu-item index="VN">Tiếng Việt</el-menu-item>
-            </el-menu>
-
-            <template #reference>
-              <img
-              title="language"
-                src="/images/language.svg"
-                alt="language"
-                class="w-10 h-10 cursor-pointer transition-transform hover:scale-110"
-              />
-            </template>
-          </el-popover>
-        </div>
+        <LocaleSwitcher @update:locale="recordActivity" />
         <myGoogleLogin />
       </div>
     </nav>
@@ -86,17 +49,20 @@
 <script setup>
 import { ref, watch, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import { Setting } from "@element-plus/icons-vue";
-import { getUserInfo } from "@/utils/axios";
-import myGoogleLogin from "@/components/myGoogleLogin.vue";
-import fiftySoundsData from "@/data/fifty-sounds.json";
-
 import { useI18n } from "vue-i18n";
-const { t, locale } = useI18n();
 
+import fiftySoundsData from "@/data/fifty-sounds.json";
+import axios, { getUserInfo } from "@/utils/axios";
+import myGoogleLogin from "@/components/myGoogleLogin.vue";
+import MenuItem from "@/components/MenuItem.vue";
+import LocaleSwitcher from "@/components/LocaleSwitcher.vue";
+
+const { t, locale } = useI18n();
 const route = useRoute();
 const activeIndex = ref("/");
 const user = getUserInfo();
+
+const isAdmin = computed(() => user?.email === "iop890520@gmail.com");
 
 watch(
   () => route.path,
@@ -114,52 +80,60 @@ const isInSongPractice = computed(() => route.path.includes("/songPractice"));
 const isInBackend = computed(() => route.path.includes("/backend"));
 
 // ===== 文字瀑布 =====
+const TEXT_COUNT = 100; // 下落文字數量
 const textContainer = ref(null);
-
 const textArray = fiftySoundsData.hiragana
   .map((item) => item.kana)
   .concat(fiftySoundsData.katakana.map((item) => item.kana))
   .concat(fiftySoundsData.dakuon.map((item) => item.kana))
   .concat(fiftySoundsData.handakuon.map((item) => item.kana));
-const TEXT_COUNT = 100; // 下落文字數量
 
-// --- 切換語系 ---
-const handleSelectLocale = (lang) => {
-  locale.value = lang;
-
-  localStorage.setItem("myGojuon", JSON.stringify({ locale: lang }));
+const recordActivity = (lang) => {
+  const dataToSend = {
+    learningModule: "language",
+    learningMethod: "switch_language",
+    learningItem: lang,
+  };
+  axios.post("/record_activity", dataToSend).catch((error) => {
+    console.error("Error recording activity:", error);
+  });
 };
 
 onMounted(() => {
   document.documentElement.setAttribute("lang", locale.value);
-
   if (!textContainer.value) return;
+  let count = 0;
+  function createTextElement() {
+    if (count < TEXT_COUNT) {
+      const textEl = document.createElement("div");
+      textEl.classList.add("falling-text");
+      textEl.innerText =
+        textArray[Math.floor(Math.random() * textArray.length)];
 
-  for (let i = 0; i < TEXT_COUNT; i++) {
-    const textEl = document.createElement("div");
-    textEl.classList.add("falling-text");
-    textEl.innerText = textArray[Math.floor(Math.random() * textArray.length)];
+      // --- 水平位置隨機 ---
+      const startX = Math.random() * window.innerWidth;
+      textEl.style.left = `${startX}px`;
 
-    // --- 水平位置隨機 ---
-    const startX = Math.random() * window.innerWidth;
-    textEl.style.left = `${startX}px`;
+      // --- 垂直位置隨機 (負值 => 讓它在容器頂端以上) ---
+      const randomTop = -(Math.random() * 300 + 100);
+      textEl.style.top = `${randomTop}px`;
 
-    // --- 垂直位置隨機 (負值 => 讓它在容器頂端以上) ---
-    const randomTop = -(Math.random() * 300 + 100);
-    textEl.style.top = `${randomTop}px`;
+      // --- 動畫時間＆延遲隨機 ---
+      const duration = 3 + Math.random() * 5; // 3 ~ 8 秒
+      const delay = Math.random() * 5; // 0 ~ 5 秒
+      textEl.style.animationDuration = `${duration}s`;
+      textEl.style.animationDelay = `${delay}s`;
 
-    // --- 動畫時間＆延遲隨機 ---
-    const duration = 3 + Math.random() * 5; // 3 ~ 8 秒
-    const delay = Math.random() * 5; // 0 ~ 5 秒
-    textEl.style.animationDuration = `${duration}s`;
-    textEl.style.animationDelay = `${delay}s`;
+      // --- 字體大小隨機 ---
+      const fontSize = 16 + Math.random() * 30;
+      textEl.style.fontSize = `${fontSize}px`;
 
-    // --- 字體大小隨機 ---
-    const fontSize = 16 + Math.random() * 30;
-    textEl.style.fontSize = `${fontSize}px`;
-
-    textContainer.value.appendChild(textEl);
+      textContainer.value.appendChild(textEl);
+      count++;
+      requestAnimationFrame(createTextElement); // 使用 requestAnimationFrame
+    }
   }
+  requestAnimationFrame(createTextElement); // 開始創建
 });
 </script>
 
@@ -181,7 +155,6 @@ onMounted(() => {
   position: relative; /* 關鍵：用來相對定位瀑布 */
 }
 
-/* 在 main 裡的下層可見 */
 .main-component {
   position: relative;
   background-color: rgba(255, 255, 255, 0.9);
@@ -218,7 +191,7 @@ onMounted(() => {
   user-select: none;
 }
 
-/* 簡單的下落動畫：可根據需求修改 */
+/* 簡單的下落動畫 */
 @keyframes fall {
   0% {
     transform: translateY(0);
@@ -228,7 +201,7 @@ onMounted(() => {
     opacity: 1;
   }
   100% {
-    transform: translateY(120vh); /* 或 calc(100vh + 100px) */
+    transform: translateY(120vh);
     opacity: 0;
   }
 }

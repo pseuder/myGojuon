@@ -41,6 +41,8 @@
   "japanese": "Tiếng Nhật",
   "romaji": "Romaji",
   "kanji": "Kanji",
+  "kanji_source": "Nguồn Kanji",
+  "auto_play": "Tự động phát",
   "sequential": "Tuần tự",
   "random": "Ngẫu nhiên",
   "switch_to_sequential": "Đã chuyển sang chế độ Tuần tự",
@@ -51,5 +53,6 @@
   "stop_looping": "Dừng lặp",
   "scrolling": "Cuộn",
   "normal": "Bình thường",
-  "mixed": "Hỗn hợp"
+  "mixed": "Hỗn hợp",
+  "logout": "Đăng xuất"
 }

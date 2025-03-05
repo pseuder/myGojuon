@@ -200,7 +200,7 @@
         </h2>
 
         <!-- gmail -->
-        <div class="flex flex-col gap-4 my-4">
+        <div class="flex flex-col gap-4 my-4" @click="handleReportClick('gmail')">
           <div class="flex items-center gap-4">
             <img
               src="/images/gmail.png"
@@ -218,7 +218,7 @@
         </div>
 
         <!-- fb -->
-        <div class="flex flex-col gap-4 my-4">
+        <div class="flex flex-col gap-4 my-4" @click="handleReportClick('facebook')">
           <div class="flex items-center gap-4">
             <img
               src="/images/facebook.png"
@@ -244,6 +244,8 @@ import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { ElementPlus } from "@element-plus/icons-vue";
 
+import axios, { getUserInfo } from "@/utils/axios";
+
 const router = useRouter();
 
 import { useI18n } from "vue-i18n";
@@ -258,6 +260,20 @@ const updateMeta = () => {
     .querySelector('meta[name="keywords"]')
     .setAttribute("content", t("meta.keywords"));
 };
+
+const handleReportClick = (item) => {
+  const dataToSend = {
+    learningModule: "report",
+    learningMethod: "report_issue",
+    learningItem: item,
+  };
+
+  // 發送數據到後端
+  axios.post("/record_activity", dataToSend).catch((error) => {
+    console.error("Error recording activity:", error);
+  });
+};
+
 
 onMounted(updateMeta);
 watch(locale, updateMeta);

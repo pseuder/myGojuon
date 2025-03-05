@@ -42,6 +42,8 @@
   "japanese": "日文字",
   "romaji": "羅馬拼音",
   "kanji": "漢字",
+  "kanji_source": "漢字來源",
+  "auto_play": "自動播放",
   "sequential": "循序",
   "random": "隨機",
   "switch_to_sequential": "已切換到循序模式",
@@ -52,5 +54,6 @@
   "stop_looping": "取消循環",
   "scrolling": "滾動",
   "normal": "一般",
-  "mixed": "混合"
+  "mixed": "混合",
+  "logout": "登出"
 }

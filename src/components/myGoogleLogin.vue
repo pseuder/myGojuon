@@ -21,7 +21,7 @@
               size="small"
               class="w-full"
             >
-              登出
+              {{ t("logout") }}
             </el-button>
           </div>
         </el-popover>
@@ -37,6 +37,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { GoogleLogin, decodeCredential } from "vue3-google-login";
+import { useI18n } from "vue-i18n";
+
 import axios, {
   isTokenExpired,
   storeToken,
@@ -44,6 +46,8 @@ import axios, {
   getUserInfo,
   logout,
 } from "@/utils/axios";
+
+const { t, locale } = useI18n();
 
 const user = ref(null);
 const isLogin = ref(false);

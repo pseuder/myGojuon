@@ -1,9 +1,9 @@
 <template>
-  <div class="flex flex-col md:flex-row h-full px-4 py-4 gap-4">
+  <div class="flex flex-col lg:flex-row h-full px-4 py-4 gap-4">
     <!-- 50音列表 -->
     <div class="w-full" :key="activeTab">
       <h2 class="text-xl font-semibold mb-3">
-        <el-tabs v-model="activeTab" class="mb-4">
+        <el-tabs v-model="activeTab" class="w-fill mb-4 lg:max-w-md">
           <el-tab-pane
             v-for="tab in tabs"
             :key="tab.name"
@@ -35,16 +35,20 @@
     </div>
     <!-- 手寫互動區 -->
     <div class="w-full content-center">
-      <!-- body-style="display: flex; flex-direction: column; gap: 15px" -->
       <el-card>
         <!-- 功能列 -->
         <div class="w-full flex items-center justify-between">
           <!-- 日文 -->
-          <div class="text-5xl font-bold">{{ selectedSound.kana }}</div>
+          <div class="text-5xl font-bold" :title="t('japanese')">{{ selectedSound.kana }}</div>
           <!-- 羅馬字 -->
-          <div class="text-4xl font-bold">{{ selectedSound.romaji }}</div>
+          <div class="text-4xl font-bold" :title="t('romaji')">{{ selectedSound.romaji }}</div>
           <!-- 漢字來源 -->
-          <div class="text-4xl font-bold">{{ selectedSound.evo }}</div>
+          <div class="text-4xl font-bold" :title="t('kanji_source')">{{ selectedSound.evo }}</div>
+
+          <!-- 自動撥放 -->
+           <el-checkbox v-model="autoPlay" class="hover:cursor-pointer">
+            {{ t("auto_play") }}
+          </el-checkbox>
 
           <!-- 音檔播放控制 -->
           <audio
@@ -109,6 +113,7 @@ const selectedSound = ref({ kana: "あ", romaji: "a", evo: "安" });
 const handwritingCanvas = ref(null);
 const audioPlayer = ref(null);
 const isPlaying = ref(false);
+const autoPlay = ref(false);
 
 const tabs = [
   { name: "hiragana", label: "hiragana" },
@@ -130,22 +135,6 @@ const groupedSounds = computed(() => {
   }
   return groups;
 });
-
-// watch(
-//   selectedSound,
-//   (newSound, oldSound) => {
-//     if (newSound !== oldSound) {
-//       if (audioPlayer.value) {
-//         audioPlayer.value.load(); // 加载新的音频文件
-//         // 使用 nextTick 确保音频加载完成后再播放
-//         nextTick(() => {
-//           playSound();
-//         });
-//       }
-//     }
-//   },
-//   { deep: true }
-// );
 
 watch(activeTab, () => {
   selectedSound.value = currentSounds.value[0];

@@ -42,6 +42,8 @@
   "japanese": "Bahasa Jepun",
   "romaji": "Romaji",
   "kanji": "Kanji",
+  "kanji_source": "Sumber Kanji",
+  "auto_play": "Main Automatik",
   "sequential": "Berjujukan",
   "random": "Rawak",
   "switch_to_sequential": "Ditukar ke Mod Berjujukan",
@@ -52,5 +54,6 @@
   "stop_looping": "Hentikan Ulang",
   "scrolling": "Tatal",
   "normal": "Normal",
-  "mixed": "Campuran"
+  "mixed": "Campuran",
+  "logout": "Log Keluar"
 }

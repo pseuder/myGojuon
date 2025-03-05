@@ -35,7 +35,7 @@
       <el-table-column prop="username" label="使用者名稱" min-width="100" />
       <el-table-column prop="learningModule" label="學習模組" />
       <el-table-column prop="learningMethod" label="學習方式" min-width="120" />
-      <!-- <el-table-column prop="learningItem" label="學習項目" min-width="120">
+      <el-table-column prop="learningItem" label="學習項目" min-width="120">
         <template #default="scope">
           <span v-if="scope.row.learningMethod === 'get_video'">{{
             scope.row.video_name
@@ -43,8 +43,6 @@
           <span v-else>{{ scope.row.learningItem }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="correctness" label="正確性" min-width="80" /> -->
-      <el-table-column prop="duration" label="耗時" />
       <el-table-column prop="ip_address" label="IP" min-width="140" />
       <el-table-column prop="country" label="國家" min-width="100" />
       <el-table-column prop="city" label="城市" min-width="100" />
@@ -89,7 +87,17 @@
             label="學習方式"
             min-width="120"
           />
-          <el-table-column prop="video_name" label="video_name" />
+          <!-- <el-table-column prop="video_name" label="video_name" /> -->
+           
+          <el-table-column prop="learningItem" label="學習項目" min-width="120">
+        <template #default="scope">
+          <span v-if="scope.row.learningMethod === 'get_video'">{{
+            scope.row.video_name
+          }}</span>
+          <span v-else>{{ scope.row.learningItem }}</span>
+        </template>
+      </el-table-column>
+
           <el-table-column prop="country" label="國家" min-width="100" />
           <el-table-column prop="city" label="城市" min-width="100" />
           <el-table-column label="建立" min-width="200">

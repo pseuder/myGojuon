@@ -42,6 +42,8 @@
   "japanese": "Japanese",
   "romaji": "Romaji",
   "kanji": "Kanji",
+  "kanji_source": "Kanji Source",
+  "auto_play": "Auto Play",
   "sequential": "Sequential",
   "random": "Random",
   "switch_to_sequential": "Switched to Sequential Mode",
@@ -52,5 +54,6 @@
   "stop_looping": "Stop looping",
   "scrolling": "Scrolling",
   "normal": "Normal",
-  "mixed": "Mixed"
+  "mixed": "Mixed",
+  "logout": "Logout"
 }
