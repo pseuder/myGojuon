@@ -19,7 +19,7 @@
     </div>
 
     <!-- 表格 -->
-    <el-table :data="paginatedData" style="width: 100%" highlight-current-row>
+    <el-table :data="tableData" style="width: 100%" highlight-current-row v-loading="loading" >
       <!-- 新增的按鈕欄位 -->
       <el-table-column label="操作" width="100">
         <template #default="scope">
@@ -75,8 +75,8 @@
       <el-pagination
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
-        :page-sizes="[10, 20, 50, 100]"
-        :total="filteredData.length"
+        :page-sizes="[10, 20, 30, 50, 100]"
+        :total="totalCount"
         layout="sizes, total, prev, pager, next"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
@@ -104,16 +104,15 @@
             label="學習方式"
             min-width="120"
           />
-          <!-- <el-table-column prop="video_name" label="video_name" /> -->
-           
+
           <el-table-column prop="learningItem" label="學習項目" min-width="120">
-        <template #default="scope">
-          <span v-if="scope.row.learningMethod === 'get_video'">{{
-            scope.row.video_name
-          }}</span>
-          <span v-else>{{ scope.row.learningItem }}</span>
-        </template>
-      </el-table-column>
+            <template #default="scope">
+              <span v-if="scope.row.learningMethod === 'get_video'">{{
+                scope.row.video_name
+              }}</span>
+              <span v-else>{{ scope.row.learningItem }}</span>
+            </template>
+          </el-table-column>
 
           <el-table-column prop="country" label="國家" min-width="100" />
           <el-table-column prop="city" label="城市" min-width="100" />
@@ -129,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from "vue";
+import { ref, reactive, onMounted, computed, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
 import axios from "@/utils/axios";
@@ -140,6 +139,8 @@ const currentPage = ref(1);
 const pageSize = ref(30);
 const dialogVisible = ref(false);
 const userDetailData = ref([]);
+const totalCount = ref(0);
+const loading = ref(false);
 
 const formatDate = (dateString) => {
   if (!dateString) return "";
@@ -154,24 +155,6 @@ const formatDate = (dateString) => {
   const hours12 = hours % 12 || 12;
   return `${year}-${month}-${day} ${period}${hours12}:${minutes}:${seconds}`;
 };
-
-const filteredData = computed(() => {
-  if (!searchUserId.value) {
-    return tableData.value;
-  }
-  return tableData.value.filter((item) =>
-    item.user_id
-      .toString()
-      .toLowerCase()
-      .includes(searchUserId.value.toLowerCase())
-  );
-});
-
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return filteredData.value.slice(start, end);
-});
 
 const showUserDetail = async (row) => {
   try {
@@ -191,31 +174,63 @@ const showUserDetail = async (row) => {
 
 const handleSearch = () => {
   currentPage.value = 1;
+  fetchData(); // 搜尋時重新載入資料
 };
 
 const handleSizeChange = (val) => {
   pageSize.value = val;
   currentPage.value = 1;
+  fetchData(); // 頁面大小改變時重新載入資料
 };
 
 const handleCurrentChange = (val) => {
   currentPage.value = val;
+  fetchData(); // 當前頁面改變時重新載入資料
 };
 
-const fetchData = () => {
-  axios.get("/fetch_all_user_activity", {
-      params: {
-        currentPage: currentPage.value,
-        pageSize: pageSize.value,
-      },
-    }).then((data) => {
-    tableData.value = data;
-  });
+
+const fetchData = async () => {
+  try {
+    loading.value = true;
+
+    const params = {
+      currentPage: currentPage.value,
+      pageSize: pageSize.value,
+    };
+
+    if (searchUserId.value) {
+      params.searchUserId = searchUserId.value; // 傳遞搜尋條件
+    }
+
+    const response = await axios.get("/fetch_all_user_activity", {
+      params,
+    });
+    tableData.value = response;
+
+    // 僅在初始化或搜尋時獲取總數
+    if (totalCount.value === 0 || searchUserId.value) {
+      const countResponse = await axios.get("/fetch_all_user_activity_count");
+      totalCount.value = countResponse;
+    }
+
+    loading.value = false;
+
+
+  } catch (error) {
+    ElMessage.error("獲取資料失敗");
+  }
 };
+
 
 onMounted(() => {
   fetchData();
 });
+
+// 監聽 searchUserId 的變化，如果變化了，重置 currentPage 並重新獲取資料
+watch(searchUserId, () => {
+    currentPage.value = 1;
+});
+
 </script>
 
 <style>
