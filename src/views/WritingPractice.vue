@@ -54,6 +54,7 @@
           <audio
             ref="audioPlayer"
             :src="`/sounds/${selectedSound.romaji}.mp3`"
+            @loadeddata="autoPlaySound"
             @ended="audioEnded"
           ></audio>
           <div class="hover:cursor-pointer" @click="togglePlay">
@@ -194,6 +195,12 @@ const playSound = () => {
     audioPlayer.value.currentTime = 0; // 重置音频到开始位置
     audioPlayer.value.play();
     isPlaying.value = true;
+  }
+};
+
+const autoPlaySound = () => {
+  if (autoPlay.value) {
+    playSound();
   }
 };
 
