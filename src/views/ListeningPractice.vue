@@ -27,13 +27,13 @@
         >
           <el-option key="hiragana" :label="t('hiragana')" value="hiragana" />
           <el-option key="katakana" :label="t('katakana')" value="katakana" />
-          <el-option key="dakuon" :label="t('dakuon')" value="dakuon" />
+          <el-option key="dakuon" :label="t('voiced_sounds')" value="dakuon" />
           <el-option
             key="handakuon"
-            :label="t('handakuon')"
+            :label="t('semi_voiced_sounds')"
             value="handakuon"
           />
-          <el-option key="yoon" :label="t('yoon')" value="yoon" />
+          <el-option key="yoon" :label="t('contracted_sounds')" value="yoon" />
         </el-select>
 
         <!-- 隨機、循序模式切換 -->
