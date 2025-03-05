@@ -1,25 +1,10 @@
 <template>
   <div
-    class="w-full h-[90vh] flex flex-col px-4 py-4 gap-4"
+    class="w-full h-[90vh] flex flex-col px-4 py-4 gap-4 "
     style="width: 99vw !important; left: 10px; position: fixed"
   >
-    <!-- 搜尋框 -->
-    <div>
-      <el-input
-        v-model="searchUserId"
-        placeholder="搜尋使用者ID"
-        class="w-60"
-        clearable
-        @change="handleSearch"
-      >
-        <template #prefix>
-          <el-icon><Search /></el-icon>
-        </template>
-      </el-input>
-    </div>
-
     <!-- 表格 -->
-    <el-table :data="tableData" style="width: 100%" highlight-current-row v-loading="loading" >
+    <el-table :data="tableData" style="width: 100%; border-radius: 12px;" highlight-current-row v-loading="loading" >
       <!-- 新增的按鈕欄位 -->
       <el-table-column label="操作" width="100">
         <template #default="scope">
@@ -45,17 +30,18 @@
       </el-table-column>
       <el-table-column prop="ip_address" label="IP" min-width="140" />
       <el-table-column prop="country" label="國家" min-width="100" />
-      <el-table-column prop="city" label="城市" min-width="100" />
-      <el-table-column label="建立" min-width="200">
-        <template #default="scope">
-          {{ formatDate(scope.row.created_at) }}
-        </template>
-      </el-table-column>
+      <el-table-column prop="city" label="城市" min-width="150" />
       <el-table-column label="首次建立" min-width="200">
         <template #default="scope">
           {{ formatDate(scope.row.min_created_at) }}
         </template>
       </el-table-column>
+      <el-table-column label="建立時間" min-width="200">
+        <template #default="scope">
+          {{ formatDate(scope.row.created_at) }}
+        </template>
+      </el-table-column>
+      
 
       <!-- 根據首次建立和建立計算使用天數 -->
       <el-table-column label="使用天數" min-width="100">
@@ -68,6 +54,8 @@
           }}
         </template>
       </el-table-column>
+
+      
     </el-table>
 
     <!-- 分頁 -->
@@ -130,11 +118,9 @@
 <script setup>
 import { ref, reactive, onMounted, computed, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Search } from "@element-plus/icons-vue";
 import axios from "@/utils/axios";
 
 const tableData = ref([]);
-const searchUserId = ref("");
 const currentPage = ref(1);
 const pageSize = ref(30);
 const dialogVisible = ref(false);
@@ -172,11 +158,6 @@ const showUserDetail = async (row) => {
   }
 };
 
-const handleSearch = () => {
-  currentPage.value = 1;
-  fetchData(); // 搜尋時重新載入資料
-};
-
 const handleSizeChange = (val) => {
   pageSize.value = val;
   currentPage.value = 1;
@@ -188,7 +169,6 @@ const handleCurrentChange = (val) => {
   fetchData(); // 當前頁面改變時重新載入資料
 };
 
-
 const fetchData = async () => {
   try {
     loading.value = true;
@@ -198,17 +178,13 @@ const fetchData = async () => {
       pageSize: pageSize.value,
     };
 
-    if (searchUserId.value) {
-      params.searchUserId = searchUserId.value; // 傳遞搜尋條件
-    }
-
     const response = await axios.get("/fetch_all_user_activity", {
       params,
     });
     tableData.value = response;
 
     // 僅在初始化或搜尋時獲取總數
-    if (totalCount.value === 0 || searchUserId.value) {
+    if (totalCount.value === 0) {
       const countResponse = await axios.get("/fetch_all_user_activity_count");
       totalCount.value = countResponse;
     }
@@ -226,10 +202,6 @@ onMounted(() => {
   fetchData();
 });
 
-// 監聽 searchUserId 的變化，如果變化了，重置 currentPage 並重新獲取資料
-watch(searchUserId, () => {
-    currentPage.value = 1;
-});
 
 </script>
 
