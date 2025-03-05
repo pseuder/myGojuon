@@ -51,6 +51,23 @@
           {{ formatDate(scope.row.created_at) }}
         </template>
       </el-table-column>
+      <el-table-column label="首次建立" min-width="200">
+        <template #default="scope">
+          {{ formatDate(scope.row.min_created_at) }}
+        </template>
+      </el-table-column>
+
+      <!-- 根據首次建立和建立計算使用天數 -->
+      <el-table-column label="使用天數" min-width="100">
+        <template #default="scope">
+          {{
+            Math.floor(
+              (new Date(scope.row.created_at) - new Date(scope.row.min_created_at)) /
+                (1000 * 60 * 60 * 24)
+            )
+          }}
+        </template>
+      </el-table-column>
     </el-table>
 
     <!-- 分頁 -->
