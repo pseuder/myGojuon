@@ -3,6 +3,16 @@
     class="w-full h-[90vh] flex flex-col px-4 py-4 gap-4 "
     style="width: 99vw !important; left: 10px; position: fixed"
   >
+  <el-switch
+    v-model="isSpecialSearch"
+    active-text="特殊搜尋"
+    inactive-text="一般搜尋"
+    active-color="#13ce66"
+    inactive-color="#ff4949"
+    class="w-1/4"
+    @change="fetchData"
+  />
+
     <!-- 表格 -->
     <el-table :data="tableData" style="width: 100%; border-radius: 12px;" highlight-current-row v-loading="loading" >
       <!-- 新增的按鈕欄位 -->
@@ -127,6 +137,7 @@ const dialogVisible = ref(false);
 const userDetailData = ref([]);
 const totalCount = ref(0);
 const loading = ref(false);
+const isSpecialSearch = ref(false);
 
 const formatDate = (dateString) => {
   if (!dateString) return "";
@@ -149,6 +160,7 @@ const showUserDetail = async (row) => {
       params: {
         user_id: row.user_id,
         ip_address: row.ip_address,
+        isSpecialSearch: isSpecialSearch.value,
       },
     });
     userDetailData.value = response;
@@ -176,6 +188,7 @@ const fetchData = async () => {
     const params = {
       currentPage: currentPage.value,
       pageSize: pageSize.value,
+      isSpecialSearch: isSpecialSearch.value,
     };
 
     const response = await axios.get("/fetch_all_user_activity", {
@@ -185,7 +198,9 @@ const fetchData = async () => {
 
     // 僅在初始化或搜尋時獲取總數
     if (totalCount.value === 0) {
-      const countResponse = await axios.get("/fetch_all_user_activity_count");
+      const countResponse = await axios.get("/fetch_all_user_activity_count", {
+      params,
+    });
       totalCount.value = countResponse;
     }
 
