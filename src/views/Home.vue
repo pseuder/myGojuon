@@ -74,6 +74,18 @@
             <span class="gradient-text-animated">あたらよ - Atarayo</span>
           </router-link>
 
+          <router-link
+            :to="{
+              path: '/songOverview',
+              query: { author: 'NELKE' },
+            }"
+            class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
+          >
+            <span class="gradient-text-animated"
+              >NELKE</span
+            >
+          </router-link>
+
           <!-- 孤獨搖滾 -->
           <router-link
             :to="{
