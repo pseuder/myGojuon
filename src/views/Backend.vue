@@ -36,6 +36,12 @@
           >
         </template>
       </el-table-column>
+      <el-table-column prop="public" label="公開" min-width="200">
+        <template #default="scope">
+          <el-tag v-if="scope.row.public" type="success">公開</el-tag>
+          <el-tag v-else type="danger">未公開</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="video_thumbnail" label="影片縮圖" min-width="100">
         <template #default="scope">
           <img
@@ -88,6 +94,9 @@
       <el-form-item label="影片標籤" prop="tags">
         <el-input v-model="formData.tags" placeholder="請用逗號分隔"></el-input>
       </el-form-item>
+      <el-form-item label="公開" prop="public">
+        <el-switch v-model="formData.public"></el-switch>
+      </el-form-item>
       <el-form-item label="歌詞" prop="lyrics">
         <el-input
           v-model="formData.lyrics"
@@ -95,11 +104,12 @@
           rows="10"
         ></el-input>
       </el-form-item>
-      <el-form-item label="converted_lyrics" prop="converted_lyrics">
+      <el-form-item label="轉換歌詞" prop="converted_lyrics">
         <el-input
           v-model="formData.converted_lyrics"
           type="textarea"
           rows="10"
+          v-loading="convertLoading"
         ></el-input>
       </el-form-item>
     </el-form>
@@ -114,7 +124,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from "vue";
+import { ref, reactive, onMounted, computed, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import axios from "@/utils/axios";
 
@@ -122,9 +132,8 @@ const tableData = ref([]);
 const dialogVisible = ref(false);
 const isEdit = ref(false);
 const filterText = ref("");
-
 const dialogTitle = computed(() => (isEdit.value ? "編輯歌曲" : "新增歌曲"));
-
+const convertLoading = ref(false);
 const form = ref(null);
 const formData = ref({
   video_id: "",
@@ -132,9 +141,21 @@ const formData = ref({
   author: "",
   video_thumbnail: "",
   tags: "",
+  public: true,
   lyrics: "",
   converted_lyrics: "",
 });
+
+
+// 監看formData.video_id，若有變動則自動更新formData.video_thumbnail
+watch(
+  () => formData.value.video_id,
+  (newVal) => {
+    if (newVal) {
+      formData.value.video_thumbnail = `https://img.youtube.com/vi/${newVal}/hqdefault.jpg`;
+    }
+  }
+);
 
 const filteredTableData = computed(() => {
   if (!filterText.value) {
@@ -160,6 +181,7 @@ const handleEdit = (row) => {
   resetForm();
   axios.get("/get_video/" + row.video_id).then((data) => {
     formData.value = { ...row };
+    formData.value.public = data.public===1;
     formData.value.lyrics = data.lyrics;
     formData.value.converted_lyrics = data.converted_lyrics;
     isEdit.value = true;
@@ -208,13 +230,24 @@ function customStringify(obj) {
 }
 
 const convert_lyrics = () => {
+  convertLoading.value = true;
   axios
     .post("/convert_lyrics", { lyrics: formData.value.lyrics })
     .then((data) => {
       formData.value.converted_lyrics = customStringify(data["data"]);
+      ElMessage({
+        type: "success",
+        message: "轉換成功",
+      });
     })
     .catch((err) => {
       console.error(err);
+      ElMessage({
+        type: "error",
+        message: "轉換失敗",
+      });
+    }).finally(() => {
+      convertLoading.value = false;
     });
 };
 
