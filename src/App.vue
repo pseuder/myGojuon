@@ -13,7 +13,6 @@
         <MenuItem
           index="/songOverview"
           :label="t('song_practice')"
-          :condition="isAdmin"
         />
         <MenuItem
           index="/analysis"
