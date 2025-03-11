@@ -37,7 +37,7 @@
       <div ref="textContainer" class="text-fall-container"></div>
       <div
         class="main-component relative"
-        :class="{ 'wide-layout': isInSongPractice || isInBackend }"
+        :class="{ 'wide-layout': isInSongPractice || isInBackend || isInSongEdit }"
       >
         <router-view> </router-view>
       </div>
@@ -77,6 +77,8 @@ watch(locale, (newLocale) => {
 
 const isInSongPractice = computed(() => route.path.includes("/songPractice"));
 const isInBackend = computed(() => route.path.includes("/backend"));
+const isInSongEdit = computed(() => route.path.includes("/songEdit"));
+
 
 // ===== 文字瀑布 =====
 const TEXT_COUNT = 100; // 下落文字數量

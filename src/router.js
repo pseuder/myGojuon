@@ -6,6 +6,7 @@ import Backend from '@/views/Backend.vue'
 import SongOverview from '@/views/SongOverview.vue'
 import SongPractice from '@/views/SongPractice.vue'
 import Analysis from '@/views/Analysis.vue'
+import SongEdit from '@/views/SongEdit.vue'
 
 const routes = [
     { path: '/', component: Home },
@@ -16,6 +17,7 @@ const routes = [
     { path: '/songOverview', name: 'songOverview', component: SongOverview },
     { path: '/songPractice/:id', name: 'songPractice', component: SongPractice },
     { path: '/analysis', component: Analysis },
+    { path: '/songEdit', component: SongEdit },
 
     // 添加一個 catch-all 路由
     { path: '/:pathMatch(.*)*', redirect: '/' }

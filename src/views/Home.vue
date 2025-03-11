@@ -81,9 +81,7 @@
             }"
             class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
           >
-            <span class="gradient-text-animated"
-              >NELKE</span
-            >
+            <span class="gradient-text-animated">NELKE</span>
           </router-link>
 
           <!-- 孤獨搖滾 -->
@@ -201,6 +199,10 @@
                 class="w-10 h-10 hover:opacity-80 transition-opacity"
               />
             </a>
+
+            <el-button @click="router.push('/songEdit')" class="">
+              YT 影片剪輯
+            </el-button>
           </div>
         </div>
       </section>
@@ -212,7 +214,10 @@
         </h2>
 
         <!-- gmail -->
-        <div class="flex flex-col gap-4 my-4" @click="handleReportClick('gmail')">
+        <div
+          class="flex flex-col gap-4 my-4"
+          @click="handleReportClick('gmail')"
+        >
           <div class="flex items-center gap-4">
             <img
               src="/images/gmail.png"
@@ -230,7 +235,10 @@
         </div>
 
         <!-- fb -->
-        <div class="flex flex-col gap-4 my-4" @click="handleReportClick('facebook')">
+        <div
+          class="flex flex-col gap-4 my-4"
+          @click="handleReportClick('facebook')"
+        >
           <div class="flex items-center gap-4">
             <img
               src="/images/facebook.png"
@@ -285,7 +293,6 @@ const handleReportClick = (item) => {
     console.error("Error recording activity:", error);
   });
 };
-
 
 onMounted(updateMeta);
 watch(locale, updateMeta);
