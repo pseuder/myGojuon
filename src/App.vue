@@ -71,9 +71,9 @@ watch(
   { immediate: true }
 );
 
-watch(locale, (newLocale) => {
-  document.documentElement.setAttribute("lang", newLocale);
-});
+// watch(locale, (newLocale) => {
+//   document.documentElement.setAttribute("lang", newLocale);
+// });
 
 const isInSongPractice = computed(() => route.path.includes("/songPractice"));
 const isInBackend = computed(() => route.path.includes("/backend"));
@@ -101,7 +101,7 @@ const recordActivity = (lang) => {
 };
 
 onMounted(() => {
-  document.documentElement.setAttribute("lang", locale.value);
+  // document.documentElement.setAttribute("lang", locale.value);
   if (!textContainer.value) return;
   let count = 0;
   function createTextElement() {
