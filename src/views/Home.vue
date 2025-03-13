@@ -271,15 +271,15 @@ const router = useRouter();
 import { useI18n } from "vue-i18n";
 const { t, locale } = useI18n();
 
-const updateMeta = () => {
-  document.title = t("meta.title");
-  document
-    .querySelector('meta[name="description"]')
-    .setAttribute("content", t("meta.description"));
-  document
-    .querySelector('meta[name="keywords"]')
-    .setAttribute("content", t("meta.keywords"));
-};
+// const updateMeta = () => {
+//   document.title = t("meta.title");
+//   document
+//     .querySelector('meta[name="description"]')
+//     .setAttribute("content", t("meta.description"));
+//   document
+//     .querySelector('meta[name="keywords"]')
+//     .setAttribute("content", t("meta.keywords"));
+// };
 
 const handleReportClick = (item) => {
   const dataToSend = {
