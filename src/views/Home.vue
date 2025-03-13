@@ -294,8 +294,8 @@ const handleReportClick = (item) => {
   });
 };
 
-onMounted(updateMeta);
-watch(locale, updateMeta);
+// onMounted(updateMeta);
+// watch(locale, updateMeta);
 </script>
 
 <style scoped>
