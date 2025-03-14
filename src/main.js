@@ -37,7 +37,8 @@ const languageMap = {
   "vi-vn": "VN",
   vi: "VN",
 };
-let locale = languageMap[browserLanguage] || "TW";
+// let locale = languageMap[browserLanguage] || "TW";
+let locale = "TW";
 
 // 先嘗試讀取 localStorage 的設定
 if (localStorage.getItem("myGojuon")) {
