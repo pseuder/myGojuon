@@ -46,6 +46,7 @@ import axios, {
   getUserInfo,
   logout,
 } from "@/utils/axios";
+import { ElMessageBox, ElMessage } from "element-plus";
 
 const { t, locale } = useI18n();
 
@@ -81,6 +82,13 @@ const callback = (response) => {
     })
     .catch((error) => {
       console.error("Error logging in:", error);
+
+      if(error.code === "ERR_NETWORK") {
+        ElMessage.error(t("network_error"));
+      }
+      else {
+        ElMessage.error(t("server_error"));
+      }
     });
 };
 
