@@ -37,24 +37,25 @@ const languageMap = {
   "vi-vn": "VN",
   vi: "VN",
 };
-let locale = languageMap[browserLanguage] || "TW";
+// let locale = languageMap[browserLanguage] || "TW";
+let locale = "TW";
 
 // 先嘗試讀取 localStorage 的設定
-if (localStorage.getItem("myGojuon")) {
-  const { locale: savedLocale } = JSON.parse(localStorage.getItem("myGojuon"));
-  if (languageMap[savedLocale.toLowerCase()]) {
-    locale = savedLocale;
-  }
-} else if (navigator.languages) {
-  for (const lang of navigator.languages) {
-    if (languageMap[lang.toLowerCase()]) {
-      locale = languageMap[lang.toLowerCase()];
-      localStorage.setItem("myGojuon", JSON.stringify({ locale }));
+// if (localStorage.getItem("myGojuon")) {
+//   const { locale: savedLocale } = JSON.parse(localStorage.getItem("myGojuon"));
+//   if (languageMap[savedLocale.toLowerCase()]) {
+//     locale = savedLocale;
+//   }
+// } else if (navigator.languages) {
+//   for (const lang of navigator.languages) {
+//     if (languageMap[lang.toLowerCase()]) {
+//       locale = languageMap[lang.toLowerCase()];
+//       localStorage.setItem("myGojuon", JSON.stringify({ locale }));
 
-      break;
-    }
-  }
-}
+//       break;
+//     }
+//   }
+// }
 const i18n = createI18n({
   locale: locale,
   fallbackLocale: "TW", // fallback locale 設定為 TW
