@@ -161,7 +161,13 @@ const sendCanvasImageToBackend = async () => {
     });
     emit("autoDetect", response);
   } catch (error) {
-    console.error("Error sending image to backend:", error);
+    console.error(error);
+    if(error.code === "ERR_NETWORK") {
+      emit("autoDetect", "ERR_NETWORK");
+    }
+    else{
+      emit("autoDetect", "ERR_SERVER");
+    }
   } finally {
     isSending.value = false;
   }
