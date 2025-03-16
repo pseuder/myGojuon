@@ -336,6 +336,14 @@ const SPECIAL_KANA_MATCHES = {
 };
 
 const autoDetect = (predict_res) => {
+  if (predict_res === "ERR_NETWORK") {
+    ElMessage.error(t("network_error"));
+    return;
+  } else if (predict_res === "ERR_SERVER") {
+    ElMessage.error(t("server_error"));
+    return;
+  }
+  
   const { predicted_hiragana, confidence } = predict_res;
   const currentKana = selectedSound.value.kana;
 
