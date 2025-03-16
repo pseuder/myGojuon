@@ -2,10 +2,11 @@
   <div class="sm:h-[80vh] flex flex-col sm:overflow-hidden">
     <div class="h-full flex flex-col sm:flex-row px-4 sm:px-10 py-4 gap-2">
       <!-- 影片播放器+功能列 -->
-      <div class="flex flex-col sm:w-1/2 gap-2">
+      <div class="flex flex-col sm:w-1/3 gap-2">
         <!-- 載入影片 -->
         <div class="flex">
-          <el-input v-model="videoId" class="w-full" placeholder="輸入YT ID" />
+          <el-input v-model="videoId" class="w-full" placeholder="輸入YT ID"
+           @click="handleCopyToClipboard(videoId)" />
           <el-button type="success " plain @click="handleReloadYT">
             載入影片
           </el-button>
@@ -14,18 +15,31 @@
           </el-button>
         </div>
         <!-- 影片播放器 -->
-        <div id="player-container" ref="playerContainerRef" class="h-[70%]">
+        <div id="player-container" ref="playerContainerRef" class="h-fit">
           <div
             id="player"
             ref="playerRef"
-            :class="{ floating: isFloating }"
             style="max-height: 430px; aspect-ratio: 4/3"
           ></div>
         </div>
 
         <div class="flex">
-          <el-input v-model="videoTitle" class="w-full" placeholder="輸入標題" />
-          <el-input v-model="videoChannel" class="w-full" placeholder="輸入頻道名稱" />
+          <el-button type="danger" @click="handleClearLyrics">清空歌詞</el-button>
+        </div>
+
+        <div class="flex">
+          <el-input
+            v-model="videoTitle"
+            class="w-full"
+            placeholder="輸入標題"
+            @click="handleCopyToClipboard(videoTitle)"
+          />
+          <el-input
+            v-model="videoChannel"
+            class="w-full"
+            placeholder="輸入頻道名稱"
+            @click="handleCopyToClipboard(videoChannel)"
+          />
         </div>
 
         <!-- 功能列 -->
@@ -46,7 +60,7 @@
             </div>
 
             <!-- 第二列 -->
-            <div class="w-full flex items-center gap-2 justify-between">
+            <!-- <div class="w-full flex items-center gap-2 justify-between">
               <el-button
                 class="w-full"
                 type="primary"
@@ -55,7 +69,7 @@
               >
                 插入中斷
               </el-button>
-            </div>
+            </div> -->
 
             <!-- 第三列 -->
             <div
@@ -67,7 +81,20 @@
                 plain
                 @click="handleCopy"
               >
-                複製結果
+                複製原版結果
+              </el-button>
+            </div>
+
+            <div
+              class="w-full flex flex-row items-center gap-4 justify-between"
+            >
+              <el-button
+                class="w-full"
+                type="success "
+                plain
+                @click="handleCopyHiragana"
+              >
+                複製平假結果
               </el-button>
             </div>
           </div>
@@ -75,27 +102,38 @@
       </div>
 
       <!-- 歌詞 -->
-      <el-scrollbar class="lyrics-container overflow-x-auto h-full sm:w-1/2">
+      <el-scrollbar
+        class="lyrics-container overflow-x-auto h-full sm:w-2/3"
+        v-loading="lyricsLoading"
+      >
         <div class="">
           <div
-            v-for="(line, index) in lyrics"
+            v-for="(line, index) in allLyrics"
             :key="index"
             :id="`lyric-${index}`"
-            :class="{ 'bg-yellow-200': currentLyricIndex === index }"
-            class="flex items-center gap-4 py-2"
+            :class="{ 'bg-yellow-100': currentLyricIndex === index }"
+            class="flex items-center gap-4 py-4"
+            style="border-block-width: 6px; border-block-color: #e5e7eb;"
           >
-            <div class="flex-shrink-0 flex items-center">
-              <el-button type="text" plain @click="startVideo(line.timestamp)">
-                <el-icon :size="25">
-                  <Switch />
-                </el-icon>
-              </el-button>
+            <div class="flex-shrink-0 flex flex-col items-center">
+              <div class="flex">
+                <el-button
+                  type="text"
+                  plain
+                  @click="startVideoOn(line.timestamp)"
+                >
+                  <el-icon :size="25">
+                    <Switch />
+                  </el-icon>
+                </el-button>
 
-              <el-button type="text" plain @click="handleDelete(index)">
-                <el-icon :size="25" color="red">
-                  <Delete />
-                </el-icon>
-              </el-button>
+                <el-button type="text" plain @click="handleDelete(index)">
+                  <el-icon :size="25" color="red">
+                    <Delete />
+                  </el-icon>
+                </el-button>
+              </div>
+
               <el-input
                 v-model="line.timestamp"
                 class="w-24"
@@ -103,7 +141,45 @@
               />
             </div>
             <div class="w-full flex flex-wrap gap-2">
-              <el-input v-model="line.lyric" class="w-full" placeholder="" />
+              <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
+                <div class="flex flex-col w-28">
+                  <el-input
+                    v-model="ly.cvt"
+                    class="w-full lyric-cvt h-6"
+                    placeholder=""
+                  />
+
+                  <el-popover
+                    placement="bottom"
+                    title="推薦假名"
+                    :width="200"
+                    trigger="click"
+                    @show="handleRecommendHiragana(ly.ori)"
+                  >
+                    <template #reference>
+                      <el-input
+                        v-model="ly.ori"
+                        class="w-full lyric-ori cursor-pointer"
+                        placeholder=""
+                      />
+                    </template>
+
+                    <div v-loading="recommendLoading" class="flex flex-col">
+                      <template
+                        v-for="(hiragana, hIndex) in recommendHiraganas"
+                        :key="hIndex"
+                      >
+                        <div
+                          @click="ly.cvt = hiragana"
+                          class="w-full cursor-pointer text-blue-400 hover:text-blue-600 p-1 text-center"
+                        >
+                          {{ hiragana }}
+                        </div>
+                      </template>
+                    </div>
+                  </el-popover>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -132,7 +208,10 @@
         <div class="h-[7%] flex gap-2 mb-4">
           <el-input v-model="searchQuery" placeholder="輸入搜尋關鍵字" />
           <el-button type="primary" @click="searchYouTube">搜尋</el-button>
-          <el-button v-if="nextPageToken" type="warning " @click="loadMoreResults"
+          <el-button
+            v-if="nextPageToken"
+            type="warning "
+            @click="loadMoreResults"
             >載入更多</el-button
           >
         </div>
@@ -176,18 +255,23 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import { Delete, Switch } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
 import axios from "axios"; // 引入 Axios
 import myAxios from "@/utils/axios";
 
+// 影片資訊
 const videoId = ref("");
 const videoTitle = ref("");
 const videoChannel = ref("");
 
+// YouTube Player
 const playerRef = ref(null);
 let player = null;
 const isPlaying = ref(false);
-const lyrics = ref([]);
-const isFloating = ref(false);
+
+// 歌詞
+const lyricsLoading = ref(false);
+const allLyrics = ref([]);
 const currentLyricIndex = ref(-1);
 
 // 歌詞貼上 Dialog
@@ -196,16 +280,23 @@ const originalLyrics = ref("");
 
 // YouTube 搜尋 Dialog
 const searchDialogVisible = ref(false);
-const searchQuery = ref("");
+const searchQuery = ref("nelke");
 const searchResults = ref([]);
 const loading = ref(false);
 const nextPageToken = ref(false);
 
-// 你的 YouTube API 金鑰
-const apiKey = ref("AIzaSyANQdZOuIqWyfjlBusOE95tN1Mqyjy1Mvw");
+// 推薦假名 Dialog
+const recommendQuery = ref("");
+const recommendLoading = ref(false);
+const recommendHiraganas = ref([]);
 
+// YouTube API 金鑰
+const apiKey = ref("");
+
+// 轉換時間字串為秒
 const parseTimeToSeconds = (timeString) => {
   // convert '[mm:ss.ms]'  to seconds
+  if (!timeString) return 0;
   const timeStringmatch = timeString.match(/\[(\d+):(\d+\.\d+)\]/);
   if (timeStringmatch) {
     const minutes = parseInt(timeStringmatch[1]);
@@ -215,24 +306,13 @@ const parseTimeToSeconds = (timeString) => {
   return 0;
 };
 
-const startVideo = (time2) => {
-  if (player) {
-    player.seekTo(parseTimeToSeconds(time2));
-    player.playVideo();
-  }
+// 複製到剪貼簿
+const handleCopyToClipboard = (text) => {
+  navigator.clipboard.writeText(text);
+  ElMessage.success("複製成功");
 };
 
-const scrollToCurrentLyric = (index) => {
-  const lyricElement = document.getElementById(`lyric-${index}`);
-  if (lyricElement) {
-    lyricElement.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }
-};
-
-// 歌詞Dialog相關
+//-- 歌詞Dialog相關 --//
 const handleLyricsDialogOpen = () => {
   lyricsDialogVisible.value = true;
 };
@@ -241,24 +321,29 @@ const handleLyricsDialogClose = () => {
   lyricsDialogVisible.value = false;
 };
 
-const handleLyricsDialogSubmit = () => {
-  lyrics.value = originalLyrics.value
-    .split("\n")
-    .map((line) => {
-      const timeString = line.match(/\[(\d+:\d+\.\d+)\]/);
-      if (timeString) {
-        return {
-          timestamp: timeString[1],
-          lyric: line.replace(timeString[0], ""),
-        };
-      }
-      return { timestamp: "", lyric: line };
-    })
-    .filter((line) => line.lyric.trim() !== "");
+const handleLyricsDialogSubmit = async () => {
+  // 透過伺服器轉換歌詞
+  lyricsLoading.value = true;
+  try {
+    const response = await myAxios.post("/convert_lyrics", {
+      lyrics: originalLyrics.value,
+    });
+    allLyrics.value = response.data;
+  } catch (error) {
+    console.error("轉換歌詞時發生錯誤：", error);
+    ElMessage.error("轉換歌詞時發生錯誤");
+  } finally {
+    lyricsLoading.value = false;
+  }
   lyricsDialogVisible.value = false;
+};  
+
+//-- 插入歌詞相關 --//
+
+const handleClearLyrics = () => {
+  allLyrics.value = [];
 };
 
-// 插入歌詞相關
 const handleInsert = () => {
   if (window.player) {
     const currentTime = window.player.getCurrentTime();
@@ -270,16 +355,18 @@ const handleInsert = () => {
     ).padStart(2, "0")}.${String(milliseconds).padStart(2, "0")}]`;
 
     // 尋找最前面的空位
-    const emptyIndex = lyrics.value.findIndex((line) => line.timestamp === "");
+    const emptyIndex = allLyrics.value.findIndex(
+      (line) => line.timestamp === "" || line.timestamp === null
+    );
     if (emptyIndex !== -1) {
-      lyrics.value[emptyIndex].timestamp = formattedTime;
+      allLyrics.value[emptyIndex].timestamp = formattedTime;
     } else {
-      lyrics.value.push({ timestamp: formattedTime, lyric: "" });
+      allLyrics.value.push({ timestamp: formattedTime, lyrics: "" });
     }
 
     nextTick(() => {
       scrollToCurrentLyric(
-        emptyIndex !== -1 ? emptyIndex : lyrics.value.length - 1
+        emptyIndex !== -1 ? emptyIndex : allLyrics.value.length - 1
       );
     });
   } else {
@@ -287,17 +374,67 @@ const handleInsert = () => {
   }
 };
 
+//-- 刪除歌詞相關 --//
 const handleDelete = (index) => {
-  lyrics.value.splice(index, 1);
+  allLyrics.value.splice(index, 1);
 };
 
+//-- 複製歌詞 --//
 const handleCopy = () => {
-  const result = lyrics.value
-    .map((line) => `${line.timestamp}${line.lyric}`)
-    .join("\n");
+  let result = "";
+
+  for (const line of allLyrics.value) {
+    let combinedLyric = "";
+    for(const lyric of line.lyrics) {
+      combinedLyric += `${lyric.ori}`;
+    }
+    result += `${line.timestamp}${combinedLyric}\n`;
+  }
+
   navigator.clipboard.writeText(result);
+  ElMessage.success("複製成功");
 };
 
+const handleCopyHiragana = () => {
+  let result = [];
+  for (const line of allLyrics.value) {
+    let combinedLyric = "[";
+    for(const lyric of line.lyrics) {
+      combinedLyric += `{"cvt": "${lyric.cvt}","ori": "${lyric.ori}"},`;
+    }
+    combinedLyric = combinedLyric.slice(0, -1);
+    combinedLyric += "]";
+    result.push({
+      timestamp: line.timestamp,
+      lyrics: JSON.parse(combinedLyric)
+    });
+  }
+  navigator.clipboard.writeText(JSON.stringify(result));
+  ElMessage.success("複製成功");
+};
+
+//-- 推薦假名相關 --//
+const handleRecommendHiragana = async (text) => {
+  if (text === "") return;
+
+  if (text === recommendQuery.value) return;
+
+  recommendHiraganas.value = [];
+  recommendLoading.value = true;
+  recommendQuery.value = text;
+  try {
+    const response = await myAxios.get("gemini_recommend_hiragana", {
+      params: { text },
+    });
+    recommendHiraganas.value = response.data;
+  } catch (error) {
+    ElMessage.error("獲取推薦假名失敗");
+  } finally {
+    recommendLoading.value = false;
+  }
+};
+
+//-- 處理按鍵事件 --//
 const handleKeyPress = (event) => {
   switch (event.key.toLowerCase()) {
     case "enter":
@@ -306,56 +443,33 @@ const handleKeyPress = (event) => {
     case "a":
       handleYTBack(5);
       break;
+    case "s":
+      handleYTStop();
+      break;
     case "d":
       handleYTForward(5);
       break;
   }
 };
 
+//-- YouTube 相關 --//
+
+// 在指定時間軸開始播放
+const startVideoOn = (time2) => {
+  if (player) {
+    player.seekTo(parseTimeToSeconds(time2));
+    player.playVideo();
+  }
+};
+
+// 重新載入 YouTube
 const handleReloadYT = () => {
   if (player) {
     player.loadVideoById(videoId.value);
   }
 };
 
-const handleFindLyrics = async () => {
-  try {
-    const response = await myAxios.get("/gemini_get_lyrics", {
-      params: {
-        title: videoTitle.value,
-        channel: videoChannel.value,
-      },
-    });
-
-    console.log("取得歌詞：", response.data);
-    let res_lyrics = response.data;
-
-    if (res_lyrics === "") {
-      ElMessage.warning("找不到歌詞");
-      return;
-    }
-
-    lyrics.value = res_lyrics
-      .split("\n")
-      .map((line) => {
-        const timeString = line.match(/\[(\d+:\d+\.\d+)\]/);
-        if (timeString) {
-          return {
-            timestamp: timeString[1],
-            lyric: line.replace(timeString[0], ""),
-          };
-        }
-        return { timestamp: "", lyric: line };
-      })
-      .filter((line) => line.lyric.trim() !== "");
-      
-
-  } catch (error) {
-    console.error("取得歌詞時發生錯誤：", error);
-    ElMessage.error("取得歌詞時發生錯誤");
-  }
-};
-
+// 往後到指定時間
 const handleYTBack = (seconds) => {
   if (player) {
     const currentTime = player.getCurrentTime();
@@ -363,6 +477,7 @@ const handleYTBack = (seconds) => {
   }
 };
 
+// 往前到指定時間
 const handleYTForward = (seconds) => {
   if (player) {
     const currentTime = player.getCurrentTime();
@@ -370,6 +485,14 @@ const handleYTForward = (seconds) => {
   }
 };
 
+// 暫停播放
+const handleYTStop = () => {
+  if (player) {
+    player.pauseVideo();
+  }
+};
+
+// YouTube API
 const loadYouTubeAPI = () => {
   return new Promise((resolve) => {
     if (window.YT) {
@@ -384,17 +507,29 @@ const loadYouTubeAPI = () => {
   });
 };
 
+// 滾動到指定歌詞
+const scrollToCurrentLyric = (index) => {
+  const lyricElement = document.getElementById(`lyric-${index}`);
+  if (lyricElement) {
+    lyricElement.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
+};
+
+// 歌詞同步
 const updateCurrentLyric = () => {
   if (player && player.getCurrentTime) {
     const currentTime = player.getCurrentTime();
-    for (let i = 0; i < lyrics.value.length; i++) {
+    for (let i = 0; i < allLyrics.value.length; i++) {
       const nextTime =
-        i < lyrics.value.length - 1
-          ? parseTimeToSeconds(lyrics.value[i + 1].timestamp)
+        i < allLyrics.value.length - 1
+          ? parseTimeToSeconds(allLyrics.value[i + 1].timestamp)
           : Infinity;
 
       if (
-        currentTime >= parseTimeToSeconds(lyrics.value[i].timestamp) &&
+        currentTime >= parseTimeToSeconds(allLyrics.value[i].timestamp) &&
         currentTime < nextTime
       ) {
         if (currentLyricIndex.value !== i) {
@@ -406,6 +541,7 @@ const updateCurrentLyric = () => {
   }
 };
 
+//-- 初始化 YouTube Player --//
 const initializePlayer = async () => {
   await loadYouTubeAPI();
   player = new YT.Player(playerRef.value, {
@@ -433,27 +569,19 @@ const initializePlayer = async () => {
   });
 };
 
-onMounted(async () => {
-  await initializePlayer();
-  window.addEventListener("keypress", handleKeyPress);
-});
+//-- YouTube 搜尋 Dialog 相關 --//
 
-onUnmounted(() => {
-  if (player) {
-    player.destroy();
-  }
-  window.removeEventListener("keypress", handleKeyPress);
-});
-
-// YouTube 搜尋 Dialog 相關
+// 打開 YouTube 搜尋 Dialog
 const openSearchDialog = () => {
   searchDialogVisible.value = true;
 };
 
+// 關閉 YouTube 搜尋 Dialog
 const closeSearchDialog = () => {
   searchDialogVisible.value = false;
 };
 
+// 搜尋 YouTube 影片
 const searchYouTube = async () => {
   loading.value = true;
   searchResults.value = []; // 清空之前的搜尋結果
@@ -481,15 +609,18 @@ const searchYouTube = async () => {
   }
 };
 
+// 選擇 YouTube 影片
 const selectVideo = (videoItemFromSearch) => {
   videoId.value = videoItemFromSearch.id.videoId;
   videoTitle.value = videoItemFromSearch.snippet.title;
   videoChannel.value = videoItemFromSearch.snippet.channelTitle;
-  handleReloadYT(); 
-  handleFindLyrics();
   closeSearchDialog();
+  handleFindLyrics().then(() => {
+    handleReloadYT();
+  });
 };
 
+// 載入更多 YouTube 影片
 const loadMoreResults = async () => {
   if (!nextPageToken.value) return;
 
@@ -517,6 +648,59 @@ const loadMoreResults = async () => {
     loading.value = false;
   }
 };
+
+//-- 取得歌詞 --//
+const handleFindLyrics = async () => {
+  lyricsLoading.value = true;
+  try {
+    const response = await myAxios.get("/gemini_get_lyrics", {
+      params: {
+        title: videoTitle.value,
+        channel: videoChannel.value,
+      },
+    });
+
+    let res_lyrics = response.data;
+
+    if (res_lyrics === "") {
+      ElMessage.warning("找不到歌詞");
+      return;
+    }
+
+    for(const line of res_lyrics) {
+      if(line.lyrics.length === 0) continue;
+      allLyrics.value.push(line);
+    }
+  } catch (error) {
+    console.error("取得歌詞時發生錯誤：", error);
+    ElMessage.error("取得歌詞時發生錯誤");
+  } finally {
+    lyricsLoading.value = false;
+  }
+};
+
+const getApiKey = async () => {
+  try {
+    const response = await myAxios.get("/get_yt_api_key");
+    apiKey.value = response.data;
+  } catch (error) {
+    console.error("取得 API Key 時發生錯誤：", error);
+    ElMessage.error("取得 API Key 時發生錯誤");
+  }
+};
+
+onMounted(async () => {
+  await initializePlayer();
+  await getApiKey();
+  window.addEventListener("keypress", handleKeyPress);
+});
+
+onUnmounted(() => {
+  if (player) {
+    player.destroy();
+  }
+  window.removeEventListener("keypress", handleKeyPress);
+});
 </script>
 
 <style scoped>
@@ -529,5 +713,22 @@ const loadMoreResults = async () => {
   .lyrics-container > div {
     min-width: 100%;
   }
+}
+
+/deep/.lyric-cvt .el-input__wrapper {
+  background-color: darkgray;
+}
+
+/deep/.lyric-ori .el-input__wrapper {
+  background-color: cadetblue;
+}
+
+/deep/.lyric-ori .el-input__inner {
+  cursor: pointer;
+  color: black;
+}
+
+/deep/.lyric-cvt .el-input__inner {
+  color: black;
 }
 </style>
