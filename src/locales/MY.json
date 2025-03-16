@@ -55,5 +55,7 @@
   "scrolling": "Tatal",
   "normal": "Normal",
   "mixed": "Campuran",
-  "logout": "Log Keluar"
+  "logout": "Log Keluar",
+  "network_error": "Ralat Rangkaian, sila cuba lagi kemudian",
+  "server_error": "Ralat Pelayan, sila cuba lagi kemudian"
 }

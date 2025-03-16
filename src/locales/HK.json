@@ -55,5 +55,7 @@
   "scrolling": "滾動",
   "normal": "一般",
   "mixed": "混合",
-  "logout": "登出"
+  "logout": "登出",
+  "network_error": "網絡錯誤，請稍後再試",
+  "server_error": "伺服器錯誤，請稍後再試"
 }

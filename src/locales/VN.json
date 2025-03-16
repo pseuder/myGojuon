@@ -54,5 +54,7 @@
   "scrolling": "Cuộn",
   "normal": "Bình thường",
   "mixed": "Hỗn hợp",
-  "logout": "Đăng xuất"
+  "logout": "Đăng xuất",
+  "network_error": "Lỗi mạng, vui lòng thử lại sau",
+  "server_error": "Lỗi máy chủ, vui lòng thử lại sau"
 }

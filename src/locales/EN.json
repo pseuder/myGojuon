@@ -55,5 +55,7 @@
   "scrolling": "Scrolling",
   "normal": "Normal",
   "mixed": "Mixed",
-  "logout": "Logout"
+  "logout": "Logout",
+  "network_error": "Network Error, please try again later",
+  "server_error": "Server Error, please try again later"
 }
