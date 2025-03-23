@@ -27,8 +27,8 @@
           ></div>
         </div>
 
-        <div class="flex">
-          <el-button type="danger" @click="handleClearLyrics"
+        <div class="flex gap-2">
+          <el-button type="warning" @click="handleClearLyrics"
             >清空歌詞</el-button
           >
           <el-input
@@ -37,10 +37,10 @@
             placeholder="輸入時間差"
           ></el-input>
           <el-button type="danger" @click="handleBulkTimeDiff('minus')"
-            >批量減時間</el-button
+            >減時</el-button
           >
-          <el-button type="danger" @click="handleBulkTimeDiff('add')"
-            >批量增時間</el-button
+          <el-button type="success" @click="handleBulkTimeDiff('add')"
+            >加時</el-button
           >
         </div>
 
@@ -61,59 +61,38 @@
 
         <!-- 功能列 -->
         <div class="h-[10%] flex flex-col gap-2">
+          <!-- 第一列 -->
           <div class="w-full flex items-center gap-2">
-            <!-- 第一列 -->
-            <div
-              class="w-full flex flex-row items-center gap-4 justify-between"
+            
+            <el-button
+              class="w-full"
+              type="warning "
+              plain
+              @click="handleLyricsDialogOpen"
             >
-              <el-button
-                class="w-full"
-                type="warning "
-                plain
-                @click="handleLyricsDialogOpen"
-              >
-                貼上原始歌詞
-              </el-button>
-            </div>
-
-            <!-- 第二列 -->
-            <!-- <div class="w-full flex items-center gap-2 justify-between">
-              <el-button
-                class="w-full"
-                type="primary"
-                plain
-                @click="handleInsert"
-              >
-                插入中斷
-              </el-button>
-            </div> -->
-
-            <!-- 第三列 -->
-            <div
-              class="w-full flex flex-row items-center gap-4 justify-between"
+              貼上歌詞
+            </el-button>
+            <el-button class="w-full" type="success" plain @click="handleCopy">
+              複製原版
+            </el-button>
+            <el-button
+              class="w-full"
+              type="primary"
+              plain
+              @click="handleCopyHiragana"
             >
-              <el-button
-                class="w-full"
-                type="success "
-                plain
-                @click="handleCopy"
-              >
-                複製原版結果
-              </el-button>
-            </div>
+              複製平假
+            </el-button>
+          </div>
 
-            <div
-              class="w-full flex flex-row items-center gap-4 justify-between"
-            >
-              <el-button
-                class="w-full"
-                type="success "
-                plain
-                @click="handleCopyHiragana"
-              >
-                複製平假結果
-              </el-button>
-            </div>
+          <!-- 第二列 -->
+          <div class="w-full ">
+            <el-space wrap>
+            <el-tag type="info"> a -> 往前3秒</el-tag>
+            <el-tag type="info"> s -> 暫停/開始</el-tag>
+            <el-tag type="info"> d -> 往後3秒</el-tag>
+            <el-tag type="info"> enter -> 插入中斷</el-tag>
+          </el-space>
           </div>
         </div>
       </div>
@@ -461,13 +440,13 @@ const handleKeyPress = (event) => {
       handleInsert();
       break;
     case "a":
-      handleYTBack(5);
+      handleYTBack(3);
       break;
     case "s":
-      handleYTStop();
+      handleYTStopStart();
       break;
     case "d":
-      handleYTForward(5);
+      handleYTForward(3);
       break;
   }
 };
@@ -484,6 +463,7 @@ const startVideoOn = (time2) => {
 
 // 重新載入 YouTube
 const handleReloadYT = () => {
+  if (!videoId.value) return;
   if (player) {
     player.loadVideoById(videoId.value);
   }
@@ -506,9 +486,15 @@ const handleYTForward = (seconds) => {
 };
 
 // 暫停播放
-const handleYTStop = () => {
+const handleYTStopStart = () => {
   if (player) {
-    player.pauseVideo();
+    if (isPlaying.value) {
+      player.pauseVideo();
+      isPlaying.value = false;
+    } else {
+      player.playVideo();
+      isPlaying.value = true;
+    }
   }
 };
 
@@ -606,6 +592,7 @@ const searchYouTube = async () => {
   loading.value = true;
   searchResults.value = []; // 清空之前的搜尋結果
   nextPageToken.value = ""; // 重置分頁 token
+  recordActivity("search_youtube");
   try {
     const response = await axios.get(
       "https://www.googleapis.com/youtube/v3/search",
@@ -672,6 +659,7 @@ const loadMoreResults = async () => {
 //-- 取得歌詞 --//
 const handleFindLyrics = async () => {
   lyricsLoading.value = true;
+  recordActivity("find_lyrics");
   try {
     const response = await myAxios.get("/gemini_get_lyrics", {
       params: {
@@ -698,8 +686,6 @@ const handleFindLyrics = async () => {
     lyricsLoading.value = false;
   }
 };
-
-
 
 const handleBulkTimeDiff = (operator) => {
   // 解析時間差格式 (mm:ss.ms)
@@ -728,7 +714,8 @@ const handleBulkTimeDiff = (operator) => {
       parseInt(minutes) * 60 * 100 + parseInt(seconds) * 100 + parseInt(ms);
 
     // 加上時間差
-    let newTotalMs = totalMs + (operator === 'add' ? deltaTotalMs : -deltaTotalMs);
+    let newTotalMs =
+      totalMs + (operator === "add" ? deltaTotalMs : -deltaTotalMs);
     if (newTotalMs < 0) newTotalMs = 0;
 
     // 轉換回 mm:ss.ms 格式
@@ -756,10 +743,22 @@ const getApiKey = async () => {
   }
 };
 
+const recordActivity = (learningMethod = "") => {
+  const dataToSend = {
+    learningModule: "song_edit",
+    learningMethod: learningMethod,
+    learningItem: "",
+  };
+  axios.post("/record_activity", dataToSend).catch((error) => {
+    console.error("Error recording activity:", error);
+  });
+};
+
 onMounted(async () => {
   await initializePlayer();
   await getApiKey();
   window.addEventListener("keypress", handleKeyPress);
+  recordActivity("enter_page");
 });
 
 onUnmounted(() => {
