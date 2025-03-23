@@ -172,9 +172,9 @@ const fetchVideo = async () => {
 
 const handleStartVideoClick = (time) => {
   // 使用者點擊跳轉歌詞時，取消循環
-  // if (isLooping.value) {
-  //   toggleLoopCurrentLyric();
-  // }
+  if (isLooping.value) {
+    toggleLoopCurrentLyric();
+  }
 
   startVideo(time);
 };
