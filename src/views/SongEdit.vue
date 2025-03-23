@@ -5,8 +5,12 @@
       <div class="flex flex-col sm:w-1/3 gap-2">
         <!-- 載入影片 -->
         <div class="flex">
-          <el-input v-model="videoId" class="w-full" placeholder="輸入YT ID"
-           @click="handleCopyToClipboard(videoId)" />
+          <el-input
+            v-model="videoId"
+            class="w-full"
+            placeholder="輸入YT ID"
+            @click="handleCopyToClipboard(videoId)"
+          />
           <el-button type="success " plain @click="handleReloadYT">
             載入影片
           </el-button>
@@ -24,7 +28,20 @@
         </div>
 
         <div class="flex">
-          <el-button type="danger" @click="handleClearLyrics">清空歌詞</el-button>
+          <el-button type="danger" @click="handleClearLyrics"
+            >清空歌詞</el-button
+          >
+          <el-input
+            v-model="timeDiff"
+            class="w-full"
+            placeholder="輸入時間差"
+          ></el-input>
+          <el-button type="danger" @click="handleBulkTimeDiff('minus')"
+            >批量減時間</el-button
+          >
+          <el-button type="danger" @click="handleBulkTimeDiff('add')"
+            >批量增時間</el-button
+          >
         </div>
 
         <div class="flex">
@@ -113,7 +130,7 @@
             :id="`lyric-${index}`"
             :class="{ 'bg-yellow-100': currentLyricIndex === index }"
             class="flex items-center gap-4 py-4"
-            style="border-block-width: 6px; border-block-color: #e5e7eb;"
+            style="border-block-width: 6px; border-block-color: #e5e7eb"
           >
             <div class="flex-shrink-0 flex flex-col items-center">
               <div class="flex">
@@ -293,6 +310,9 @@ const recommendHiraganas = ref([]);
 // YouTube API 金鑰
 const apiKey = ref("");
 
+// 時間差
+const timeDiff = ref("00:00.00");
+
 // 轉換時間字串為秒
 const parseTimeToSeconds = (timeString) => {
   // convert '[mm:ss.ms]'  to seconds
@@ -336,7 +356,7 @@ const handleLyricsDialogSubmit = async () => {
     lyricsLoading.value = false;
   }
   lyricsDialogVisible.value = false;
-};  
+};
 
 //-- 插入歌詞相關 --//
 
@@ -385,7 +405,7 @@ const handleCopy = () => {
 
   for (const line of allLyrics.value) {
     let combinedLyric = "";
-    for(const lyric of line.lyrics) {
+    for (const lyric of line.lyrics) {
       combinedLyric += `${lyric.ori}`;
     }
     result += `${line.timestamp}${combinedLyric}\n`;
@@ -399,14 +419,14 @@ const handleCopyHiragana = () => {
   let result = [];
   for (const line of allLyrics.value) {
     let combinedLyric = "[";
-    for(const lyric of line.lyrics) {
+    for (const lyric of line.lyrics) {
       combinedLyric += `{"cvt": "${lyric.cvt}","ori": "${lyric.ori}"},`;
     }
     combinedLyric = combinedLyric.slice(0, -1);
     combinedLyric += "]";
     result.push({
       timestamp: line.timestamp,
-      lyrics: JSON.parse(combinedLyric)
+      lyrics: JSON.parse(combinedLyric),
     });
   }
   navigator.clipboard.writeText(JSON.stringify(result));
@@ -667,8 +687,8 @@ const handleFindLyrics = async () => {
       return;
     }
 
-    for(const line of res_lyrics) {
-      if(line.lyrics.length === 0) continue;
+    for (const line of res_lyrics) {
+      if (line.lyrics.length === 0) continue;
       allLyrics.value.push(line);
     }
   } catch (error) {
@@ -677,6 +697,53 @@ const handleFindLyrics = async () => {
   } finally {
     lyricsLoading.value = false;
   }
+};
+
+
+
+const handleBulkTimeDiff = (operator) => {
+  // 解析時間差格式 (mm:ss.ms)
+  const deltaPattern = /(\d{2}):(\d{2})\.(\d{2})/;
+  const deltaMatch = timeDiff.value.match(deltaPattern);
+  if (!deltaMatch) {
+    ElMessage.error("時間差格式錯誤，請輸入 mm:ss.ms");
+    return;
+  }
+
+  // 將時間差轉換為毫秒
+  const [_, deltaMinutes, deltaSeconds, deltaMs] = deltaMatch;
+  const deltaTotalMs =
+    parseInt(deltaMinutes) * 60 * 100 +
+    parseInt(deltaSeconds) * 100 +
+    parseInt(deltaMs);
+
+  // 處理每一行歌詞
+  allLyrics.value = allLyrics.value.map((line) => {
+    const timestampPattern = /\[(\d{2}):(\d{2})\.(\d{2})\]/;
+    const match = line.timestamp.match(timestampPattern);
+    if (!match) return line;
+
+    const [_, minutes, seconds, ms] = match;
+    const totalMs =
+      parseInt(minutes) * 60 * 100 + parseInt(seconds) * 100 + parseInt(ms);
+
+    // 加上時間差
+    let newTotalMs = totalMs + (operator === 'add' ? deltaTotalMs : -deltaTotalMs);
+    if (newTotalMs < 0) newTotalMs = 0;
+
+    // 轉換回 mm:ss.ms 格式
+    const newMinutes = Math.floor(newTotalMs / (60 * 100));
+    const newSeconds = Math.floor((newTotalMs % (60 * 100)) / 100);
+    const newMs = newTotalMs % 100;
+
+    // 更新時間戳
+    line.timestamp = `[${String(newMinutes).padStart(2, "0")}:${String(
+      newSeconds
+    ).padStart(2, "0")}.${String(newMs).padStart(2, "0")}]`;
+    return line;
+  });
+
+  ElMessage.success("時間調整完成");
 };
 
 const getApiKey = async () => {
@@ -715,20 +782,20 @@ onUnmounted(() => {
   }
 }
 
-/deep/.lyric-cvt .el-input__wrapper {
+:deep(.lyric-cvt .el-input__wrapper) {
   background-color: darkgray;
 }
 
-/deep/.lyric-ori .el-input__wrapper {
+:deep(.lyric-ori .el-input__wrapper) {
   background-color: cadetblue;
 }
 
-/deep/.lyric-ori .el-input__inner {
+:deep(.lyric-ori .el-input__inner) {
   cursor: pointer;
   color: black;
 }
 
-/deep/.lyric-cvt .el-input__inner {
+:deep(.lyric-cvt .el-input__inner) {
   color: black;
 }
 </style>
