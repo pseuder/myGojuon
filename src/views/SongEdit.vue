@@ -592,7 +592,7 @@ const searchYouTube = async () => {
   loading.value = true;
   searchResults.value = []; // 清空之前的搜尋結果
   nextPageToken.value = ""; // 重置分頁 token
-  recordActivity("search_youtube");
+  recordActivity("search_youtube", searchQuery.value);
   try {
     const response = await axios.get(
       "https://www.googleapis.com/youtube/v3/search",
@@ -659,7 +659,7 @@ const loadMoreResults = async () => {
 //-- 取得歌詞 --//
 const handleFindLyrics = async () => {
   lyricsLoading.value = true;
-  recordActivity("find_lyrics");
+  recordActivity("find_lyrics", videoTitle.value);
   try {
     const response = await myAxios.get("/gemini_get_lyrics", {
       params: {
@@ -743,13 +743,13 @@ const getApiKey = async () => {
   }
 };
 
-const recordActivity = (learningMethod = "") => {
+const recordActivity = (learningMethod = "", learningItem = "") => {
   const dataToSend = {
     learningModule: "song_edit",
     learningMethod: learningMethod,
-    learningItem: "",
+    learningItem: learningItem,
   };
-  axios.post("/record_activity", dataToSend).catch((error) => {
+  myAxios.post("/record_activity", dataToSend).catch((error) => {
     console.error("Error recording activity:", error);
   });
 };
@@ -758,7 +758,7 @@ onMounted(async () => {
   await initializePlayer();
   await getApiKey();
   window.addEventListener("keypress", handleKeyPress);
-  recordActivity("enter_page");
+  recordActivity("enter_page", "");
 });
 
 onUnmounted(() => {
