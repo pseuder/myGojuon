@@ -63,7 +63,6 @@
         <div class="h-[10%] flex flex-col gap-2">
           <!-- 第一列 -->
           <div class="w-full flex items-center gap-2">
-            
             <el-button
               class="w-full"
               type="warning "
@@ -73,7 +72,7 @@
               貼上歌詞
             </el-button>
             <el-button class="w-full" type="success" plain @click="handleCopy">
-              複製原版
+              複製歌詞
             </el-button>
             <el-button
               class="w-full"
@@ -81,18 +80,18 @@
               plain
               @click="handleCopyHiragana"
             >
-              複製平假
+              複製轉換格式歌詞
             </el-button>
           </div>
 
           <!-- 第二列 -->
-          <div class="w-full ">
+          <div class="w-full">
             <el-space wrap>
-            <el-tag type="info"> a -> 往前3秒</el-tag>
-            <el-tag type="info"> s -> 暫停/開始</el-tag>
-            <el-tag type="info"> d -> 往後3秒</el-tag>
-            <el-tag type="info"> enter -> 插入中斷</el-tag>
-          </el-space>
+              <el-tag type="info"> a -> 往前3秒</el-tag>
+              <el-tag type="info"> s -> 暫停/開始</el-tag>
+              <el-tag type="info"> d -> 往後3秒</el-tag>
+              <el-tag type="info"> enter -> 插入中斷</el-tag>
+            </el-space>
           </div>
         </div>
       </div>
@@ -130,18 +129,36 @@
                 </el-button>
               </div>
 
-              <el-input
+              <input
                 v-model="line.timestamp"
-                class="w-24"
+                class="w-24 h-6 px-1 border border-gray-300 rounded"
                 placeholder="輸入時間"
               />
             </div>
             <div class="w-full flex flex-wrap gap-2">
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
-                <div class="flex flex-col w-28">
-                  <el-input
+                <div class="flex flex-col w-28" :id="`lyric-cvt-${index}-${lyIndex}`">
+                  <span
+                    class="flex  gap-6"
+                    >
+                    <button
+                      type="button"
+                      class="text-blue-500 text-sm"
+                      @click="handleWidthenLyric(index, lyIndex)"
+                    >
+                      加寬
+                    </button>
+                    <button
+                      type="button"
+                      class="text-red-500 text-sm"
+                      @click="handleDeleteLyric(index, lyIndex)"
+                    >
+                      刪除
+                    </button></span
+                  >
+                  <input
                     v-model="ly.cvt"
-                    class="w-full lyric-cvt h-6"
+                    class="w-full lyric-cvt h-6 px-1 border border-gray-300 rounded"
                     placeholder=""
                   />
 
@@ -153,9 +170,9 @@
                     @show="handleRecommendHiragana(ly.ori)"
                   >
                     <template #reference>
-                      <el-input
+                      <input
                         v-model="ly.ori"
-                        class="w-full lyric-ori cursor-pointer"
+                        class="w-full lyric-ori cursor-pointer h-6 p-2 border border-gray-300 rounded"
                         placeholder=""
                       />
                     </template>
@@ -378,6 +395,28 @@ const handleDelete = (index) => {
   allLyrics.value.splice(index, 1);
 };
 
+const handleWidthenLyric = (lyricIndex, lyricLineIndex) => {
+  // 找出指定 input 元素 並增加 50px
+  const input = document.querySelector(
+    `#lyric-cvt-${lyricIndex}-${lyricLineIndex}`
+  );
+  if (input) {
+    console.log(input);
+    let originWidth = input.style.width;
+    if (originWidth == "") {
+      input.style.width = "162px";
+    } else {
+      // 擷取數字部分
+      const num = parseInt(originWidth.replace("px", ""));
+      input.style.width = (num + 50) + "px";
+    }
+  }
+};
+
+const handleDeleteLyric = (lyricIndex, lyricLineIndex) => {
+  allLyrics.value[lyricIndex].lyrics.splice(lyricLineIndex, 1);
+};
+
 //-- 複製歌詞 --//
 const handleCopy = () => {
   let result = "";
@@ -394,9 +433,23 @@ const handleCopy = () => {
   ElMessage.success("複製成功");
 };
 
+function customStringify(obj) {
+  return (
+    JSON.stringify(obj, null, 2)
+      // 處理 lyrics 內部的物件格式
+      .replace(
+        /{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)"\s*}/g,
+        '{"cvt": "$1","ori": "$2"}'
+      )
+      // 修正最後一個逗號後的換行
+      .replace(/},\s+]/g, "},\n  ]")
+  );
+}
+
 const handleCopyHiragana = () => {
   let result = [];
   for (const line of allLyrics.value) {
+    if (line.lyrics.length === 0) continue;
     let combinedLyric = "[";
     for (const lyric of line.lyrics) {
       combinedLyric += `{"cvt": "${lyric.cvt}","ori": "${lyric.ori}"},`;
@@ -408,7 +461,7 @@ const handleCopyHiragana = () => {
       lyrics: JSON.parse(combinedLyric),
     });
   }
-  navigator.clipboard.writeText(JSON.stringify(result));
+  navigator.clipboard.writeText(customStringify(result));
   ElMessage.success("複製成功");
 };
 
@@ -781,20 +834,20 @@ onUnmounted(() => {
   }
 }
 
-:deep(.lyric-cvt .el-input__wrapper) {
+.lyric-cvt {
   background-color: darkgray;
 }
 
-:deep(.lyric-ori .el-input__wrapper) {
+.lyric-ori {
   background-color: cadetblue;
 }
 
-:deep(.lyric-ori .el-input__inner) {
+input {
   cursor: pointer;
   color: black;
 }
 
-:deep(.lyric-cvt .el-input__inner) {
+input {
   color: black;
 }
 </style>
