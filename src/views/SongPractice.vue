@@ -75,6 +75,9 @@
 
       <!-- 歌詞 -->
       <el-scrollbar class="lyrics-container overflow-x-auto h-full lg:w-1/2">
+        <el-button type="warning" size="small" @click="handleCopyLyrics" plain>
+          複製歌詞
+        </el-button>
         <div class="">
           <div
             v-for="(line, index) in lyrics"
@@ -133,6 +136,7 @@ import {
   DArrowRight,
   Switch,
 } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
 import axios from "@/utils/axios";
 import { useI18n } from "vue-i18n";
@@ -312,6 +316,21 @@ const handleKeyPress = (event) => {
       toggleLoopCurrentLyric();
       break;
   }
+};
+
+const handleCopyLyrics = () => {
+  let result = "";
+
+  for (const line of lyrics.value) {
+    let combinedLyric = "";
+    for (const lyric of line.lyrics) {
+      combinedLyric += `${lyric.ori}`;
+    }
+    result += `${line.timestamp}${combinedLyric}\n`;
+  }
+
+  navigator.clipboard.writeText(result);
+  ElMessage.success("複製成功");
 };
 
 const Go_to_previous_lyric = () => {
