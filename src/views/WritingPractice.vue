@@ -208,6 +208,8 @@ const selectSound = (sound) => {
   if (sound.kana) {
     selectedSound.value = sound;
 
+    navigator.clipboard.writeText(sound.kana);
+
     const dataToSend = {
       learningModule: "writing",
       learningMethod: "selectSound",
