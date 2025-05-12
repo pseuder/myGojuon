@@ -11,9 +11,11 @@
         v-for="author in allAuthors"
         :key="author.author"
         class="cursor-pointer text-blue-400 hover:underline hover:text-blue-600"
+        :class="[author.author === 'NELKE' ? 'gradient-text-tech-animated' : ''
+        ]"
         @click="filterByAuthor(author.author)"
       >
-        {{ author.author }}
+      {{ author.author }}
       </el-tag>
     </el-space>
     <div class="flex gap-4 items-center">
@@ -101,3 +103,27 @@ onMounted(() => {
   });
 });
 </script>
+
+<style scoped>
+.gradient-text-tech-animated {
+  background: linear-gradient(120deg, #4caf50, #2196f3, #673ab7, #4caf50);
+  background-size: 300% 100%;
+  -webkit-background-clip: text; /* 為了 Safari 瀏覽器 */
+  background-clip: text;
+  color: transparent; /* 文字顏色設為透明，顯示背景漸層 */
+  animation: gradient-animation 8s ease infinite;
+  background-color: #ecf5ff; /* 指定背景顏色 */
+}
+
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+</style>
