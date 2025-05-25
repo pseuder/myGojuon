@@ -5,6 +5,7 @@
       <div class="flex flex-col lg:w-1/2">
         <div class="gradient-text-tech-animated">
           {{ currentVideo ? currentVideo.video_name : "Loading..." }}
+          {{ currentVideo ? currentVideo.author : "Loading..." }}
         </div>
         <!-- 影片播放器 -->
         <div id="player-container" ref="playerContainerRef" class="h-[70%]">
@@ -169,9 +170,92 @@ const fetchVideo = async () => {
     const response = await axios.get("/get_video/" + videoId.value);
     currentVideo.value = response;
     lyrics.value = JSON.parse(currentVideo.value.converted_lyrics);
+    updateMetaTags();
   } catch (error) {
     console.error("Error fetching video:", error);
   }
+};
+
+// 動態更新 meta 標籤的函數
+const updateMetaTags = () => {
+  if (!currentVideo.value) return;
+
+  const video = currentVideo.value;
+  
+  // 更新頁面標題
+  document.title = `${video.video_name} - ${video.author} | 日語歌曲練習`;
+  
+  // 更新或創建 meta 標籤
+  updateMetaTag('description', `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能，幫助您學習日語。`);
+  updateMetaTag('keywords', `日語歌曲, ${video.video_name}, ${video.author}, 日語學習, 歌詞練習, 發音練習, 五十音`);
+  
+  // Open Graph 標籤
+  updateMetaTag('og:title', `${video.video_name} - ${video.author} | 日語歌曲練習`);
+  updateMetaTag('og:description', `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能。`);
+  updateMetaTag('og:type', 'website');
+  updateMetaTag('og:url', window.location.href);
+  
+  // Twitter Card 標籤
+  updateMetaTag('twitter:card', 'summary');
+  updateMetaTag('twitter:title', `${video.video_name} - ${video.author} | 日語歌曲練習`);
+  updateMetaTag('twitter:description', `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能。`);
+  
+  // 結構化數據 (JSON-LD)
+  updateStructuredData(video);
+};
+
+// 更新或創建 meta 標籤的輔助函數
+const updateMetaTag = (name, content) => {
+  // 檢查是否為 og: 或 twitter: 標籤
+  const isProperty = name.startsWith('og:') || name.startsWith('twitter:');
+  const attribute = isProperty ? 'property' : 'name';
+  
+  let meta = document.querySelector(`meta[${attribute}="${name}"]`);
+  
+  if (meta) {
+    meta.setAttribute('content', content);
+  } else {
+    meta = document.createElement('meta');
+    meta.setAttribute(attribute, name);
+    meta.setAttribute('content', content);
+    document.head.appendChild(meta);
+  }
+};
+
+// 更新結構化數據
+const updateStructuredData = (video) => {
+  // 移除現有的結構化數據
+  const existingScript = document.querySelector('script[type="application/ld+json"]');
+  if (existingScript) {
+    existingScript.remove();
+  }
+  
+  // 創建新的結構化數據
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": `${video.video_name} - ${video.author} | 日語歌曲練習`,
+    "description": `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能。`,
+    "url": window.location.href,
+    "mainEntity": {
+      "@type": "MusicRecording",
+      "name": video.video_name,
+      "byArtist": {
+        "@type": "Person",
+        "name": video.author
+      },
+      "inLanguage": "ja"
+    },
+    "provider": {
+      "@type": "Organization",
+      "name": "日語五十音學習網站"
+    }
+  };
+  
+  const script = document.createElement('script');
+  script.type = 'application/ld+json';
+  script.textContent = JSON.stringify(structuredData);
+  document.head.appendChild(script);
 };
 
 const handleStartVideoClick = (time) => {
@@ -366,6 +450,47 @@ const toggleLoopCurrentLyric = () => {
   }
 };
 
+// 監聽 currentVideo 變化
+watch(currentVideo, (newVideo) => {
+  if (newVideo) {
+    updateMetaTags();
+  }
+}, { deep: true });
+
+// 清理 meta 標籤的函數
+const cleanupMetaTags = () => {
+  // 恢復預設標題
+  document.title = '日語五十音學習網站';
+  
+  // 移除動態添加的 meta 標籤
+  const metaTagsToRemove = [
+    'description',
+    'keywords',
+    'og:title',
+    'og:description',
+    'og:type',
+    'og:url',
+    'twitter:card',
+    'twitter:title',
+    'twitter:description'
+  ];
+  
+  metaTagsToRemove.forEach(name => {
+    const isProperty = name.startsWith('og:') || name.startsWith('twitter:');
+    const attribute = isProperty ? 'property' : 'name';
+    const meta = document.querySelector(`meta[${attribute}="${name}"]`);
+    if (meta) {
+      meta.remove();
+    }
+  });
+  
+  // 移除結構化數據
+  const structuredDataScript = document.querySelector('script[type="application/ld+json"]');
+  if (structuredDataScript) {
+    structuredDataScript.remove();
+  }
+};
+
 onMounted(async () => {
   await fetchVideo();
   await initializePlayer();
@@ -377,6 +502,7 @@ onUnmounted(() => {
     player.destroy();
   }
   window.removeEventListener("keypress", handleKeyPress);
+  cleanupMetaTags();
 });
 </script>
 
