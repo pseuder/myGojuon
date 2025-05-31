@@ -11,30 +11,33 @@
         v-for="author in allAuthors"
         :key="author.author"
         class="cursor-pointer text-blue-400 hover:underline hover:text-blue-600"
-        :class="[author.author === 'NELKE' ? 'gradient-text-tech-animated' : ''
+        :class="[
+          author.author === 'NELKE' ? 'gradient-text-tech-animated' : '',
         ]"
         @click="filterByAuthor(author.author)"
       >
-      {{ author.author }}
+        {{ author.author }}
       </el-tag>
     </el-space>
     <div class="flex gap-4 items-center">
       <el-space class="justify-center" style="width: 100%" wrap>
         <template v-for="video in filteredVideos" :key="video.UID">
           <el-card class="w-full max-w-[380px]" shadow="hover">
-            
             <div class="p-4">
               <router-link
-                :to="{ name: 'songPractice', params: { id: video.video_id } }"
                 class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
+                :to="{ name: 'songPractice', params: { id: video.video_id } }"
+                target="_blank"
               >
-              <img
-              :src="
-                'https://i.ytimg.com/vi/' + video.video_id + '/hqdefault.jpg'
-              "
-              class="w-full h-48 object-cover"
-              alt="video thumbnail"
-            />
+                <img
+                  :src="
+                    'https://i.ytimg.com/vi/' +
+                    video.video_id +
+                    '/hqdefault.jpg'
+                  "
+                  class="w-full h-48 object-cover"
+                  alt="video thumbnail"
+                />
                 {{ video.video_name }}
               </router-link>
 

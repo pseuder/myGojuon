@@ -14,7 +14,12 @@
       style="width: 100%"
       highlight-current-row
     >
-      <el-table-column prop="UID" label="UID" min-width="50"></el-table-column>
+      <el-table-column
+        prop="UID"
+        label="UID"
+        min-width="100"
+        sortable
+      ></el-table-column>
       <el-table-column
         prop="video_name"
         label="影片名稱"
@@ -44,11 +49,17 @@
       </el-table-column>
       <el-table-column prop="video_thumbnail" label="影片縮圖" min-width="100">
         <template #default="scope">
-          <img
-            :src="scope.row.video_thumbnail"
-            alt="video thumbnail"
-            class="w-24 h-24 object-cover"
-          />
+          <router-link
+            class="text-lg text-blue-400 hover:underline hover:text-blue-600 block w-full mb-2 truncate"
+            :to="{ name: 'songPractice', params: { id: scope.row.video_id } }"
+            target="_blank"
+          >
+            <img
+              :src="scope.row.video_thumbnail"
+              alt="video thumbnail"
+              class="w-24 h-24 object-cover"
+            />
+          </router-link>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="180">
@@ -146,7 +157,6 @@ const formData = ref({
   converted_lyrics: "",
 });
 
-
 // 監看formData.video_id，若有變動則自動更新formData.video_thumbnail
 watch(
   () => formData.value.video_id,
@@ -181,12 +191,12 @@ const handleEdit = (row) => {
   resetForm();
   axios.get("/get_video/" + row.video_id).then((data) => {
     formData.value = { ...row };
-    formData.value.public = data.public===1;
+    formData.value.public = data.public === 1;
     formData.value.lyrics = data.lyrics;
     formData.value.converted_lyrics = data.converted_lyrics;
     isEdit.value = true;
     dialogVisible.value = true;
-  });  
+  });
 };
 
 const handleDelete = (row) => {
@@ -246,7 +256,8 @@ const convert_lyrics = () => {
         type: "error",
         message: "轉換失敗",
       });
-    }).finally(() => {
+    })
+    .finally(() => {
       convertLoading.value = false;
     });
 };
