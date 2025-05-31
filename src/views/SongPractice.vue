@@ -132,11 +132,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
-import {
-  VideoPause,
-  VideoPlay,
-  Switch,
-} from "@element-plus/icons-vue";
+import { VideoPause, VideoPlay, Switch } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { useRouter, useRoute } from "vue-router";
 import axios from "@/utils/axios";
@@ -176,17 +172,21 @@ const fetchAllVideos = async () => {
   } catch (error) {
     console.error("Error fetching all videos:", error);
     ElMessage.error("無法獲取所有歌曲列表");
-    allVideos.value = []; 
+    allVideos.value = [];
   }
 };
 
 const authorFilteredVideos = computed(() => {
-  if (!currentVideo.value || !currentVideo.value.author || !allVideos.value.length) {
+  if (
+    !currentVideo.value ||
+    !currentVideo.value.author ||
+    !allVideos.value.length
+  ) {
     return [];
   }
   // Filter by author and sort by UID to ensure "next" is correctly identified
   const filtered = allVideos.value
-    .filter(video => video.author === currentVideo.value.author)
+    .filter((video) => video.author === currentVideo.value.author)
     .sort((a, b) => a.uid - b.uid);
   return filtered;
 });
@@ -209,7 +209,7 @@ const fetchVideo = async () => {
     const response = await axios.get("/get_video/" + videoId.value);
     currentVideo.value = response;
     if (!currentVideo.value.videoId) {
-        currentVideo.value.videoId = videoId.value;
+      currentVideo.value.videoId = videoId.value;
     }
     lyrics.value = JSON.parse(currentVideo.value.converted_lyrics || "[]");
     updateMetaTags();
@@ -223,45 +223,71 @@ const updateMetaTags = () => {
   if (!currentVideo.value) return;
   const video = currentVideo.value;
   document.title = `${video.video_name} - ${video.author} | 日語歌曲練習`;
-  updateMetaTag('description', `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能，幫助您學習日語。`);
-  updateMetaTag('keywords', `日語歌曲, ${video.video_name}, ${video.author}, 日語學習, 歌詞練習, 發音練習, 五十音`);
-  updateMetaTag('og:title', `${video.video_name} - ${video.author} | 日語歌曲練習`);
-  updateMetaTag('og:description', `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能。`);
-  updateMetaTag('og:type', 'website');
-  updateMetaTag('og:url', window.location.href);
-  updateMetaTag('twitter:card', 'summary');
-  updateMetaTag('twitter:title', `${video.video_name} - ${video.author} | 日語歌曲練習`);
-  updateMetaTag('twitter:description', `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能。`);
+  updateMetaTag(
+    "description",
+    `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能，幫助您學習日語。`
+  );
+  updateMetaTag(
+    "keywords",
+    `日語歌曲, ${video.video_name}, ${video.author}, 日語學習, 歌詞練習, 發音練習, 五十音`
+  );
+  updateMetaTag(
+    "og:title",
+    `${video.video_name} - ${video.author} | 日語歌曲練習`
+  );
+  updateMetaTag(
+    "og:description",
+    `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能。`
+  );
+  updateMetaTag("og:type", "website");
+  updateMetaTag("og:url", window.location.href);
+  updateMetaTag("twitter:card", "summary");
+  updateMetaTag(
+    "twitter:title",
+    `${video.video_name} - ${video.author} | 日語歌曲練習`
+  );
+  updateMetaTag(
+    "twitter:description",
+    `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能。`
+  );
   updateStructuredData(video);
 };
 
 const updateMetaTag = (name, content) => {
-  const isProperty = name.startsWith('og:') || name.startsWith('twitter:');
-  const attribute = isProperty ? 'property' : 'name';
+  const isProperty = name.startsWith("og:") || name.startsWith("twitter:");
+  const attribute = isProperty ? "property" : "name";
   let meta = document.querySelector(`meta[${attribute}="${name}"]`);
   if (meta) {
-    meta.setAttribute('content', content);
+    meta.setAttribute("content", content);
   } else {
-    meta = document.createElement('meta');
+    meta = document.createElement("meta");
     meta.setAttribute(attribute, name);
-    meta.setAttribute('content', content);
+    meta.setAttribute("content", content);
     document.head.appendChild(meta);
   }
 };
 
 const updateStructuredData = (video) => {
-  const existingScript = document.querySelector('script[type="application/ld+json"]');
+  const existingScript = document.querySelector(
+    'script[type="application/ld+json"]'
+  );
   if (existingScript) existingScript.remove();
   const structuredData = {
-    "@context": "https://schema.org", "@type": "WebPage",
-    "name": `${video.video_name} - ${video.author} | 日語歌曲練習`,
-    "description": `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能。`,
-    "url": window.location.href,
-    "mainEntity": { "@type": "MusicRecording", "name": video.video_name, "byArtist": { "@type": "Person", "name": video.author }, "inLanguage": "ja" },
-    "provider": { "@type": "Organization", "name": "日語五十音學習網站" }
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: `${video.video_name} - ${video.author} | 日語歌曲練習`,
+    description: `練習日語歌曲《${video.video_name}》by ${video.author}。提供歌詞對照、發音練習、循環播放等功能。`,
+    url: window.location.href,
+    mainEntity: {
+      "@type": "MusicRecording",
+      name: video.video_name,
+      byArtist: { "@type": "Person", name: video.author },
+      inLanguage: "ja",
+    },
+    provider: { "@type": "Organization", name: "日語五十音學習網站" },
   };
-  const script = document.createElement('script');
-  script.type = 'application/ld+json';
+  const script = document.createElement("script");
+  script.type = "application/ld+json";
   script.textContent = JSON.stringify(structuredData);
   document.head.appendChild(script);
 };
@@ -288,7 +314,8 @@ const parseTimeToSeconds = (timeString) => {
 
 const loadYouTubeAPI = () => {
   return new Promise((resolve) => {
-    if (window.YT && window.YT.Player) { // Check for Player as well
+    if (window.YT && window.YT.Player) {
+      // Check for Player as well
       resolve();
     } else {
       const tag = document.createElement("script");
@@ -320,6 +347,7 @@ const togglePlayPause = () => {
 
 // --- New function to play next song ---
 const playNextSong = () => {
+  debugger;
   if (currentVideoIndexInAuthorList.value === -1) {
     console.warn("Current video not found in author's list. Looping current.");
     if (player && player.seekTo) player.seekTo(0);
@@ -327,16 +355,18 @@ const playNextSong = () => {
     return;
   }
 
-  const nextIndex = currentVideoIndexInAuthorList.value + 1;
-  if (nextIndex < authorFilteredVideos.value.length) {
-    const nextSong = authorFilteredVideos.value[nextIndex];
-    ElMessage.info(`即將播放下一首: ${nextSong.video_name}`);
-    router.push({ name: "songPractice", params: { id: nextSong.video_id } });
-  } else {
-    ElMessage.info("已是此歌手的最後一首歌，將從頭播放目前歌曲。");
-    if (player && player.seekTo) player.seekTo(0);
-    if (player && player.playVideo) player.playVideo();
+  let nextIndex = currentVideoIndexInAuthorList.value + 1;
+  if (nextIndex >= authorFilteredVideos.value.length) {
+    nextIndex = 0;
   }
+  const nextSong = authorFilteredVideos.value[nextIndex];
+  ElMessage.info(`即將播放下一首: ${nextSong.video_name}`);
+  router.push({
+    name: "songPractice",
+    params: {
+      id: nextSong.video_id,
+    },
+  });
 };
 
 const initializePlayer = async () => {
@@ -346,7 +376,7 @@ const initializePlayer = async () => {
     return;
   }
   await loadYouTubeAPI();
-  if (playerRef.value && typeof YT !== 'undefined' && YT.Player) {
+  if (playerRef.value && typeof YT !== "undefined" && YT.Player) {
     player = new YT.Player(playerRef.value, {
       videoId: videoId.value,
       height: "100%",
@@ -367,13 +397,15 @@ const initializePlayer = async () => {
           }
         },
         onError: (event) => {
-            console.error("YouTube Player Error:", event.data);
-            ElMessage.error(`播放器錯誤: ${event.data}`);
-        }
+          console.error("YouTube Player Error:", event.data);
+          ElMessage.error(`播放器錯誤: ${event.data}`);
+        },
       },
     });
   } else {
-    console.error("Player ref not available or YouTube API not fully loaded for YT.Player.");
+    console.error(
+      "Player ref not available or YouTube API not fully loaded for YT.Player."
+    );
     ElMessage.error("播放器初始化失敗，請稍後再試");
   }
 };
@@ -416,14 +448,23 @@ const scrollToCurrentLyric = (index) => {
 
 const handleKeyPress = (event) => {
   console.log(event);
-  if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+  if (
+    document.activeElement.tagName === "INPUT" ||
+    document.activeElement.tagName === "TEXTAREA"
+  ) {
     return;
   }
   console.log(event.key.toLowerCase());
   switch (event.key.toLowerCase()) {
-    case "a": Go_to_previous_lyric(); break;
-    case "d": Go_to_next_lyric(); break;
-    case "s": toggleLoopCurrentLyric(); break;
+    case "a":
+      Go_to_previous_lyric();
+      break;
+    case "d":
+      Go_to_next_lyric();
+      break;
+    case "s":
+      toggleLoopCurrentLyric();
+      break;
   }
 };
 
@@ -457,11 +498,17 @@ const toggleLoopCurrentLyric = () => {
   }
   isLooping.value = !isLooping.value;
   if (isLooping.value) {
-    loopStart.value = parseTimeToSeconds(lyrics.value[currentLyricIndex.value].timestamp);
+    loopStart.value = parseTimeToSeconds(
+      lyrics.value[currentLyricIndex.value].timestamp
+    );
     loopEnd.value =
       currentLyricIndex.value < lyrics.value.length - 1
-        ? parseTimeToSeconds(lyrics.value[currentLyricIndex.value + 1].timestamp)
-        : (player && player.getDuration ? player.getDuration() : Infinity);
+        ? parseTimeToSeconds(
+            lyrics.value[currentLyricIndex.value + 1].timestamp
+          )
+        : player && player.getDuration
+        ? player.getDuration()
+        : Infinity;
     ElMessage.success("開始循環當前行");
   } else {
     loopStart.value = 0;
@@ -470,39 +517,49 @@ const toggleLoopCurrentLyric = () => {
   }
 };
 
-watch(currentVideo, (newVideo) => {
-  if (newVideo) updateMetaTags();
-}, { deep: true });
+watch(
+  currentVideo,
+  (newVideo) => {
+    if (newVideo) updateMetaTags();
+  },
+  { deep: true }
+);
 
 // --- Watch for route parameter changes to load new video ---
-watch(() => route.params.id, async (newId, oldId) => {
-  if (newId && newId !== oldId) {
-    videoId.value = newId;
+watch(
+  () => route.params.id,
+  async (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      videoId.value = newId;
 
-    // Reset states for the new video
-    currentLyricIndex.value = -1;
-    lyrics.value = [];
-    isLooping.value = false;
+      // Reset states for the new video
+      currentLyricIndex.value = -1;
+      lyrics.value = [];
+      isLooping.value = false;
 
-    if (player) {
-      player.destroy();
-      player = null;
+      if (player) {
+        player.destroy();
+        player = null;
+      }
+
+      await fetchVideo();
+      await initializePlayer();
     }
-    
-    await fetchVideo();
-    await initializePlayer();
-  }
-}, { immediate: false });
+  },
+  { immediate: false }
+);
 
 const cleanupMetaTags = () => {
-  document.title = '日語五十音學習網站';
+  document.title = "日語五十音學習網站";
   const metaSelectors = [
-    'meta[name="description"]', 'meta[name="keywords"]',
-    'meta[property^="og:"]', 'meta[property^="twitter:"]',
-    'script[type="application/ld+json"]'
+    'meta[name="description"]',
+    'meta[name="keywords"]',
+    'meta[property^="og:"]',
+    'meta[property^="twitter:"]',
+    'script[type="application/ld+json"]',
   ];
-  metaSelectors.forEach(selector => {
-    document.querySelectorAll(selector).forEach(el => el.remove());
+  metaSelectors.forEach((selector) => {
+    document.querySelectorAll(selector).forEach((el) => el.remove());
   });
 };
 
