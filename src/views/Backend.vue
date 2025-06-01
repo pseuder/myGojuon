@@ -84,52 +84,58 @@
   </div>
 
   <el-dialog :title="dialogTitle" v-model="dialogVisible" width="80%" top="5vh">
-    <el-form
-      :model="formData"
-      ref="form"
-      label-width="80px"
-      label-position="left"
-    >
-      <el-form-item label="影片名稱" prop="video_name">
-        <el-input v-model="formData.video_name"></el-input>
-      </el-form-item>
-      <el-form-item label="作者" prop="author">
-        <el-input v-model="formData.author"></el-input>
-      </el-form-item>
-      <el-form-item label="影片ID" prop="video_id">
-        <el-input v-model="formData.video_id"></el-input>
-      </el-form-item>
-      <el-form-item label="影片縮圖" prop="video_thumbnail">
-        <el-input v-model="formData.video_thumbnail"></el-input>
-      </el-form-item>
-      <el-form-item label="影片標籤" prop="tags">
-        <el-input v-model="formData.tags" placeholder="請用逗號分隔"></el-input>
-      </el-form-item>
-      <el-form-item label="公開" prop="public">
-        <el-switch v-model="formData.public"></el-switch>
-      </el-form-item>
-      <el-form-item label="歌詞" prop="lyrics">
-        <el-input
-          v-model="formData.lyrics"
-          type="textarea"
-          rows="10"
-        ></el-input>
-      </el-form-item>
-      <el-form-item label="轉換歌詞" prop="converted_lyrics">
-        <el-input
-          v-model="formData.converted_lyrics"
-          type="textarea"
-          rows="10"
-          v-loading="convertLoading"
-        ></el-input>
-      </el-form-item>
-    </el-form>
-    <div slot="footer" class="text-right">
-      <el-button @click="convert_lyrics">取得轉換歌詞</el-button>
-      <el-button type="primary" @click="saveVideo">{{
-        isEdit ? "更新" : "新增"
-      }}</el-button>
-      <el-button @click="dialogVisible = false">取消</el-button>
+    <div class="h-[80vh] overflow-hidden">
+      <el-form
+        :model="formData"
+        ref="form"
+        label-width="80px"
+        label-position="left"
+        class="h-[90%] overflow-auto"
+      >
+        <el-form-item label="影片名稱" prop="video_name">
+          <el-input v-model="formData.video_name"></el-input>
+        </el-form-item>
+        <el-form-item label="作者" prop="author">
+          <el-input v-model="formData.author"></el-input>
+        </el-form-item>
+        <el-form-item label="影片ID" prop="video_id">
+          <el-input v-model="formData.video_id"></el-input>
+        </el-form-item>
+        <el-form-item label="影片縮圖" prop="video_thumbnail">
+          <el-input v-model="formData.video_thumbnail"></el-input>
+        </el-form-item>
+        <el-form-item label="影片標籤" prop="tags">
+          <el-input
+            v-model="formData.tags"
+            placeholder="請用逗號分隔"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="公開" prop="public">
+          <el-switch v-model="formData.public"></el-switch>
+        </el-form-item>
+        <el-form-item label="歌詞" prop="lyrics">
+          <el-input
+            v-model="formData.lyrics"
+            type="textarea"
+            rows="10"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="轉換歌詞" prop="converted_lyrics">
+          <el-input
+            v-model="formData.converted_lyrics"
+            type="textarea"
+            rows="10"
+            v-loading="convertLoading"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="h-[7%] mt-4 text-right">
+        <el-button @click="convert_lyrics">取得轉換歌詞</el-button>
+        <el-button type="primary" @click="saveVideo">{{
+          isEdit ? "更新" : "新增"
+        }}</el-button>
+        <el-button @click="dialogVisible = false">取消</el-button>
+      </div>
     </div>
   </el-dialog>
 </template>

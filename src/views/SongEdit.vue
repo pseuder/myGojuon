@@ -137,10 +137,11 @@
             </div>
             <div class="w-full flex flex-wrap gap-2">
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
-                <div class="flex flex-col w-28" :id="`lyric-cvt-${index}-${lyIndex}`">
-                  <span
-                    class="flex  gap-6"
-                    >
+                <div
+                  class="flex flex-col w-28"
+                  :id="`lyric-cvt-${index}-${lyIndex}`"
+                >
+                  <span class="flex gap-6">
                     <button
                       type="button"
                       class="text-blue-500 text-sm"
@@ -307,7 +308,7 @@ const recommendHiraganas = ref([]);
 const apiKey = ref("");
 
 // 時間差
-const timeDiff = ref("00:00.00");
+const timeDiff = ref("00:00.20");
 
 // 轉換時間字串為秒
 const parseTimeToSeconds = (timeString) => {
@@ -408,7 +409,7 @@ const handleWidthenLyric = (lyricIndex, lyricLineIndex) => {
     } else {
       // 擷取數字部分
       const num = parseInt(originWidth.replace("px", ""));
-      input.style.width = (num + 50) + "px";
+      input.style.width = num + 50 + "px";
     }
   }
 };
