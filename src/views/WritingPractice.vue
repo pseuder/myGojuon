@@ -1,32 +1,33 @@
 <template>
-  <div class="flex flex-col lg:flex-row h-full px-4 py-4 gap-4">
-    <!-- 50音列表 -->
+  <div class="flex h-full flex-col gap-4 px-4 py-4 lg:flex-row">
+    <!-- 50音Menu -->
     <div class="w-full" :key="activeTab">
-      <h2 class="text-xl font-semibold mb-3">
-        <el-tabs v-model="activeTab" class="w-fill mb-4 lg:max-w-md">
-          <el-tab-pane
-            v-for="tab in tabs"
-            :key="tab.name"
-            :label="t(tab.label)"
-            :name="tab.name"
-          />
+      <h2 class="mb-3 text-xl font-semibold">
+        <el-tabs
+          v-model="activeTab"
+          class="w-fill mb-4 lg:max-w-md"
+          @tab-change="handleTabChange"
+        >
+          <template v-for="tab in tabs" :key="tab.name">
+            <el-tab-pane :label="t(tab.label)" :name="tab.name" />
+          </template>
         </el-tabs>
       </h2>
       <div
-        v-for="(row, rowIndex) in groupedSounds"
+        v-for="(row, rowIndex) in currentSounds_menu"
         :key="rowIndex"
-        class="flex mb-2"
+        class="mb-2 flex"
       >
         <div
           v-for="sound in row"
           :key="sound.kana"
-          class="flex-1 mx-1 flex items-center"
+          class="mx-1 flex flex-1 items-center"
         >
           <el-button
             @click="selectSound(sound)"
             :type="isSelectedSound(sound) ? 'primary' : ''"
             :style="{ visibility: sound.kana ? 'visible' : 'hidden' }"
-            class="flex-grow"
+            class="grow"
           >
             {{ sound.kana }}
           </el-button>
@@ -37,49 +38,52 @@
     <div class="w-full content-center">
       <el-card>
         <!-- 功能列 -->
-        <div class="w-full flex items-center justify-between">
+        <div class="flex w-full items-center justify-between">
           <!-- 日文 -->
-          <div class="text-5xl font-bold" :title="t('japanese')">{{ selectedSound.kana }}</div>
+          <div
+            class="inline-flex flex-col items-center text-3xl font-bold sm:text-5xl"
+            :title="t('japanese')"
+          >
+            <span class="text-[12px] text-gray-600"> {{ t("japanese") }}</span>
+            <span>{{ selectedSound.kana }}</span>
+          </div>
           <!-- 羅馬字 -->
-          <div class="text-4xl font-bold" :title="t('romaji')">{{ selectedSound.romaji }}</div>
+          <div
+            class="inline-flex flex-col items-center text-3xl font-bold sm:text-4xl"
+            :title="t('romaji')"
+          >
+            <span class="text-[12px] text-gray-600"> {{ t("romaji") }}</span>
+            <span>{{ selectedSound.romaji }}</span>
+          </div>
           <!-- 漢字來源 -->
-          <div class="text-4xl font-bold" :title="t('kanji_source')">{{ selectedSound.evo }}</div>
+          <div
+            class="inline-flex flex-col items-center text-3xl font-bold sm:text-4xl"
+            :title="t('kanji_source')"
+          >
+            <span class="text-[12px] text-gray-600">
+              {{ t("kanji_source") }}</span
+            >
+            <span>{{ selectedSound.evo }}</span>
+          </div>
 
           <!-- 自動撥放 -->
-           <el-checkbox v-model="autoPlay" class="hover:cursor-pointer">
+          <el-checkbox v-model="autoPlay" class="hover:cursor-pointer">
             {{ t("auto_play") }}
           </el-checkbox>
 
           <!-- 音檔播放控制 -->
-          <audio
-            ref="audioPlayer"
-            :src="`/sounds/${selectedSound.romaji}.mp3`"
-            @loadeddata="autoPlaySound"
-            @ended="audioEnded"
-          ></audio>
           <div class="hover:cursor-pointer" @click="togglePlay">
             <img
               v-if="isPlaying"
               src="/images/volume2.png"
               alt="暫停"
-              class="w-8 h-8"
-            />
-            <img v-else src="/images/volume.png" alt="播放" class="w-8 h-8" />
-          </div>
-
-          <!-- 上一個、下一個按鈕 -->
-          <div class="flex items-center gap-4">
-            <img
-              src="/images/arrow-circle-left-solid.svg"
-              alt="上一個"
-              class="w-8 h-8 cursor-pointer"
-              @click="changeSound('prev')"
+              class="h-8 w-8 select-none"
             />
             <img
-              src="/images/arrow-circle-right-solid.svg"
-              alt="下一個"
-              class="w-8 h-8 cursor-pointer"
-              @click="changeSound('next')"
+              v-else
+              src="/images/volume.png"
+              alt="播放"
+              class="h-8 w-8 select-none"
             />
           </div>
         </div>
@@ -87,10 +91,12 @@
         <!-- 手寫區 -->
         <HandwritingCanvas
           ref="handwritingCanvas"
+          class="select-none"
           :example-kana="selectedSound.kana"
           :current-type="activeTab"
           :show-example="true"
-          :learning-module="'writing'"
+          :learning-module="LEARNING_MODULE"
+          @changeSound="changeSound"
         />
       </el-card>
     </div>
@@ -98,50 +104,90 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
-import { CaretLeft, CaretRight } from "@element-plus/icons-vue";
-import { ElMessageBox, ElMessage } from "element-plus";
-import HandwritingCanvas from "@/components/HandwritingCanvas.vue";
-import fiftySoundsData from "@/data/fifty-sounds.json";
-import axios, { getUserInfo } from "@/utils/axios";
-
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 const { t, locale } = useI18n();
 
-const fiftySounds = ref(fiftySoundsData);
-const activeTab = ref("hiragana");
+import HandwritingCanvas from "@/components/HandwritingCanvas.vue";
+import fiftySoundsData from "@/data/fifty-sounds.json";
+import { useApi } from "@/composables/useApi.js";
+const MYAPI = useApi();
+import { useWebAudio } from "@/composables/useWebAudio.js";
+const { isPlaying, play: playAudio, stop: stopAudio } = useWebAudio();
+
+// 常數值設置
+const TAB_TYPES = {
+  HIRAGANA: "hiragana",
+  KATAKANA: "katakana",
+  DAKUON: "dakuon",
+  HANDAKUON: "handakuon",
+  YOON: "yoon",
+};
+const LEARNING_MODULE = "writing";
+const fiftySounds = fiftySoundsData;
+const activeTab = ref(TAB_TYPES.HIRAGANA);
 const selectedSound = ref({ kana: "あ", romaji: "a", evo: "安" });
-const handwritingCanvas = ref(null);
-const audioPlayer = ref(null);
-const isPlaying = ref(false);
 const autoPlay = ref(false);
 
 const tabs = [
-  { name: "hiragana", label: "hiragana" },
-  { name: "katakana", label: "katakana" },
-  { name: "dakuon", label: "voiced_sounds" },
-  { name: "handakuon", label: "semi_voiced_sounds" },
-  { name: "yoon", label: "contracted_sounds" },
+  { name: TAB_TYPES.HIRAGANA, label: "hiragana" },
+  { name: TAB_TYPES.KATAKANA, label: "katakana" },
+  { name: TAB_TYPES.DAKUON, label: "dakuon" },
+  { name: TAB_TYPES.HANDAKUON, label: "handakuon" },
+  { name: TAB_TYPES.YOON, label: "yoon" },
 ];
 
-const currentSounds = computed(() =>
-  fiftySounds.value ? fiftySounds.value[activeTab.value] : []
-);
+// CSS: 判斷當前單字
+const isSelectedSound = (sound) =>
+  selectedSound.value && selectedSound.value.kana === sound.kana;
 
-const groupedSounds = computed(() => {
+// 當前單字集, 如:あ, い, う, ..., ん
+const currentSounds = computed(() => fiftySounds[activeTab.value] ?? []);
+
+// 渲染當前單字集選單
+const currentSounds_menu = computed(() => {
   const groups = [];
-  const groupSize = activeTab.value === "yoon" ? 3 : 5;
+
+  // 預設5列, YOON為3列
+  let groupSize = 5;
+  if (activeTab.value === TAB_TYPES.YOON) {
+    groupSize = 3;
+  }
+
   for (let i = 0; i < currentSounds.value.length; i += groupSize) {
     groups.push(currentSounds.value.slice(i, i + groupSize));
   }
   return groups;
 });
 
+// 切換單字集時自動切換為新單字集第一個單字
 watch(activeTab, () => {
   selectedSound.value = currentSounds.value[0];
 });
 
-const findNextValidKana = (currentIndex, direction) => {
+// 切換單字時撥放發音
+watch(selectedSound, async () => {
+  if (autoPlay.value) {
+    await playSound();
+
+    await MYAPI.post("/writing_changeSound", {
+      learning_item: selectedSound.value.kana,
+    });
+  }
+});
+
+// 切換當前單字
+const selectSound = (sound) => {
+  if (sound.kana) {
+    selectedSound.value = sound;
+
+    // 自動複製
+    navigator.clipboard.writeText(sound.kana);
+  }
+};
+
+// 尋找下一個單字
+const findNextChar = (currentIndex, direction) => {
   const totalItems = currentSounds.value.length;
   let nextIndex = currentIndex;
   let loopCount = 0;
@@ -153,79 +199,36 @@ const findNextValidKana = (currentIndex, direction) => {
     }
     loopCount++;
   }
-
-  return null;
 };
 
-const changeSound = (type) => {
+// 切換單字
+const changeSound = async (type) => {
   const currentIndex = currentSounds.value.findIndex(
-    (sound) => sound.kana === selectedSound.value.kana
+    (sound) => sound.kana === selectedSound.value.kana,
   );
 
   const nextSound =
     type === "next"
-      ? findNextValidKana(currentIndex, 1)
-      : findNextValidKana(currentIndex, -1);
+      ? findNextChar(currentIndex, 1)
+      : findNextChar(currentIndex, -1);
 
-  if (nextSound) {
-    selectSound(nextSound);
-
-    // 重製播放器圖示
-    isPlaying.value = false;
-  }
+  selectSound(nextSound);
 };
 
-const togglePlay = () => {
-  if (audioPlayer.value) {
-    if (isPlaying.value) {
-      audioPlayer.value.pause();
-    } else {
-      audioPlayer.value.play();
-    }
-    isPlaying.value = !isPlaying.value;
-  }
+// 播放單字發音
+const playSound = async () => {
+  stopAudio(); // 先停止當前播放
+  const currentRomaji = selectedSound.value.romaji;
+  const audioUrl = `/sounds/${currentRomaji}.mp3`;
+  await playAudio(audioUrl);
 };
 
-const audioEnded = () => {
-  isPlaying.value = false;
+// Click: 播放單字發音
+const togglePlay = async () => {
+  await playSound();
 };
 
-const playSound = () => {
-  if (audioPlayer.value) {
-    audioPlayer.value.currentTime = 0; // 重置音频到开始位置
-    audioPlayer.value.play();
-    isPlaying.value = true;
-  }
-};
-
-const autoPlaySound = () => {
-  if (autoPlay.value) {
-    playSound();
-  }
-};
-
-const selectSound = (sound) => {
-  if (sound.kana) {
-    selectedSound.value = sound;
-
-    navigator.clipboard.writeText(sound.kana);
-
-    const dataToSend = {
-      learningModule: "writing",
-      learningMethod: "selectSound",
-      learningItem: sound.kana,
-    };
-
-    // 發送數據到後端
-    axios.post("/record_activity", dataToSend).catch((error) => {
-      console.error("Error recording activity:", error);
-    });
-  }
-};
-
-const isSelectedSound = (sound) =>
-  selectedSound.value && selectedSound.value.kana === sound.kana;
-
+// Event: 左右鍵切換單字
 const handleKeydown = (event) => {
   if (event.key === "ArrowLeft") {
     changeSound("prev");
@@ -234,19 +237,13 @@ const handleKeydown = (event) => {
   }
 };
 
+// TODO: 從全域設定獲取使用者Preference(autoPlay, activeTab, selectedSound...)
+
 onMounted(() => {
   window.addEventListener("keydown", handleKeydown);
-  // 初始加载时播放第一个音频
-  // nextTick(() => {
-  //   playSound();
-  // });
 });
 
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeydown);
-  if (audioPlayer.value) {
-    audioPlayer.value.pause();
-    audioPlayer.value.src = "";
-  }
 });
 </script>

@@ -1,6 +1,6 @@
 import { ref, reactive } from 'vue'
 
-export function useCanvas(props) {
+export function useCanvas(props, exampleScale) {
   const canvas = ref(null)
   const canvasContainer = ref(null)
   const canvasWrapper = ref(null)
@@ -38,11 +38,7 @@ export function useCanvas(props) {
   }
 
   const redrawCanvas = () => {
-    if (!ctx.value || !canvas.value) return
-    drawGrid()
-    if (props.showExample) {
-      drawExampleKana()
-    }
+    clearCanvas()
   }
 
   const drawGrid = () => {
@@ -68,9 +64,11 @@ export function useCanvas(props) {
       if (!ctx.value || !canvas.value) return
       ctx.value.save()
 
-      const fontSize = props.currentType === 'yoon'
+      const baseFontSize = props.currentType === 'yoon'
         ? canvas.value.height * 0.5
         : canvas.value.height * 0.8
+      
+      const fontSize = baseFontSize * (exampleScale.value / 100)
 
       // 使用字體堆疊，從最優先到備用字體
       ctx.value.font = `${fontSize}px "UDDigiKyokasho N-R", "Yu Gothic", "MS Gothic", sans-serif`

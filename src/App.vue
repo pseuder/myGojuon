@@ -1,34 +1,23 @@
 <template>
-  <div class="h-full relative">
-    <nav class="navbar">
-      <el-menu
-        :default-active="activeIndex"
-        class="w-full user-select-none overflow-hidden"
-        mode="horizontal"
-        router
-      >
-        <MenuItem index="/" :label="t('home')" />
-        <MenuItem index="/writing" :label="t('handwriting_practice')" />
-        <MenuItem index="/listening" :label="t('dictation_practice')" />
-        <MenuItem
-          index="/songOverview"
-          :label="t('song_practice')"
-        />
-        <MenuItem
-          index="/analysis"
-          :label="t('activity_analysis')"
-          :condition="isAdmin"
-        />
-        <MenuItem
-          index="/backend"
-          :label="t('admin_panel')"
-          :condition="isAdmin"
-        />
-      </el-menu>
-
-      <div class="flex items-center gap-4 flex-shrink-0">
-        <LocaleSwitcher @update:locale="recordActivity" />
-        <myGoogleLogin />
+  <div class="h-full w-full">
+    <nav class="flex w-full">
+      <div class="user-select-none w-[50%] grow">
+        <el-menu :default-active="activeIndex" mode="horizontal" router>
+          <MenuItem index="/" :label="t('home')" />
+          <MenuItem
+            index="/WritingPractice"
+            :label="t('handwriting_practice')"
+          />
+          <MenuItem
+            index="/ListeningPractice"
+            :label="t('dictation_practice')"
+          />
+          <MenuItem index="/SongOverview" :label="t('song_practice')" />
+        </el-menu>
+      </div>
+      <div class="flex w-fit items-center gap-4">
+        <LocaleSwitcher />
+        <myGoogleLogin v-model:textWaterfallEnabled="textWaterfallEnabled" />
       </div>
     </nav>
 
@@ -36,12 +25,41 @@
       <!-- 文字瀑布 -->
       <div ref="textContainer" class="text-fall-container"></div>
       <div
-        class="main-component relative"
-        :class="{ 'wide-layout': isInSongPractice || isInBackend || isInSongEdit }"
+        class="main-component relative h-fit"
+        :class="{
+          'wide-layout':
+            isInSongPractice || isInBackend || isInSongEdit || isInSongOverview,
+        }"
       >
-        <router-view> </router-view>
+        <router-view />
       </div>
     </main>
+
+    <!-- Floating Contact Button -->
+    <div v-if="showFloatingButton" class="floating-contact-button">
+      <el-button
+        class="close-button"
+        type="danger"
+        plain
+        @click.stop="showFloatingButton = false"
+        link
+      >
+        <el-icon :size="18"><CloseBold /></el-icon>
+      </el-button>
+
+      <div @click="showContactForm = !showContactForm">
+        <el-button
+          type="warning"
+          plain
+          circle
+          size="large"
+          :title="t('anonymous_feedback')"
+        >
+          <el-icon :size="25"><ChatLineRound /></el-icon>
+        </el-button>
+      </div>
+    </div>
+    <ContactForm :visible="showContactForm" @close="showContactForm = false" />
   </div>
 </template>
 
@@ -49,59 +67,77 @@
 import { ref, watch, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { ChatLineRound, CloseBold } from "@element-plus/icons-vue";
+import ContactForm from "@/components/ContactForm.vue";
 
 import fiftySoundsData from "@/data/fifty-sounds.json";
-import axios, { getUserInfo } from "@/utils/axios";
 import myGoogleLogin from "@/components/myGoogleLogin.vue";
 import MenuItem from "@/components/MenuItem.vue";
 import LocaleSwitcher from "@/components/LocaleSwitcher.vue";
+import { useAuth } from "@/composables/useAuth.js";
+
+// 初始化認證狀態
+const { initializeAuth, user } = useAuth();
+initializeAuth();
+
+const showContactForm = ref(false);
+const showFloatingButton = ref(true);
 
 const { t, locale } = useI18n();
 const route = useRoute();
 const activeIndex = ref("/");
-const user = getUserInfo();
 
-const isAdmin = computed(() => user?.email === "iop890520@gmail.com");
+const isAdmin = computed(() => user.value?.email === "iop890520@gmail.com");
+
+// 文字瀑布開關狀態
+const textWaterfallEnabled = ref(true);
 
 watch(
   () => route.path,
   (newPath) => {
-    activeIndex.value = newPath;
+    // 移除語言前綴
+    const basePath = newPath.replace(/^\/(en)/, "") || "/";
+    activeIndex.value = basePath;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
-// watch(locale, (newLocale) => {
-//   document.documentElement.setAttribute("lang", newLocale);
-// });
-
-const isInSongPractice = computed(() => route.path.includes("/songPractice"));
-const isInBackend = computed(() => route.path.includes("/backend"));
-const isInSongEdit = computed(() => route.path.includes("/songEdit"));
-
+const isInSongPractice = computed(() => route.path.includes("/SongPractice"));
+const isInSongOverview = computed(() => route.path.includes("/SongOverview"));
+const isInBackend = computed(() => route.path.includes("/Backend"));
+const isInSongEdit = computed(
+  () => route.path.includes("/S/") || route.path.includes("/s/"),
+);
 
 // ===== 文字瀑布 =====
-const TEXT_COUNT = 100; // 下落文字數量
+const TEXT_COUNT = 100;
 const textContainer = ref(null);
 const textArray = fiftySoundsData.hiragana
   .map((item) => item.kana)
-  .concat(fiftySoundsData.katakana.map((item) => item.kana))
-  .concat(fiftySoundsData.dakuon.map((item) => item.kana))
-  .concat(fiftySoundsData.handakuon.map((item) => item.kana));
+  .concat(fiftySoundsData.katakana.map((item) => item.kana));
 
-const recordActivity = (lang) => {
-  const dataToSend = {
-    learningModule: "language",
-    learningMethod: "switch_language",
-    learningItem: lang,
-  };
-  axios.post("/record_activity", dataToSend).catch((error) => {
-    console.error("Error recording activity:", error);
-  });
+const isDesktopDevice = () => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  const mobileKeywords = [
+    "android",
+    "webos",
+    "iphone",
+    "ipad",
+    "ipod",
+    "blackberry",
+    "windows phone",
+  ];
+  return !mobileKeywords.some((keyword) => userAgent.includes(keyword));
 };
 
 onMounted(() => {
-  // document.documentElement.setAttribute("lang", locale.value);
+  if (!textContainer.value) return;
+  if (isDesktopDevice() && textWaterfallEnabled.value) {
+    createTextWaterfall();
+  }
+});
+
+function createTextWaterfall() {
   if (!textContainer.value) return;
   let count = 0;
   function createTextElement() {
@@ -110,42 +146,41 @@ onMounted(() => {
       textEl.classList.add("falling-text");
       textEl.innerText =
         textArray[Math.floor(Math.random() * textArray.length)];
-
-      // --- 水平位置隨機 ---
       const startX = Math.random() * window.innerWidth;
       textEl.style.left = `${startX}px`;
-
-      // --- 垂直位置隨機 (負值 => 讓它在容器頂端以上) ---
       const randomTop = -(Math.random() * 300 + 100);
       textEl.style.top = `${randomTop}px`;
-
-      // --- 動畫時間＆延遲隨機 ---
-      const duration = 3 + Math.random() * 5; // 3 ~ 8 秒
-      const delay = Math.random() * 5; // 0 ~ 5 秒
+      const duration = 3 + Math.random() * 5;
+      const delay = Math.random() * 5;
       textEl.style.animationDuration = `${duration}s`;
       textEl.style.animationDelay = `${delay}s`;
-
-      // --- 字體大小隨機 ---
       const fontSize = 16 + Math.random() * 30;
       textEl.style.fontSize = `${fontSize}px`;
-
       textContainer.value.appendChild(textEl);
       count++;
-      requestAnimationFrame(createTextElement); // 使用 requestAnimationFrame
+      requestAnimationFrame(createTextElement);
     }
   }
-  requestAnimationFrame(createTextElement); // 開始創建
+  requestAnimationFrame(createTextElement);
+}
+
+function clearTextWaterfall() {
+  if (!textContainer.value) return;
+  textContainer.value.innerHTML = "";
+}
+
+watch(textWaterfallEnabled, (newValue) => {
+  if (!isDesktopDevice()) return;
+  if (newValue) {
+    createTextWaterfall();
+  } else {
+    clearTextWaterfall();
+  }
 });
 </script>
 
 <style>
-.navbar {
-  height: fit-content;
-  position: relative;
-  z-index: 2;
-  display: flex;
-}
-
+@reference "tailwindcss";
 .content {
   height: calc(100% - 60px);
   overflow-y: auto;
@@ -153,14 +188,14 @@ onMounted(() => {
   background-image: url("/images/gojuon-writing.jpg");
   background-size: cover;
   background-position: center;
-  position: relative; /* 關鍵：用來相對定位瀑布 */
+  position: relative;
 }
 
 .main-component {
   position: relative;
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 10px;
-  z-index: 2; /* 大於文字瀑布容器，確保主內容在文字上方 */
+  z-index: 2;
   max-width: 1000px;
   margin: auto;
 }
@@ -169,21 +204,23 @@ onMounted(() => {
   max-width: 90vw !important;
 }
 
-/* ---------------------------
-   文字瀑布容器
----------------------------- */
+@media (min-width: 1024px) {
+  .wide-layout {
+    height: 100%;
+  }
+}
+
 .text-fall-container {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden; /* 隱藏超出的文字 */
-  pointer-events: none; /* 不要阻擋滑鼠事件 */
-  z-index: 1; /* 被 main-component (z-index:2) 蓋住 */
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
 }
 
-/* 下落文字的基本樣式 */
 .falling-text {
   position: absolute;
   color: rgba(120, 100, 200);
@@ -192,7 +229,6 @@ onMounted(() => {
   user-select: none;
 }
 
-/* 簡單的下落動畫 */
 @keyframes fall {
   0% {
     transform: translateY(0);
@@ -205,5 +241,20 @@ onMounted(() => {
     transform: translateY(120vh);
     opacity: 0;
   }
+}
+
+.floating-contact-button {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 100;
+  cursor: pointer;
+}
+
+.close-button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 101;
 }
 </style>

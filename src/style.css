@@ -1,6 +1,9 @@
-@tailwind base;
-@tailwind components;
+@import "element-plus/dist/index.css";
+
+@import "tailwindcss/preflight";
 @tailwind utilities;
+
+@reference "tailwindcss";
 
 body,
 html,
@@ -10,6 +13,48 @@ html,
   height: 100%;
   touch-action: manipulation;
   -webkit-touch-callout: none;
+  overflow: hidden;
+  cursor: url("/cursors/default.png"), auto;
+}
+
+a,
+button,
+[role="button"],
+.clickable-element,
+.pointer-cursor,
+.el-button,
+.el-menu-item,
+.el-tabs__item,
+.el-checkbox,
+.el-checkbox__input,
+.el-select__wrapper,
+.el-switch__core {
+  cursor: url("/cursors/cross.png"), pointer !important;
+}
+
+.cursor-pointer,
+.hover\:cursor-pointer:hover {
+  cursor: url("/cursors/cross.png"), pointer !important;
+}
+
+.el-button.is-disabled {
+  cursor: url("/cursors/not-allowed.png"), not-allowed !important;
+}
+
+canvas {
+  cursor: url("/cursors/crosshair.png"), crosshair !important;
+}
+
+#pen-info {
+  cursor: url("/cursors/help.png"), help !important;
+  color: blueviolet;
+  font-weight: bold;
+  font-size: 22px;
+  user-select: none;
+}
+
+#ai-recognition-button {
+  cursor: url("/cursors/boom.png"), pointer !important;
 }
 
 .el-tabs,
