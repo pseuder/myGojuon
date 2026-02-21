@@ -47,7 +47,7 @@
       <!-- 重置網站 -->
       <div>
         <div class="flex items-center gap-2">
-          <el-button @click="handleResetWebsite">
+          <el-button type="warning " class="w-full" @click="handleResetWebsite">
             {{ t("reset_website") }}
           </el-button>
         </div>

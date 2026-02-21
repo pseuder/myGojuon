@@ -150,7 +150,8 @@
         </div>
       </el-scrollbar>
     </div>
-    <!-- 增加載入中狀態顯示 -->
+
+    <!-- 載入中狀態 -->
     <div v-else class="flex h-full items-center justify-center">
       <p>Loading song...</p>
     </div>
@@ -172,26 +173,21 @@ import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { VideoPause, VideoPlay, Right } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
-const { t } = useI18n();
-
-/*-- API --*/
-import { useApi } from "@/composables/useApi.js";
-const MYAPI = useApi();
-
-/*-- router --*/
 import { useRouter, useRoute } from "vue-router";
-const router = useRouter();
+import { useApi } from "@/composables/useApi.js";
 
+const { t } = useI18n();
+const MYAPI = useApi();
+const router = useRouter();
+const route = useRoute();
 const localePath = (p) => p;
 
-// --- 數據獲取 ---
-
-const route = useRoute();
 const videoId = computed(() => route.params.uid);
 const uid = route.params.uid;
 
 const videoData = ref(null);
 const currentVideo = computed(() => videoData.value);
+
 const lyrics = computed(() => {
   if (videoData.value?.converted) {
     try {
@@ -215,33 +211,12 @@ const fetchVideoData = async (id) => {
   }
 };
 
-// --- 播放器與互動邏輯  ---
-
-const playerRef = ref(null);
-let player = null;
-const currentLyricIndex = ref(-1);
-
-const display_mode = ref("both");
-const playbackRate = ref(1);
-const autoScroll = ref(true);
-const autoPlayNext = ref(false);
-const isPlaying = ref(false);
-const isLooping = ref(false);
-const loopStart = ref(0);
-const loopEnd = ref(0);
-
-// 可調整寬度相關
-const leftWidth = ref(50); // 左側寬度百分比
-const isResizing = ref(false);
-const windowWidth = ref(0);
-const isMobile = computed(() => windowWidth.value < 1024);
-
+/*-- 歌手歌曲列表與自動播下一首 --*/
 const allVideos = ref([]);
+
 const fetchAllVideos = async () => {
   try {
-    const params = {
-      artist_id: currentVideo.value?.artist_id || "",
-    };
+    const params = { artist_id: currentVideo.value?.artist_id || "" };
     const res = await MYAPI.get("/get_artist_songs", params);
     allVideos.value = res.data;
   } catch (error) {
@@ -265,80 +240,21 @@ const artistFilteredVideos = computed(() => {
 });
 
 const currentVideoIndexInArtistList = computed(() => {
-  if (!currentVideo.value || !artistFilteredVideos.value.length) {
-    return -1;
-  }
+  if (!currentVideo.value || !artistFilteredVideos.value.length) return -1;
   return artistFilteredVideos.value.findIndex(
     (v) => v.source_id === videoId.value,
   );
 });
 
-// 解析時間戳
-const parseTimeToSeconds = (timeString) => {
-  if (!timeString) return 0;
-  const timeStringmatch = timeString.match(/\[(\d+):(\d+\.\d+)\]/);
-  if (timeStringmatch) {
-    return parseInt(timeStringmatch[1]) * 60 + parseFloat(timeStringmatch[2]);
-  }
-  return 0;
-};
-
-// YouTube Player 初始化
-const initializePlayer = () => {
-  if (
-    typeof window.YT === "undefined" ||
-    typeof window.YT.Player === "undefined"
-  ) {
-    // 如果 API 還沒好，稍後再試
-    setTimeout(initializePlayer, 100);
-    return;
-  }
-
-  if (!playerRef.value) return;
-
-  // 如果已有播放器實例，先銷毀
-  if (player) {
-    player.destroy();
-    player = null;
-  }
-
-  player = new window.YT.Player(playerRef.value, {
-    videoId: videoId.value, // 直接使用 videoId
-    height: "100%",
-    width: "100%",
-    playerVars: { autoplay: 1, playsinline: 1 },
-    events: {
-      onReady: (event) => {
-        setInterval(updateCurrentLyric, 100);
-        event.target.setPlaybackRate(playbackRate.value);
-      },
-      onStateChange: (event) => {
-        isPlaying.value = event.data === window.YT.PlayerState.PLAYING;
-        if (event.data === window.YT.PlayerState.ENDED) {
-          playNextSong();
-          player.seekTo(0);
-        }
-      },
-      onError: (event) => {
-        console.error("YouTube Player Error:", event.data);
-        ElMessage.error(`播放器錯誤: ${event.data}`);
-      },
-    },
-  });
-};
-
 const playNextSong = () => {
-  // 如果未勾選自動播放，只重播當前歌曲
   if (!autoPlayNext.value) {
     if (player && player.seekTo) player.seekTo(0);
     return;
   }
-
   if (currentVideoIndexInArtistList.value === -1) {
     if (player && player.seekTo) player.seekTo(0);
     return;
   }
-
   const nextIndex = currentVideoIndexInArtistList.value + 1;
   if (nextIndex < artistFilteredVideos.value.length) {
     const nextSong = artistFilteredVideos.value[nextIndex];
@@ -350,79 +266,98 @@ const playNextSong = () => {
   }
 };
 
-// 當 videoId 改變時，重新初始化播放器
-watch(videoId, async (newId, oldId) => {
-  if (newId && newId !== oldId && true) {
-    // 重置狀態
-    currentLyricIndex.value = -1;
-    isLooping.value = false;
+/*-- 播放器狀態與設定 --*/
+const display_mode = ref("both");
+const playbackRate = ref(1);
+const autoScroll = ref(true);
+const autoPlayNext = ref(false);
+const isPlaying = ref(false);
 
-    // 手動刷新數據以確保獲取新歌曲的信息
-    await fetchVideoData(newId);
+/*-- 歌詞同步與循環播放 --*/
+const currentLyricIndex = ref(-1);
+const isLooping = ref(false);
+const loopStart = ref(0);
+const loopEnd = ref(0);
 
-    // 重新獲取所有影片列表（因為可能切換到不同歌手）
-    await fetchAllVideos();
-
-    // 重新初始化播放器
-    initializePlayer();
+const parseTimeToSeconds = (timeString) => {
+  if (!timeString) return 0;
+  const match = timeString.match(/\[(\d+):(\d+\.\d+)\]/);
+  if (match) {
+    return parseInt(match[1]) * 60 + parseFloat(match[2]);
   }
-});
-
-// 監聽自動播放, 播放速率和自動滾動的變化
-watch(autoPlayNext, (newValue) => {
-  if (true) {
-    localStorage.setItem("myGojuon_autoPlayNext", JSON.stringify(newValue));
-  }
-});
-
-watch(playbackRate, (newValue) => {
-  if (true) {
-    localStorage.setItem("myGojuon_playbackRate", JSON.stringify(newValue));
-  }
-});
-
-watch(autoScroll, (newValue) => {
-  if (true) {
-    localStorage.setItem("myGojuon_autoScroll", JSON.stringify(newValue));
-  }
-});
+  return 0;
+};
 
 const updateCurrentLyric = () => {
   if (
-    player &&
-    typeof player.getCurrentTime === "function" &&
-    lyrics.value.length > 0
-  ) {
-    const currentTime = player.getCurrentTime();
-    if (isLooping.value && loopEnd.value > 0 && currentTime >= loopEnd.value) {
-      player.seekTo(loopStart.value);
-      return;
-    }
-    for (let i = 0; i < lyrics.value.length; i++) {
-      const lineStartTime = parseTimeToSeconds(lyrics.value[i].timestamp);
-      const nextLineStartTime =
-        i < lyrics.value.length - 1
-          ? parseTimeToSeconds(lyrics.value[i + 1].timestamp)
-          : player.getDuration() || Infinity;
-      if (currentTime >= lineStartTime && currentTime < nextLineStartTime) {
-        if (currentLyricIndex.value !== i) {
-          currentLyricIndex.value = i;
-          if (autoScroll.value) scrollToCurrentLyric(i);
-        }
-        break;
+    !player ||
+    typeof player.getCurrentTime !== "function" ||
+    lyrics.value.length === 0
+  )
+    return;
+
+  const currentTime = player.getCurrentTime();
+
+  // 循環播放檢查
+  if (isLooping.value && loopEnd.value > 0 && currentTime >= loopEnd.value) {
+    player.seekTo(loopStart.value);
+    return;
+  }
+
+  // 更新當前歌詞索引
+  for (let i = 0; i < lyrics.value.length; i++) {
+    const lineStartTime = parseTimeToSeconds(lyrics.value[i].timestamp);
+    const nextLineStartTime =
+      i < lyrics.value.length - 1
+        ? parseTimeToSeconds(lyrics.value[i + 1].timestamp)
+        : player.getDuration() || Infinity;
+
+    if (currentTime >= lineStartTime && currentTime < nextLineStartTime) {
+      if (currentLyricIndex.value !== i) {
+        currentLyricIndex.value = i;
+        if (autoScroll.value) scrollToCurrentLyric(i);
       }
+      break;
     }
   }
 };
 
 const scrollToCurrentLyric = (index) => {
-  if (true) {
-    const lyricElement = document.getElementById(`lyric-${index}`);
-    if (lyricElement) {
-      lyricElement.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+  const lyricElement = document.getElementById(`lyric-${index}`);
+  if (lyricElement) {
+    lyricElement.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 };
+
+const toggleLoopCurrentLyric = () => {
+  if (lyrics.value.length === 0 || currentLyricIndex.value < 0) {
+    ElMessage.warning("沒有可循環的歌詞行");
+    return;
+  }
+  isLooping.value = !isLooping.value;
+  if (isLooping.value) {
+    loopStart.value = parseTimeToSeconds(
+      lyrics.value[currentLyricIndex.value].timestamp,
+    );
+    loopEnd.value =
+      currentLyricIndex.value < lyrics.value.length - 1
+        ? parseTimeToSeconds(
+            lyrics.value[currentLyricIndex.value + 1].timestamp,
+          )
+        : player && player.getDuration
+          ? player.getDuration()
+          : Infinity;
+    ElMessage.success("開始循環當前行");
+  } else {
+    loopStart.value = 0;
+    loopEnd.value = 0;
+    ElMessage.info("停止循環");
+  }
+};
+
+/*-- 播放器操作（播放、暫停、跳轉、速率） --*/
+const playerRef = ref(null);
+let player = null;
 
 const startVideo = (time) => {
   if (player && player.seekTo) {
@@ -462,50 +397,63 @@ const goToNextLyric = () => {
 
 const skipBackward = () => {
   if (player && player.getCurrentTime && player.seekTo) {
-    const currentTime = player.getCurrentTime();
-    player.seekTo(Math.max(0, currentTime - 3));
+    player.seekTo(Math.max(0, player.getCurrentTime() - 3));
   }
 };
 
 const skipForward = () => {
   if (player && player.getCurrentTime && player.seekTo) {
-    const currentTime = player.getCurrentTime();
     const duration = player.getDuration ? player.getDuration() : Infinity;
-    player.seekTo(Math.min(duration, currentTime + 3));
+    player.seekTo(Math.min(duration, player.getCurrentTime() + 3));
   }
 };
 
-const toggleLoopCurrentLyric = () => {
-  if (lyrics.value.length === 0 || currentLyricIndex.value < 0) {
-    ElMessage.warning("沒有可循環的歌詞行");
+/*-- YouTube Player 初始化 --*/
+const initializePlayer = () => {
+  if (
+    typeof window.YT === "undefined" ||
+    typeof window.YT.Player === "undefined"
+  ) {
+    setTimeout(initializePlayer, 100);
     return;
   }
-  isLooping.value = !isLooping.value;
-  if (isLooping.value) {
-    loopStart.value = parseTimeToSeconds(
-      lyrics.value[currentLyricIndex.value].timestamp,
-    );
-    loopEnd.value =
-      currentLyricIndex.value < lyrics.value.length - 1
-        ? parseTimeToSeconds(
-            lyrics.value[currentLyricIndex.value + 1].timestamp,
-          )
-        : player && player.getDuration
-          ? player.getDuration()
-          : Infinity;
-    ElMessage.success("開始循環當前行");
-  } else {
-    loopStart.value = 0;
-    loopEnd.value = 0;
-    ElMessage.info("停止循環");
+  if (!playerRef.value) return;
+
+  if (player) {
+    player.destroy();
+    player = null;
   }
+
+  player = new window.YT.Player(playerRef.value, {
+    videoId: videoId.value,
+    height: "100%",
+    width: "100%",
+    playerVars: { autoplay: 1, playsinline: 1 },
+    events: {
+      onReady: (event) => {
+        setInterval(updateCurrentLyric, 100);
+        event.target.setPlaybackRate(playbackRate.value);
+      },
+      onStateChange: (event) => {
+        isPlaying.value = event.data === window.YT.PlayerState.PLAYING;
+        if (event.data === window.YT.PlayerState.ENDED) {
+          playNextSong();
+          player.seekTo(0);
+        }
+      },
+      onError: (event) => {
+        console.error("YouTube Player Error:", event.data);
+        ElMessage.error(`播放器錯誤: ${event.data}`);
+      },
+    },
+  });
 };
 
+/*-- 鍵盤快捷鍵 --*/
 const handleKeyPress = (event) => {
   if (
-    true &&
-    (document.activeElement.tagName === "INPUT" ||
-      document.activeElement.tagName === "TEXTAREA")
+    document.activeElement.tagName === "INPUT" ||
+    document.activeElement.tagName === "TEXTAREA"
   ) {
     return;
   }
@@ -531,108 +479,107 @@ const handleKeyPress = (event) => {
   }
 };
 
-// 更新窗口寬度
+/*-- 版面拖拉調整（左右寬度） --*/
+const leftWidth = ref(50);
+const isResizing = ref(false);
+const windowWidth = ref(0);
+const isMobile = computed(() => windowWidth.value < 1024);
+
 const updateWindowWidth = () => {
-  if (true) {
-    windowWidth.value = window.innerWidth;
-  }
+  windowWidth.value = window.innerWidth;
 };
 
-// 調整寬度功能
 const startResize = (event) => {
-  if (!true) return;
   isResizing.value = true;
   document.addEventListener("mousemove", onResize);
   document.addEventListener("mouseup", stopResize);
-  // 防止文字選取
   event.preventDefault();
 };
 
 const onResize = (event) => {
-  if (!isResizing.value || !true) return;
-
+  if (!isResizing.value) return;
   const container = document.querySelector(".lg\\:flex-row");
   if (!container) return;
-
   const containerRect = container.getBoundingClientRect();
   const newLeftWidth =
     ((event.clientX - containerRect.left) / containerRect.width) * 100;
-
-  // 限制寬度在 20% 到 80% 之間
   if (newLeftWidth >= 20 && newLeftWidth <= 80) {
     leftWidth.value = newLeftWidth;
   }
 };
 
 const stopResize = () => {
-  if (!true) return;
   isResizing.value = false;
   document.removeEventListener("mousemove", onResize);
   document.removeEventListener("mouseup", stopResize);
-
-  // 保存到 localStorage
   localStorage.setItem("myGojuon_leftWidth", JSON.stringify(leftWidth.value));
 };
 
-// onMounted 只在客戶端執行，是放置客戶端專用邏輯的最佳位置
+/*-- Watchers（監聽狀態變化並同步 localStorage） --*/
+watch(videoId, async (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    currentLyricIndex.value = -1;
+    isLooping.value = false;
+    await fetchVideoData(newId);
+    await fetchAllVideos();
+    initializePlayer();
+  }
+});
+
+watch(autoPlayNext, (newValue) => {
+  localStorage.setItem("myGojuon_autoPlayNext", JSON.stringify(newValue));
+});
+
+watch(playbackRate, (newValue) => {
+  localStorage.setItem("myGojuon_playbackRate", JSON.stringify(newValue));
+});
+
+watch(autoScroll, (newValue) => {
+  localStorage.setItem("myGojuon_autoScroll", JSON.stringify(newValue));
+});
+
+/*-- 生命週期（初始化 & 清理） --*/
 onMounted(async () => {
   await fetchVideoData(uid);
-  // 確保在客戶端環境下執行
-  if (true) {
-    // 初始化窗口寬度
-    updateWindowWidth();
-    // 監聽窗口大小變化
-    window.addEventListener("resize", updateWindowWidth);
 
-    // 載入本地存儲的設定
-    const savedAutoPlayNext = localStorage.getItem("myGojuon_autoPlayNext");
-    const savedPlaybackRate = localStorage.getItem("myGojuon_playbackRate");
-    const savedAutoScroll = localStorage.getItem("myGojuon_autoScroll");
-    const savedLeftWidth = localStorage.getItem("myGojuon_leftWidth");
+  updateWindowWidth();
+  window.addEventListener("resize", updateWindowWidth);
+  window.addEventListener("keypress", handleKeyPress, true);
 
-    if (savedAutoPlayNext !== null) {
-      autoPlayNext.value = JSON.parse(savedAutoPlayNext);
-    }
-    if (savedPlaybackRate !== null) {
-      playbackRate.value = JSON.parse(savedPlaybackRate);
-    }
-    if (savedAutoScroll !== null) {
-      autoScroll.value = JSON.parse(savedAutoScroll);
-    }
-    if (savedLeftWidth !== null) {
-      leftWidth.value = JSON.parse(savedLeftWidth);
-    }
+  // 載入 localStorage 設定
+  const savedAutoPlayNext = localStorage.getItem("myGojuon_autoPlayNext");
+  const savedPlaybackRate = localStorage.getItem("myGojuon_playbackRate");
+  const savedAutoScroll = localStorage.getItem("myGojuon_autoScroll");
+  const savedLeftWidth = localStorage.getItem("myGojuon_leftWidth");
 
-    fetchAllVideos();
+  if (savedAutoPlayNext !== null)
+    autoPlayNext.value = JSON.parse(savedAutoPlayNext);
+  if (savedPlaybackRate !== null)
+    playbackRate.value = JSON.parse(savedPlaybackRate);
+  if (savedAutoScroll !== null) autoScroll.value = JSON.parse(savedAutoScroll);
+  if (savedLeftWidth !== null) leftWidth.value = JSON.parse(savedLeftWidth);
 
-    // 監聽 YouTube API 是否準備就緒
-    window.onYouTubeIframeAPIReady = () => {
-      initializePlayer();
-    };
+  fetchAllVideos();
 
-    // 如果 API 已經載入，直接初始化
-    if (window.YT && window.YT.Player) {
-      initializePlayer();
-    }
-
-    window.addEventListener("keypress", handleKeyPress, true);
+  // 初始化 YouTube Player
+  window.onYouTubeIframeAPIReady = () => {
+    initializePlayer();
+  };
+  if (window.YT && window.YT.Player) {
+    initializePlayer();
   }
 });
 
 onUnmounted(() => {
-  if (true) {
-    if (player) {
-      player.destroy();
-      player = null;
-    }
-    window.removeEventListener("keypress", handleKeyPress);
-    window.removeEventListener("resize", updateWindowWidth);
-    // 清理拖動事件監聽器
-    document.removeEventListener("mousemove", onResize);
-    document.removeEventListener("mouseup", stopResize);
-    // onYouTubeIframeAPIReady 設為 null，避免組件卸載後觸發
-    window.onYouTubeIframeAPIReady = null;
+  if (player) {
+    player.destroy();
+    player = null;
   }
+  window.removeEventListener("keypress", handleKeyPress);
+  window.removeEventListener("resize", updateWindowWidth);
+  document.removeEventListener("mousemove", onResize);
+  document.removeEventListener("mouseup", stopResize);
+  window.onYouTubeIframeAPIReady = null;
 });
 </script>
 
