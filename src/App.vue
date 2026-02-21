@@ -16,7 +16,7 @@
         </el-menu>
       </div>
       <div class="flex w-fit items-center gap-4">
-        <LocaleSwitcher />
+        <NavSetting />
         <myGoogleLogin v-model:textWaterfallEnabled="textWaterfallEnabled" />
       </div>
     </nav>
@@ -27,8 +27,7 @@
       <div
         class="main-component relative h-fit"
         :class="{
-          'wide-layout':
-            isInSongPractice || isInBackend || isInSongEdit || isInSongOverview,
+          'wide-layout': isWideLayout,
         }"
       >
         <router-view />
@@ -64,123 +63,44 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from "vue";
+import { ref, watch, computed, onMounted, toRef } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { ChatLineRound, CloseBold } from "@element-plus/icons-vue";
 import ContactForm from "@/components/ContactForm.vue";
-
-import fiftySoundsData from "@/data/fifty-sounds.json";
 import myGoogleLogin from "@/components/myGoogleLogin.vue";
 import MenuItem from "@/components/MenuItem.vue";
-import LocaleSwitcher from "@/components/LocaleSwitcher.vue";
-import { useAuth } from "@/composables/useAuth.js";
+import NavSetting from "@/components/NavSetting.vue";
 
-// 初始化認證狀態
-const { initializeAuth, user } = useAuth();
-initializeAuth();
+/*-- 全域設定 --*/
+import { useSettingsStore } from "@/stores/index.js";
+const settingsStore = useSettingsStore();
 
-const showContactForm = ref(false);
-const showFloatingButton = ref(true);
+/*-- 文字瀑布 --*/
+import { useTextWaterfall } from "@/composables/useTextWaterfall";
+const textContainer = ref(null);
+useTextWaterfall(textContainer, toRef(settingsStore, "textfall"));
 
 const { t, locale } = useI18n();
 const route = useRoute();
-const activeIndex = ref("/");
 
-const isAdmin = computed(() => user.value?.email === "iop890520@gmail.com");
-
-// 文字瀑布開關狀態
-const textWaterfallEnabled = ref(true);
-
-watch(
-  () => route.path,
-  (newPath) => {
-    // 移除語言前綴
-    const basePath = newPath.replace(/^\/(en)/, "") || "/";
-    activeIndex.value = basePath;
-  },
-  { immediate: true },
+const isWideLayout = computed(
+  () =>
+    route.path.includes("/SongOverview") ||
+    route.path.includes("/SongPractice") ||
+    route.path.includes("/Backend") ||
+    route.path.includes("/S/") ||
+    route.path.includes("/s/"),
 );
 
-const isInSongPractice = computed(() => route.path.includes("/SongPractice"));
-const isInSongOverview = computed(() => route.path.includes("/SongOverview"));
-const isInBackend = computed(() => route.path.includes("/Backend"));
-const isInSongEdit = computed(
-  () => route.path.includes("/S/") || route.path.includes("/s/"),
-);
+const showContactForm = ref(false);
+const showFloatingButton = ref(true);
+const activeIndex = computed(() => route.path);
 
-// ===== 文字瀑布 =====
-const TEXT_COUNT = 100;
-const textContainer = ref(null);
-const textArray = fiftySoundsData.hiragana
-  .map((item) => item.kana)
-  .concat(fiftySoundsData.katakana.map((item) => item.kana));
-
-const isDesktopDevice = () => {
-  const userAgent = navigator.userAgent.toLowerCase();
-  const mobileKeywords = [
-    "android",
-    "webos",
-    "iphone",
-    "ipad",
-    "ipod",
-    "blackberry",
-    "windows phone",
-  ];
-  return !mobileKeywords.some((keyword) => userAgent.includes(keyword));
-};
-
-onMounted(() => {
-  if (!textContainer.value) return;
-  if (isDesktopDevice() && textWaterfallEnabled.value) {
-    createTextWaterfall();
-  }
-});
-
-function createTextWaterfall() {
-  if (!textContainer.value) return;
-  let count = 0;
-  function createTextElement() {
-    if (count < TEXT_COUNT) {
-      const textEl = document.createElement("div");
-      textEl.classList.add("falling-text");
-      textEl.innerText =
-        textArray[Math.floor(Math.random() * textArray.length)];
-      const startX = Math.random() * window.innerWidth;
-      textEl.style.left = `${startX}px`;
-      const randomTop = -(Math.random() * 300 + 100);
-      textEl.style.top = `${randomTop}px`;
-      const duration = 3 + Math.random() * 5;
-      const delay = Math.random() * 5;
-      textEl.style.animationDuration = `${duration}s`;
-      textEl.style.animationDelay = `${delay}s`;
-      const fontSize = 16 + Math.random() * 30;
-      textEl.style.fontSize = `${fontSize}px`;
-      textContainer.value.appendChild(textEl);
-      count++;
-      requestAnimationFrame(createTextElement);
-    }
-  }
-  requestAnimationFrame(createTextElement);
-}
-
-function clearTextWaterfall() {
-  if (!textContainer.value) return;
-  textContainer.value.innerHTML = "";
-}
-
-watch(textWaterfallEnabled, (newValue) => {
-  if (!isDesktopDevice()) return;
-  if (newValue) {
-    createTextWaterfall();
-  } else {
-    clearTextWaterfall();
-  }
-});
+onMounted(() => {});
 </script>
 
 <style>
-@reference "tailwindcss";
 .content {
   height: calc(100% - 60px);
   overflow-y: auto;

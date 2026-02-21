@@ -1,69 +1,68 @@
+import axios from "axios";
+import { useAuthStore } from "@/stores/auth.js";
+
 export const useApi = () => {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE;
+  const instance = axios.create({
+    baseURL: import.meta.env.VITE_API_BASE,
+    timeout: import.meta.env.VITE_API_TIMEOUT,
+  });
 
-  // 在Header中加入JWT
-  const getHeaders = (extraHeaders = {}) => {
-    const headers = { ...extraHeaders };
-    const token = localStorage.getItem("myGojuon_token");
+  // Request interceptor：自動在 Header 加入 JWT
+  instance.interceptors.request.use((config) => {
+    const authStore = useAuthStore();
+    const token = authStore.token;
     if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
-    return headers;
-  };
+    return config;
+  });
 
-  const request = async (path, options = {}) => {
-    const url = new URL(path, API_BASE_URL);
+  // Response interceptor：統一處理 401
+  instance.interceptors.response.use(
+    (response) => response.data,
+    (error) => {
+      if (error.code === "ECONNABORTED") {
+        console.error("請求逾時，請稍後再試");
+      } else if (error.response?.status === 401) {
+        console.error("未授權的請求，請重新登入");
+      }
+      return Promise.reject(error);
+    },
+  );
 
-    if (options.params) {
-      Object.entries(options.params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          url.searchParams.append(key, value);
-        }
-      });
-    }
+  const request = (path, options = {}) => {
+    const { method = "GET", params, body, headers } = options;
 
-    const fetchOptions = {
-      method: options.method || "GET",
-      headers: getHeaders(options.headers || {}),
+    const config = {
+      url: path,
+      method,
+      params,
+      headers,
     };
 
-    if (options.body) {
-      if (options.body instanceof FormData) {
-        fetchOptions.body = options.body;
-      } else {
-        fetchOptions.headers["Content-Type"] = "application/json";
-        fetchOptions.body = JSON.stringify(options.body);
-      }
+    // Axios 會自動偵測 FormData 並設定正確的 Content-Type
+    // 若是一般物件則直接傳入 data，Axios 會自動序列化為 JSON
+    if (body !== undefined) {
+      config.data = body;
     }
 
-    const response = await fetch(url.toString(), fetchOptions);
-
-    if (response.status === 401) {
-      console.error("未授權的請求，請重新登入");
-    }
-
-    return await response.json();
+    return instance.request(config);
   };
 
-  const get = (path, params = {}, headers = {}) => {
-    return request(path, { method: "GET", params, headers });
-  };
+  const get = (path, params = {}, headers = {}) =>
+    request(path, { method: "GET", params, headers });
 
-  const post = (path, body = {}, headers = {}) => {
-    return request(path, { method: "POST", body, headers });
-  };
+  const post = (path, body = {}, headers = {}) =>
+    request(path, { method: "POST", body, headers });
 
-  const put = (path, body = {}, headers = {}) => {
-    return request(path, { method: "PUT", body, headers });
-  };
+  const put = (path, body = {}, headers = {}) =>
+    request(path, { method: "PUT", body, headers });
 
-  const patch = (path, body = {}, headers = {}) => {
-    return request(path, { method: "PATCH", body, headers });
-  };
+  const patch = (path, body = {}, headers = {}) =>
+    request(path, { method: "PATCH", body, headers });
 
-  const del = (path, params = {}, headers = {}) => {
-    return request(path, { method: "DELETE", params, headers });
-  };
+  const del = (path, params = {}, headers = {}) =>
+    request(path, { method: "DELETE", params, headers });
 
   return { get, post, put, patch, del };
 };

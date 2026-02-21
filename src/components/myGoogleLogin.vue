@@ -1,6 +1,6 @@
 <template>
   <div class="mr-2 flex h-full w-full items-center gap-4 overflow-hidden">
-    <template v-if="isLogin && user">
+    <template v-if="authStore.isLoggedIn">
       <div class="flex items-center">
         <el-popover
           placement="bottom"
@@ -12,18 +12,12 @@
             <div
               class="w-20 cursor-pointer truncate text-blue-400 hover:text-blue-600"
             >
-              {{ user.name }}
+              {{ authStore.userName }}
             </div>
           </template>
           <div class="flex flex-col items-center gap-2">
-            <div>{{ t("left_points") }}: ∞</div>
-            <div class="flex items-center gap-2">
-              <span class="text-sm">{{ t("text_waterfall") }}</span>
-              <el-switch
-                :model-value="textWaterfallEnabled"
-                @update:model-value="handleTextWaterfallToggle"
-              />
-            </div>
+            <div>{{ t("left_points") }}: {{ authStore.userPoint }}</div>
+
             <el-button
               @click="handleLogout"
               type="danger"
@@ -44,32 +38,19 @@
 </template>
 
 <script setup>
-import { decodeCredential } from "vue3-google-login";
-import { useI18n } from "vue-i18n";
+import { ref, computed, watch, onMounted } from "vue";
 import { ElMessage } from "element-plus";
-import { useAuth } from "@/composables/useAuth.js";
-import { useApi } from "@/composables/useApi.js";
 
+/*-- i18n --*/
+import { useI18n } from "vue-i18n";
 const { t } = useI18n();
-const { user, isLogin, setLoginInfo, logout } = useAuth();
-const myAPI = useApi();
 
-const props = defineProps({
-  textWaterfallEnabled: { type: Boolean, required: true },
-});
-const emit = defineEmits(["update:textWaterfallEnabled"]);
-
-const handleTextWaterfallToggle = (value) => {
-  emit("update:textWaterfallEnabled", value);
-};
-
+/*-- store --*/
+import { useAuthStore } from "@/stores/index.js";
+const authStore = useAuthStore();
 const handleLoginCallback = async (response) => {
-  const userData = decodeCredential(response.credential);
-  const { name, email, picture, sub } = userData;
-
   try {
-    const res = await myAPI.post("/login", { email, name, picture, sub });
-    setLoginInfo(res.data.token, { email, name, picture, sub });
+    authStore.login(response.credential);
     ElMessage.success(t("login_success"));
   } catch (error) {
     if (error && error.message) {
@@ -87,7 +68,12 @@ const handleLoginCallback = async (response) => {
 };
 
 const handleLogout = () => {
-  logout();
+  authStore.logout();
   ElMessage.success(t("logout_success"));
 };
+
+onMounted(() => {
+  // 嘗試根據localStorage獲取使用者訊息
+  authStore.fetchCurrentUser();
+});
 </script>

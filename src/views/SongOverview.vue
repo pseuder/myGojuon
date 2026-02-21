@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-[88vh] w-full flex-col p-2 lg:h-full">
+    <!-- 指定歌手歌曲頁面 -->
     <div class="mb-4 flex-none">
-      <!-- Navigation header when viewing specific author -->
       <div
         v-if="activeTab !== 'all'"
         class="flex items-center gap-4 border-b border-gray-200 py-2 dark:border-gray-700"
@@ -10,14 +10,12 @@
           <el-icon class=""><Back /></el-icon>
         </el-button>
         <h2 class="gradient-text-tech mx-auto text-2xl font-bold">
-          {{ currentAuthor?.name || "" }}
+          {{ currentArtistName || "" }}
         </h2>
         <el-button class="invisible">
           <el-icon class=""><ArrowLeft /></el-icon>
         </el-button>
       </div>
-
-      <!-- Tabs only shown when on ALL view -->
       <el-tabs
         v-else
         v-model="activeTab"
@@ -26,27 +24,25 @@
       >
         <el-tab-pane label="ALL" name="all"> </el-tab-pane>
         <el-tab-pane
-          v-for="author in allAuthors"
-          :key="author.id"
-          :label="author.name"
-          :name="String(author.id)"
-          :class="{ 'gradient-text-tech-animated': author.author == 'NELKE' }"
+          v-for="artist in allArtists"
+          :key="artist.artist_id"
+          :label="artist.name"
+          :name="String(artist.artist_id)"
         >
         </el-tab-pane>
       </el-tabs>
     </div>
 
+    <!-- 全部歌手清單 -->
     <div class="flex w-full grow flex-col items-center gap-4 overflow-x-hidden">
-      <!-- Author selection view -->
       <div
         v-if="activeTab === 'all'"
         class="flex w-full flex-1 flex-wrap content-start justify-center gap-4 overflow-y-auto p-2"
       >
-        <!-- Skeleton loading for authors -->
-        <template v-if="isLoading && allAuthors.length === 0">
+        <template v-if="isLoading && allArtists.length === 0">
           <div
             v-for="i in 6"
-            :key="`skeleton-author-${i}`"
+            :key="`skeleton-artist-${i}`"
             class="flex flex-col"
           >
             <el-card class="h-52 w-80 p-0 md:w-96" shadow="hover">
@@ -63,23 +59,21 @@
             </el-skeleton>
           </div>
         </template>
-
-        <!-- Actual author cards -->
-        <template v-else v-for="author in allAuthors" :key="author.id">
+        <template v-else v-for="artist in allArtists" :key="artist.artist_id">
           <div
             class="flex cursor-pointer flex-col hover:scale-105"
-            @click="handleAuthorSelect(author.id)"
+            @click="handleArtistSelect(artist.artist_id, artist.name)"
           >
             <el-card class="h-52 w-80 p-0 md:w-96" shadow="hover">
               <img
-                :src="`/thumbnails/${author.name}.jpg`"
+                :src="`/thumbnails/${artist.name}.jpg`"
                 class="h-full w-full"
-                :alt="author.name"
+                :alt="artist.name"
                 style="object-fit: cover; object-position: top"
               />
             </el-card>
             <div class="text-lg font-bold">
-              {{ author.name }} - {{ author.song_count }} {{ t("songs") }}
+              {{ artist.name }} - {{ artist.song_count }} {{ t("songs") }}
             </div>
           </div>
         </template>
@@ -147,7 +141,6 @@
 
         <!-- Video cards container -->
         <el-space
-          ref="scrollContainer"
           class="w-full flex-1 justify-center overflow-x-hidden overflow-y-auto"
           wrap
         >
@@ -241,17 +234,6 @@
           </template>
         </el-space>
       </div>
-
-      <!-- Loading indicator for infinite scroll (only when loading more, not initial load) -->
-      <div
-        v-if="isLoading && activeTab !== 'all' && allVideos.length > 0"
-        class="flex justify-center py-4"
-      >
-        <el-icon class="is-loading">
-          <Loading />
-        </el-icon>
-        <span class="ml-2">{{ t("loading_more_videos") }}</span>
-      </div>
     </div>
   </div>
 </template>
@@ -261,137 +243,25 @@ import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Loading, ArrowLeft, Back } from "@element-plus/icons-vue";
 
-import { useI18n } from "vue-i18n";
-const { t, locale } = useI18n();
+/*-- router --*/
+const router = useRouter();
+const route = useRoute();
 const localePath = (p) => p;
 
+/*-- i18n --*/
+import { useI18n } from "vue-i18n";
+const { t, locale } = useI18n();
+
+/*-- API --*/
 import { useApi } from "@/composables/useApi.js";
 const MYAPI = useApi();
 
-// 歌曲總覽頁面專屬 SEO Meta
-
-// 添加結構化資料
-
-const router = useRouter();
-const route = useRoute();
 const allVideos = ref([]);
-const allAuthors = ref([]);
-const selectedAuthor = ref(null);
+const allArtists = ref([]);
+const selectedArtist = ref(null);
 const activeTab = ref("all");
-
-const page_size = ref(10);
-const page_number = ref(1);
-const total = ref(0);
-const hasMore = ref(true);
-const queryInput = ref("");
-
 const isLoading = ref(true);
-
-// Sorting state
-const sortBy = ref(null); // 'views' or 'publish_date'
-const sortOrder = ref("desc"); // 'asc' or 'desc'
-
-// Ref for scrollable container
-const scrollContainer = ref(null);
-
-// Store scroll position for author list
-const authorListScrollPosition = ref(0);
-
-// Computed property for current author
-const currentAuthor = computed(() => {
-  if (!activeTab.value || activeTab.value === "all") return null;
-  return allAuthors.value.find(
-    (author) => String(author.id) === String(activeTab.value),
-  );
-});
-
-// Computed property for filtered videos based on search query
-const filteredVideos = computed(() => {
-  if (!queryInput.value.trim()) {
-    return allVideos.value;
-  }
-
-  const searchTerm = queryInput.value.toLowerCase().trim();
-
-  return allVideos.value.filter((video) => {
-    // Search in video name
-    const nameMatch = video.name?.toLowerCase().includes(searchTerm);
-
-    // Search in tags (備註)
-    const tagsMatch = video.tags?.toLowerCase().includes(searchTerm);
-
-    return nameMatch || tagsMatch;
-  });
-});
-
-// Computed property for sorted videos
-const sortedVideos = computed(() => {
-  const videos = [...filteredVideos.value];
-
-  if (!sortBy.value) {
-    return videos;
-  }
-
-  if (sortBy.value === "views") {
-    videos.sort((a, b) => {
-      const viewsA = parseInt(a.views) || 0;
-      const viewsB = parseInt(b.views) || 0;
-      return sortOrder.value === "desc" ? viewsB - viewsA : viewsA - viewsB;
-    });
-  } else if (sortBy.value === "publish_date") {
-    videos.sort((a, b) => {
-      const dateA = new Date(a.publish_date || 0);
-      const dateB = new Date(b.publish_date || 0);
-      return sortOrder.value === "desc" ? dateB - dateA : dateA - dateB;
-    });
-  }
-
-  return videos;
-});
-
-// Toggle sort function
-const toggleSort = (field) => {
-  if (sortBy.value === field) {
-    // If clicking the same field, cycle through: desc -> asc -> null (original order)
-    if (sortOrder.value === "desc") {
-      sortOrder.value = "asc";
-    } else {
-      // Third click: reset to original order
-      sortBy.value = null;
-      sortOrder.value = "desc";
-    }
-  } else {
-    // If clicking a different field, set it as sortBy and default to desc
-    sortBy.value = field;
-    sortOrder.value = "desc";
-  }
-};
-
-// Load more videos when scrolling to bottom
-const loadMoreVideos = async () => {
-  if (isLoading.value || !hasMore.value) {
-    return;
-  }
-
-  page_number.value += 1;
-  await fetchVideos(true);
-};
-
-// Scroll event handler for infinite scroll
-const handleScroll = () => {
-  if (!scrollContainer.value) return;
-
-  const element = scrollContainer.value.$el;
-  const scrollTop = element.scrollTop;
-  const scrollHeight = element.scrollHeight;
-  const clientHeight = element.clientHeight;
-
-  // Trigger load more when user scrolls to within 100px of bottom
-  const threshold = 100;
-  if (scrollTop + clientHeight >= scrollHeight - threshold) {
-    loadMoreVideos();
-  }
-};
+const currentArtistName = ref("");
 
 // 輔助函式: 解析路由
 const resolveVideoUrl = (source_id) => {
@@ -426,34 +296,103 @@ const formatDate = (dateString) => {
   return `${year}-${month}-${day}`;
 };
 
-const handleAuthorSelect = (authorId) => {
-  // Save scroll position before leaving author list view
-  const authorListContainer = document.querySelector(
-    ".flex.w-full.flex-1.flex-wrap.content-start.justify-center.gap-4.overflow-y-auto",
-  );
-  if (authorListContainer) {
-    authorListScrollPosition.value = authorListContainer.scrollTop;
+/*-- 紀錄滾動位置 --*/
+const artistListScrollPosition = ref(0);
+
+/*-- 過濾&排序 --*/
+const queryInput = ref("");
+const sortBy = ref(null); // 'views' or 'publish_date'
+const sortOrder = ref("desc"); // 'asc' or 'desc'
+
+// 過濾後歌曲列表
+const filteredVideos = computed(() => {
+  if (!queryInput.value.trim()) {
+    return allVideos.value;
+  }
+  const searchTerm = queryInput.value.toLowerCase().trim();
+  return allVideos.value.filter((video) => {
+    const nameMatch = video.name?.toLowerCase().includes(searchTerm);
+    const tagsMatch = video.tags?.toLowerCase().includes(searchTerm);
+    return nameMatch || tagsMatch;
+  });
+});
+
+// 排序後歌曲列表
+const sortedVideos = computed(() => {
+  const videos = [...filteredVideos.value];
+
+  if (!sortBy.value) {
+    return videos;
   }
 
-  const authorIdStr = String(authorId);
-  activeTab.value = authorIdStr;
-  handleTabChange(authorIdStr);
+  if (sortBy.value === "views") {
+    videos.sort((a, b) => {
+      const viewsA = parseInt(a.views) || 0;
+      const viewsB = parseInt(b.views) || 0;
+      return sortOrder.value === "desc" ? viewsB - viewsA : viewsA - viewsB;
+    });
+  } else if (sortBy.value === "publish_date") {
+    videos.sort((a, b) => {
+      const dateA = new Date(a.publish_date || 0);
+      const dateB = new Date(b.publish_date || 0);
+      return sortOrder.value === "desc" ? dateB - dateA : dateA - dateB;
+    });
+  }
+
+  return videos;
+});
+
+// Event: 排序
+const toggleSort = (field) => {
+  if (sortBy.value === field) {
+    // If clicking the same field, cycle through: desc -> asc -> null (original order)
+    if (sortOrder.value === "desc") {
+      sortOrder.value = "asc";
+    } else {
+      // Third click: reset to original order
+      sortBy.value = null;
+      sortOrder.value = "desc";
+    }
+  } else {
+    // If clicking a different field, set it as sortBy and default to desc
+    sortBy.value = field;
+    sortOrder.value = "desc";
+  }
 };
 
+// Event: 點擊歌手
+const handleArtistSelect = (artistId, artistName) => {
+  // Save scroll position before leaving artist list view
+  const artistListContainer = document.querySelector(
+    ".flex.w-full.flex-1.flex-wrap.content-start.justify-center.gap-4.overflow-y-auto",
+  );
+  if (artistListContainer) {
+    artistListScrollPosition.value = artistListContainer.scrollTop;
+  }
+
+  const artistIdStr = String(artistId);
+  activeTab.value = artistIdStr;
+  handleTabChange(artistIdStr);
+
+  currentArtistName.value = artistName;
+};
+
+// Event: 點擊返回
 const handleBackToAll = async () => {
   activeTab.value = "all";
   await handleTabChange("all");
 
-  // Restore scroll position after returning to author list view
+  // Restore scroll position after returning to artist list view
   await nextTick();
-  const authorListContainer = document.querySelector(
+  const artistListContainer = document.querySelector(
     ".flex.w-full.flex-1.flex-wrap.content-start.justify-center.gap-4.overflow-y-auto",
   );
-  if (authorListContainer && authorListScrollPosition.value > 0) {
-    authorListContainer.scrollTop = authorListScrollPosition.value;
+  if (artistListContainer && artistListScrollPosition.value > 0) {
+    artistListContainer.scrollTop = artistListScrollPosition.value;
   }
 };
 
+// Event: 點擊特定影片
 const handleVideoClick = (source_id) => {
   const dataToSend = {
     source_id: source_id,
@@ -465,74 +404,44 @@ const handleVideoClick = (source_id) => {
   });
 };
 
+// Event: 總攬/歌手頁面切換
 const handleTabChange = async (tabName) => {
   if (tabName === "all") {
-    selectedAuthor.value = null;
+    selectedArtist.value = null;
     router.push({
       query: {},
     });
   } else {
-    selectedAuthor.value = tabName;
+    selectedArtist.value = tabName;
     router.push({
       query: {
-        author: tabName,
+        artist: tabName,
       },
     });
   }
   // Reset for new tab
-  page_number.value = 1;
   allVideos.value = [];
-  hasMore.value = true;
   await fetchVideos();
-
-  // Re-add scroll event listener after tab change
-  await nextTick();
-  if (scrollContainer.value) {
-    const element = scrollContainer.value.$el;
-    // Remove existing listener first to avoid duplicates
-    element.removeEventListener("scroll", handleScroll);
-    // Add the listener again
-    element.addEventListener("scroll", handleScroll);
-  }
 };
 
-const fetchVideos = async (isAppend = false) => {
+// 獲取某歌手所有影片
+const fetchVideos = async () => {
   isLoading.value = true;
-
-  // const params = {
-  //   page_size: page_size.value,
-  //   page_number: page_number.value,
-  // };
-
   const params = {};
-
-  if (selectedAuthor.value) {
-    params.author_id = selectedAuthor.value;
+  if (selectedArtist.value) {
+    params.artist_id = selectedArtist.value;
   }
 
   try {
-    // Fetch authors first if not already loaded
-    if (allAuthors.value.length === 0) {
-      const authorRes = await MYAPI.get("/get_all_authors");
-      allAuthors.value = authorRes.data;
+    if (allArtists.value.length === 0) {
+      const artistRes = await MYAPI.get("/get_artists_list");
+      allArtists.value = artistRes.data;
     }
 
-    // If a specific author is selected, fetch their videos
-    if (selectedAuthor.value) {
-      const videoRes = await MYAPI.get("/get_all_videos", params);
+    if (selectedArtist.value) {
+      const videoRes = await MYAPI.get("/get_artist_songs", params);
       if (videoRes["status"] == "success") {
-        const newVideos = videoRes.data.data;
-        total.value = videoRes.data.total;
-
-        if (isAppend) {
-          allVideos.value = [...allVideos.value, ...newVideos];
-        } else {
-          allVideos.value = newVideos;
-        }
-
-        hasMore.value =
-          newVideos.length === page_size.value &&
-          allVideos.value.length < total.value;
+        allVideos.value = videoRes["data"];
       } else {
         ElMessage({
           type: videoRes["status"],
@@ -540,10 +449,7 @@ const fetchVideos = async (isAppend = false) => {
         });
       }
     } else {
-      // When 'all' is selected, we don't fetch videos, just clear the list
       allVideos.value = [];
-      total.value = 0;
-      hasMore.value = false;
     }
   } catch (error) {
     console.error("Error fetching data:", error);
@@ -557,34 +463,20 @@ const fetchVideos = async (isAppend = false) => {
 };
 
 onMounted(async () => {
-  const author_id = route.query.author;
-  if (author_id) {
-    selectedAuthor.value = author_id;
-    activeTab.value = author_id;
+  const artist_id = route.query.artist;
+  if (artist_id) {
+    selectedArtist.value = artist_id;
+    activeTab.value = artist_id;
   } else {
     activeTab.value = "all";
   }
   await fetchVideos();
-
-  // Add scroll event listener for infinite scroll after DOM is ready
-  await nextTick();
-  if (scrollContainer.value) {
-    const element = scrollContainer.value.$el;
-    element.addEventListener("scroll", handleScroll);
-  }
 });
 
-onUnmounted(() => {
-  // Remove scroll event listener
-  if (scrollContainer.value) {
-    const element = scrollContainer.value.$el;
-    element.removeEventListener("scroll", handleScroll);
-  }
-});
+onUnmounted(() => {});
 </script>
 
 <style scoped>
-@reference "tailwindcss";
 .gradient-text-tech {
   background: linear-gradient(120deg, #4caf50, #2196f3, #673ab7, #4caf50);
   background-size: 300% 100%;

@@ -45,7 +45,7 @@
             :title="t('japanese')"
           >
             <span class="text-[12px] text-gray-600"> {{ t("japanese") }}</span>
-            <span>{{ selectedSound.kana }}</span>
+            <span>{{ learningStore.writing_selectedSound.kana }}</span>
           </div>
           <!-- 羅馬字 -->
           <div
@@ -53,7 +53,7 @@
             :title="t('romaji')"
           >
             <span class="text-[12px] text-gray-600"> {{ t("romaji") }}</span>
-            <span>{{ selectedSound.romaji }}</span>
+            <span>{{ learningStore.writing_selectedSound.romaji }}</span>
           </div>
           <!-- 漢字來源 -->
           <div
@@ -63,11 +63,14 @@
             <span class="text-[12px] text-gray-600">
               {{ t("kanji_source") }}</span
             >
-            <span>{{ selectedSound.evo }}</span>
+            <span>{{ learningStore.writing_selectedSound.evo }}</span>
           </div>
 
           <!-- 自動撥放 -->
-          <el-checkbox v-model="autoPlay" class="hover:cursor-pointer">
+          <el-checkbox
+            v-model="learningStore.writing_autoplay"
+            class="hover:cursor-pointer"
+          >
             {{ t("auto_play") }}
           </el-checkbox>
 
@@ -92,7 +95,7 @@
         <HandwritingCanvas
           ref="handwritingCanvas"
           class="select-none"
-          :example-kana="selectedSound.kana"
+          :example-kana="learningStore.writing_selectedSound.kana"
           :current-type="activeTab"
           :show-example="true"
           :learning-module="LEARNING_MODULE"
@@ -115,6 +118,10 @@ const MYAPI = useApi();
 import { useWebAudio } from "@/composables/useWebAudio.js";
 const { isPlaying, play: playAudio, stop: stopAudio } = useWebAudio();
 
+/*-- store --*/
+import { useLearningStore } from "@/stores/learning.js";
+const learningStore = useLearningStore();
+
 // 常數值設置
 const TAB_TYPES = {
   HIRAGANA: "hiragana",
@@ -125,10 +132,8 @@ const TAB_TYPES = {
 };
 const LEARNING_MODULE = "writing";
 const fiftySounds = fiftySoundsData;
-const activeTab = ref(TAB_TYPES.HIRAGANA);
-const selectedSound = ref({ kana: "あ", romaji: "a", evo: "安" });
-const autoPlay = ref(false);
-
+const activeTab = ref(learningStore.writing_tab);
+// const selectedSound = ref({ kana: "あ", romaji: "a", evo: "安" });
 const tabs = [
   { name: TAB_TYPES.HIRAGANA, label: "hiragana" },
   { name: TAB_TYPES.KATAKANA, label: "katakana" },
@@ -139,7 +144,8 @@ const tabs = [
 
 // CSS: 判斷當前單字
 const isSelectedSound = (sound) =>
-  selectedSound.value && selectedSound.value.kana === sound.kana;
+  learningStore.writing_selectedSound &&
+  learningStore.writing_selectedSound.kana === sound.kana;
 
 // 當前單字集, 如:あ, い, う, ..., ん
 const currentSounds = computed(() => fiftySounds[activeTab.value] ?? []);
@@ -162,24 +168,27 @@ const currentSounds_menu = computed(() => {
 
 // 切換單字集時自動切換為新單字集第一個單字
 watch(activeTab, () => {
-  selectedSound.value = currentSounds.value[0];
+  learningStore.writing_selectedSound = currentSounds.value[0];
 });
 
 // 切換單字時撥放發音
-watch(selectedSound, async () => {
-  if (autoPlay.value) {
-    await playSound();
+watch(
+  () => learningStore.writing_selectedSound,
+  async () => {
+    if (learningStore.writing_autoplay) {
+      await playSound();
 
-    await MYAPI.post("/writing_changeSound", {
-      learning_item: selectedSound.value.kana,
-    });
-  }
-});
+      await MYAPI.post("/writing_changeSound", {
+        learning_item: learningStore.writing_selectedSound.kana,
+      });
+    }
+  },
+);
 
 // 切換當前單字
 const selectSound = (sound) => {
   if (sound.kana) {
-    selectedSound.value = sound;
+    learningStore.writing_selectedSound = sound;
 
     // 自動複製
     navigator.clipboard.writeText(sound.kana);
@@ -204,7 +213,7 @@ const findNextChar = (currentIndex, direction) => {
 // 切換單字
 const changeSound = async (type) => {
   const currentIndex = currentSounds.value.findIndex(
-    (sound) => sound.kana === selectedSound.value.kana,
+    (sound) => sound.kana === learningStore.writing_selectedSound.kana,
   );
 
   const nextSound =
@@ -218,7 +227,7 @@ const changeSound = async (type) => {
 // 播放單字發音
 const playSound = async () => {
   stopAudio(); // 先停止當前播放
-  const currentRomaji = selectedSound.value.romaji;
+  const currentRomaji = learningStore.writing_selectedSound.romaji;
   const audioUrl = `/sounds/${currentRomaji}.mp3`;
   await playAudio(audioUrl);
 };
@@ -237,7 +246,9 @@ const handleKeydown = (event) => {
   }
 };
 
-// TODO: 從全域設定獲取使用者Preference(autoPlay, activeTab, selectedSound...)
+const handleTabChange = (tabName) => {
+  learningStore.writing_tab = tabName;
+};
 
 onMounted(() => {
   window.addEventListener("keydown", handleKeydown);

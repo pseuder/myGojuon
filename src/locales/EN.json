@@ -126,5 +126,6 @@
   "publish_date": "Publish Date",
   "loading_more_videos": "Loading more videos...",
   "error_loading_data": "Error loading data",
-  "text_waterfall": "Text Waterfall"
+  "text_waterfall": "Textfall",
+  "language": "Language"
 }

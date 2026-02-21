@@ -1,87 +1,93 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive } from "vue";
 
 export function useCanvas(props, exampleScale) {
-  const canvas = ref(null)
-  const canvasContainer = ref(null)
-  const canvasWrapper = ref(null)
-  const ctx = reactive({ value: null })
+  const canvas = ref(null);
+  const canvasContainer = ref(null);
+  const canvasWrapper = ref(null);
+  const ctx = reactive({ value: null });
 
   const initCanvas = () => {
-    if (!canvasContainer.value || !canvasWrapper.value || !canvas.value) return
+    if (!canvasContainer.value || !canvasWrapper.value || !canvas.value) return;
 
-    const containerWidth = canvasWrapper.value.offsetWidth
-    const containerHeight = canvasWrapper.value.offsetHeight
+    const containerWidth = canvasWrapper.value.offsetWidth;
+    const containerHeight = canvasWrapper.value.offsetHeight;
 
-    canvas.value.width = containerWidth
-    canvas.value.height = containerHeight
+    canvas.value.width = containerWidth;
+    canvas.value.height = containerHeight;
 
-    ctx.value = canvas.value.getContext('2d')
-    ctx.value.lineCap = 'round'
-    ctx.value.lineJoin = 'round'
+    ctx.value = canvas.value.getContext("2d");
+    ctx.value.lineCap = "round";
+    ctx.value.lineJoin = "round";
 
-    redrawCanvas()
-  }
+    redrawCanvas();
+  };
 
   const clearCanvas = () => {
-    if (!ctx.value || !canvas.value) return
-    ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height)
-    drawGrid()
+    if (!ctx.value || !canvas.value) return;
+    ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height);
+    drawGrid();
     if (props.showExample) {
-      drawExampleKana()
+      drawExampleKana();
     }
-  }
+  };
 
   const clearUserDrawing = () => {
-    if (!ctx.value || !canvas.value) return
-    ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height)
-    redrawCanvas()
-  }
+    if (!ctx.value || !canvas.value) return;
+    ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height);
+    redrawCanvas();
+  };
 
   const redrawCanvas = () => {
-    clearCanvas()
-  }
+    clearCanvas();
+  };
 
   const drawGrid = () => {
-    if (!ctx.value || !canvas.value) return
-    ctx.value.save()
-    ctx.value.strokeStyle = '#ccc'
-    ctx.value.lineWidth = 1
+    if (!ctx.value || !canvas.value) return;
+    ctx.value.save();
+    ctx.value.strokeStyle = "#ccc";
+    ctx.value.lineWidth = 1;
 
-    ctx.value.beginPath()
-    ctx.value.moveTo(0, canvas.value.height / 2)
-    ctx.value.lineTo(canvas.value.width, canvas.value.height / 2)
-    ctx.value.stroke()
+    ctx.value.beginPath();
+    ctx.value.moveTo(0, canvas.value.height / 2);
+    ctx.value.lineTo(canvas.value.width, canvas.value.height / 2);
+    ctx.value.stroke();
 
-    ctx.value.beginPath()
-    ctx.value.moveTo(canvas.value.width / 2, 0)
-    ctx.value.lineTo(canvas.value.width / 2, canvas.value.height)
-    ctx.value.stroke()
+    ctx.value.beginPath();
+    ctx.value.moveTo(canvas.value.width / 2, 0);
+    ctx.value.lineTo(canvas.value.width / 2, canvas.value.height);
+    ctx.value.stroke();
 
-    ctx.value.restore()
-  }
+    ctx.value.restore();
+  };
 
   const drawExampleKana = () => {
-      if (!ctx.value || !canvas.value) return
-      ctx.value.save()
+    if (!ctx.value || !canvas.value) return;
+    ctx.value.save();
 
-      const baseFontSize = props.currentType === 'yoon'
+    const baseFontSize =
+      props.currentType === "yoon"
         ? canvas.value.height * 0.5
-        : canvas.value.height * 0.8
-      
-      const fontSize = baseFontSize * (exampleScale.value / 100)
+        : canvas.value.height * 0.8;
 
-      // 使用字體堆疊，從最優先到備用字體
-      ctx.value.font = `${fontSize}px "UDDigiKyokasho N-R", "Yu Gothic", "MS Gothic", sans-serif`
-      ctx.value.fillStyle = 'rgba(200, 200, 200, 0.5)'
-      ctx.value.textAlign = 'center'
-      ctx.value.textBaseline = 'middle'
-      ctx.value.fillText(props.exampleKana, canvas.value.width / 2, canvas.value.height / 2)
-      ctx.value.restore()
-  }
+    const scale = exampleScale.value;
+    const fontSize = baseFontSize * (scale / 100);
+
+    // 使用字體堆疊，從最優先到備用字體
+    ctx.value.font = `${fontSize}px "UDDigiKyokasho N-R", "Yu Gothic", "MS Gothic", sans-serif`;
+    ctx.value.fillStyle = "rgba(200, 200, 200, 0.5)";
+    ctx.value.textAlign = "center";
+    ctx.value.textBaseline = "middle";
+    ctx.value.fillText(
+      props.exampleKana,
+      canvas.value.width / 2,
+      canvas.value.height / 2,
+    );
+    ctx.value.restore();
+  };
 
   const handleResize = () => {
-    initCanvas()
-  }
+    initCanvas();
+  };
 
   return {
     canvas,
@@ -94,6 +100,6 @@ export function useCanvas(props, exampleScale) {
     redrawCanvas,
     drawGrid,
     drawExampleKana,
-    handleResize
-  }
+    handleResize,
+  };
 }

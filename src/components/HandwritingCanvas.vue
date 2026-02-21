@@ -1,8 +1,8 @@
 <template>
   <div class="select-none" ref="canvasContainer">
     <div class="flex grow gap-2" v-if="showExample">
-      <span class="flex-shrink-0">{{ t("example_size") }}</span>
-      <el-slider v-model="exampleScale" />
+      <span class="shrink-0">{{ t("example_size") }}</span>
+      <el-slider v-model="learningStore.writing_exampleScale" />
     </div>
     <div class="my-2 flex items-center justify-end gap-2">
       <div v-if="selectedSound.type">
@@ -11,7 +11,7 @@
         }}</el-tag>
       </div>
 
-      <div class="flex-grow">
+      <div class="grow">
         <el-tooltip placement="bottom">
           <template #content>
             <p style="white-space: pre-line">{{ t("supports_stylus") }}</p>
@@ -94,12 +94,18 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useCanvas } from "@/composables/useCanvas.js";
 import { usePen } from "@/composables/usePen.js";
 import { useDrawing } from "@/composables/useDrawing.js";
-import { useApi } from "@/composables/useApi.js";
-import { useI18n } from "vue-i18n";
 
-const MYAPI = useApi();
+/*-- store --*/
+import { storeToRefs } from "pinia";
+import { useLearningStore } from "@/stores/learning.js";
+const learningStore = useLearningStore();
+const { writing_exampleScale } = storeToRefs(learningStore);
+
+/*-- i18n --*/
+import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 
+/*-- Prop --*/
 const props = defineProps({
   exampleKana: { type: String, default: "あ" },
   showExample: { type: Boolean, default: true },
@@ -112,12 +118,66 @@ const props = defineProps({
   },
 });
 
+/*-- Emit --*/
 const emit = defineEmits(["imageRecognition", "changeSound"]);
 
-const STORAGE_KEYS = {
-  EXAMPLE_SCALE: "handwriting_exampleScale",
-  PEN_COLOR: "handwriting_penColor",
-};
+/*-- Composable --*/
+const {
+  canvas,
+  canvasContainer,
+  canvasWrapper,
+  ctx,
+  initCanvas,
+  clearCanvas,
+  clearUserDrawing,
+  redrawCanvas,
+} = useCanvas(props, writing_exampleScale);
+
+const { penMode, penColor, penSize } = usePen();
+
+const {
+  isDrawing,
+  userPaths,
+  startDrawing,
+  draw,
+  stopDrawing,
+  drawUserPaths,
+  clearUserPaths,
+} = useDrawing(canvas, penMode, penColor, penSize, ctx);
+
+watch(
+  () => props.exampleKana,
+  () => {
+    clearCanvas();
+    clearUserPaths();
+  },
+);
+
+watch(
+  () => penColor,
+  () => {
+    console.log(penColor.value);
+    learningStore.pen_color = penColor.value;
+  },
+  { deep: true },
+);
+
+watch(
+  () => learningStore.writing_exampleScale,
+  () => {
+    redrawCanvas();
+  },
+);
+
+watch(
+  userPaths,
+  () => {
+    redrawCanvas();
+    drawUserPaths();
+  },
+  { deep: true },
+);
+
 const predefinedColors = [
   "#000000",
   "#FF0000",
@@ -128,33 +188,9 @@ const predefinedColors = [
   "#808080",
 ];
 
-const savedExampleScale = localStorage.getItem(STORAGE_KEYS.EXAMPLE_SCALE);
-const exampleScale = ref(savedExampleScale ? parseInt(savedExampleScale) : 80);
-
 const handleChangeSound = (direction) => {
   emit("changeSound", direction);
 };
-
-const {
-  canvas,
-  canvasContainer,
-  canvasWrapper,
-  ctx,
-  initCanvas,
-  clearCanvas,
-  clearUserDrawing,
-  redrawCanvas,
-} = useCanvas(props, exampleScale);
-const { penMode, penColor, penSize, updateTouchAction } = usePen();
-const {
-  isDrawing,
-  userPaths,
-  startDrawing,
-  draw,
-  stopDrawing,
-  drawUserPaths,
-  clearUserPaths,
-} = useDrawing(canvas, penMode, penColor, penSize, ctx, handleDrawingStop);
 
 const handlePointerDown = (event) => {
   if (event.pointerType === "pen") penMode.value = true;
@@ -162,6 +198,21 @@ const handlePointerDown = (event) => {
 };
 
 const isRotating = ref(false);
+
+const handleClear = () => {
+  if (!isRotating.value) {
+    isRotating.value = true;
+    setTimeout(() => {
+      isRotating.value = false;
+    }, 500);
+  }
+  clearUserDrawing();
+  clearUserPaths();
+};
+
+const handleTouch = (event) => {
+  event.preventDefault();
+};
 
 const generateCanvasImage = async () => {
   const offscreenCanvas = document.createElement("canvas");
@@ -190,54 +241,10 @@ const handleAIRecognition = async () => {
   emit("imageRecognition", imageBlob);
 };
 
-const handleClear = () => {
-  if (!isRotating.value) {
-    isRotating.value = true;
-    setTimeout(() => {
-      isRotating.value = false;
-    }, 500);
-  }
-  clearUserDrawing();
-  clearUserPaths();
-};
-
-const handleTouch = (event) => {
-  event.preventDefault();
-};
-
-async function handleDrawingStop(duration) {
-  // Activity recording - can be extended
-}
-
 onMounted(() => {
   initCanvas();
   window.addEventListener("resize", () => initCanvas());
-  updateTouchAction();
 });
-
-watch(
-  () => props.exampleKana,
-  () => {
-    clearCanvas();
-    clearUserPaths();
-  },
-);
-watch(() => props.showExample, redrawCanvas);
-watch(exampleScale, (newValue) => {
-  localStorage.setItem(STORAGE_KEYS.EXAMPLE_SCALE, newValue.toString());
-  redrawCanvas();
-});
-watch(penColor, (newValue) => {
-  localStorage.setItem(STORAGE_KEYS.PEN_COLOR, newValue);
-});
-watch(
-  userPaths,
-  () => {
-    redrawCanvas();
-    drawUserPaths();
-  },
-  { deep: true },
-);
 
 onUnmounted(() => {
   window.removeEventListener("resize", () => initCanvas());

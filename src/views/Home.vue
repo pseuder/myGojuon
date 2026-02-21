@@ -62,35 +62,36 @@
         </h2>
         <div class="flex flex-col gap-2">
           <div class="my-4 flex flex-col gap-4">
-            <div class="flex items-center gap-4">
-              <a
-                href="mailto:iop890520@gmail.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <img
-                  src="/images/gmail.png"
-                  :alt="t('contact_me') + ' - Gmail'"
-                  class="h-8 w-8 text-red-400 transition-opacity hover:opacity-80"
-                />
-              </a>
+            <div
+              class="flex items-center gap-4"
+              @click="handleContactClick('gmail')"
+            >
+              <img
+                src="/images/gmail.png"
+                :alt="t('contact_me') + ' - Gmail'"
+                class="h-8 w-8 text-red-400 transition-opacity hover:opacity-80"
+              />
               <span>iop890520@gmail.com</span>
             </div>
           </div>
           <div class="my-4 flex flex-col gap-4">
-            <div class="flex items-center gap-4">
+            <div
+              class="flex items-center gap-4"
+              @click="handleContactClick('facebook')"
+            >
+              <img
+                src="/images/facebook.png"
+                :alt="t('contact_me') + ' - Facebook'"
+                class="h-8 w-8 text-red-400 transition-opacity hover:opacity-80"
+              />
               <a
                 href="https://www.facebook.com/Pseuder/"
                 target="_blank"
                 rel="noopener noreferrer"
+                class="underline text-blue-700"
               >
-                <img
-                  src="/images/facebook.png"
-                  :alt="t('contact_me') + ' - Facebook'"
-                  class="h-8 w-8 text-red-400 transition-opacity hover:opacity-80"
-                />
+                https://www.facebook.com/Pseuder
               </a>
-              <span>https://www.facebook.com/Pseuder</span>
             </div>
           </div>
         </div>
@@ -184,8 +185,21 @@ import { useRouter } from "vue-router";
 import { ElementPlus, VideoCameraFilled } from "@element-plus/icons-vue";
 import { useI18n } from "vue-i18n";
 
+/*-- API --*/
+import { useApi } from "@/composables/useApi.js";
+const MYAPI = useApi();
+
 const router = useRouter();
 const { t } = useI18n();
+
+const handleContactClick = async (contactType) => {
+  try {
+    const params = {
+      contactType: contactType,
+    };
+    const res = await MYAPI.post("/contact", params);
+  } catch (error) {}
+};
 </script>
 
 <style scoped>

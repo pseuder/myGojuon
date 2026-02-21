@@ -14,7 +14,11 @@
         </div>
 
         <!-- 選擇字符集 -->
-        <el-select v-model="activeTab" placeholder="選擇字符集">
+        <el-select
+          v-model="learningStore.listening_tab"
+          placeholder="選擇字符集"
+          @change="handleTabChange"
+        >
           <el-option key="hiragana" :label="t('hiragana')" value="hiragana" />
           <el-option key="katakana" :label="t('katakana')" value="katakana" />
           <el-option key="dakuon" :label="t('dakuon')" value="dakuon" />
@@ -28,7 +32,7 @@
             key="special"
             :label="t('special_sounds')"
             value="special"
-            :disabled="specialLearningList.length === 0"
+            :disabled="learningStore.listening_specialLearningList.length === 0"
             style="color: #00d4d4"
           />
         </el-select>
@@ -46,7 +50,7 @@
       <div class="flex items-center gap-4">
         <!-- 隨機、循序模式切換 -->
         <el-switch
-          v-model="isRandomMode"
+          v-model="learningStore.listening_mode"
           :active-text="t('random')"
           :inactive-text="t('sequential')"
           @change="handleModeChange"
@@ -60,14 +64,14 @@
         <el-popover placement="bottom" width="auto" trigger="click">
           <template #reference>
             <el-tag type="success" class="text-lg hover:cursor-pointer"
-              >Round {{ round }} - {{ completedInRound }} /
-              {{ totalInRound }}</el-tag
+              >Round {{ learningStore.listening_round }} -
+              {{ completedInRound }} / {{ totalInRound }}</el-tag
             >
           </template>
 
           <div class="sound-grid">
             <div
-              v-for="(count, sound) in soundCounts"
+              v-for="(count, sound) in learningStore.listening_roundCounts"
               :key="sound"
               class="sound-item"
             >
@@ -104,7 +108,10 @@
 
       <div class="flex items-center justify-end">
         <!-- 特別學習列表 -->
-        <el-badge :value="specialLearningList.length" class="mr-2">
+        <el-badge
+          :value="learningStore.listening_specialLearningList.length"
+          class="mr-2"
+        >
           <el-button
             @click="specialLearningListDialogVisible = true"
             type="primary"
@@ -127,7 +134,7 @@
 
         <!-- AI辨識 -->
         <el-button
-          v-if="isLogin"
+          v-if="authStore.isLoggedIn"
           id="ai-recognition-button"
           @click="handwritingCanvas.handleAIRecognition()"
           class="tech-gradient-button h-12 w-full text-[18px]"
@@ -158,13 +165,16 @@
       <div v-if="showCurrentWord" class="rounded-lg bg-gray-100 p-4">
         <div class="flex justify-between md:flex-col">
           <p>
-            <strong>{{ t("japanese") }}：</strong>{{ selectedSound.kana }}
+            <strong>{{ t("japanese") }}：</strong
+            >{{ learningStore.listening_selectedSound.kana }}
           </p>
           <p>
-            <strong>{{ t("romaji") }}：</strong>{{ selectedSound.romaji }}
+            <strong>{{ t("romaji") }}：</strong
+            >{{ learningStore.listening_selectedSound.romaji }}
           </p>
           <p>
-            <strong>{{ t("kanji_source") }}：</strong>{{ selectedSound.evo }}
+            <strong>{{ t("kanji_source") }}：</strong
+            >{{ learningStore.listening_selectedSound.evo }}
           </p>
         </div>
       </div>
@@ -175,12 +185,12 @@
         <HandwritingCanvas
           ref="handwritingCanvas"
           @image-recognition="imageRecognition"
-          :example-kana="selectedSound.kana"
+          :example-kana="learningStore.listening_selectedSound.kana"
           :show-example="false"
-          :current-type="activeTab"
+          :current-type="learningStore.listening_tab"
           :learning-module="'listening'"
           :show-change-sound-buttons="false"
-          :selected-sound="selectedSound"
+          :selected-sound="learningStore.listening_selectedSound"
         />
       </el-card>
     </div>
@@ -208,12 +218,12 @@
         </div>
       </template>
 
-      <div v-if="specialLearningList.length === 0">
+      <div v-if="learningStore.listening_specialLearningList.length === 0">
         {{ t("no_special_learning_words") }}
       </div>
       <div class="max-h-[70vh] overflow-auto" v-else>
         <div
-          v-for="(item, index) in specialLearningList"
+          v-for="(item, index) in learningStore.listening_specialLearningList"
           :key="index"
           class="mt-2 flex items-center justify-between"
         >
@@ -234,15 +244,18 @@ import { Delete, List, CirclePlusFilled } from "@element-plus/icons-vue";
 import HandwritingCanvas from "@/components/HandwritingCanvas.vue";
 import fiftySoundsData from "@/data/fifty-sounds.json";
 
-import { useAuth } from "@/composables/useAuth.js";
-const { user } = useAuth();
-const isLogin = computed(() => !!user.value);
-
+/*-- i18n --*/
 import { useI18n } from "vue-i18n";
 const { t, locale } = useI18n();
 
+/*-- API --*/
 import { useApi } from "@/composables/useApi.js";
 const MYAPI = useApi();
+
+/*-- store --*/
+import { useAuthStore, useLearningStore } from "@/stores/index.js";
+const authStore = useAuthStore();
+const learningStore = useLearningStore();
 
 // 使用 Web Audio API 進行音頻管理
 import { useWebAudio } from "@/composables/useWebAudio.js";
@@ -256,61 +269,48 @@ const TAB_TYPES = {
   YOON: "yoon",
 };
 
-const currentSounds = computed(() => {
-  if (activeTab.value === "special") {
-    return specialLearningList.value;
+// 單前單字集
+const currentCharSet = computed(() => {
+  if (learningStore.listening_tab === "special") {
+    return learningStore.listening_specialLearningList;
   }
-  return fiftySounds[activeTab.value] ?? [];
+  return fiftySounds[learningStore.listening_tab] ?? [];
 });
 
-/*-- 學習輪數 --*/
-const soundCounts = reactive({});
-const round = ref(1);
-
 const totalInRound = computed(
-  () => currentSounds.value.filter((sound) => sound.kana).length,
+  () => currentCharSet.value.filter((sound) => sound.kana).length,
 );
 
 const completedInRound = computed(
   () =>
-    currentSounds.value.filter(
-      (sound) => sound.kana && soundCounts[sound.kana] >= round.value,
+    currentCharSet.value.filter(
+      (sound) =>
+        sound.kana &&
+        learningStore.listening_roundCounts[sound.kana] >=
+          learningStore.listening_round,
     ).length,
 );
 
 const fiftySounds = fiftySoundsData;
-const activeTab = ref(TAB_TYPES.HIRAGANA);
-const selectedSound = ref({
-  kana: "あ",
-  romaji: "a",
-  evo: "安",
-  type: "hiragana",
-});
 const handwritingCanvas = ref(null);
-
-// User Preference
-const isRandomMode = ref(false);
 const showCurrentWord = ref(false);
-
-// Special Learning List
-const specialLearningList = ref([]);
 const specialLearningListDialogVisible = ref(false);
-
-// Predict
 const predictKana = ref("");
-
 const isRotating = ref(false);
+const loading = ref(false);
 
 // 標記是否正在掛載中
 const isMounting = ref(true);
 
-watch(currentSounds, () => {
-  initializeCounts();
-  round.value = 1;
+// 切換單字集時重置輪數與計數
+watch(currentCharSet, () => {
+  initializeCounts(true);
+  learningStore.listening_round = 1;
 });
 
+// 監聽切換單字並撥放聲音
 watch(
-  selectedSound,
+  () => learningStore.listening_selectedSound,
   async (newSound, oldSound) => {
     // 掛載期間不自動播放，避免重複播放
     if (newSound !== oldSound && !isMounting.value) {
@@ -318,35 +318,62 @@ watch(
       await playSound();
     }
   },
-  { deep: true },
 );
 
-watch(activeTab, () => {
-  selectedSound.value = currentSounds.value[0];
-  // 重置soundCounts
-  initializeCounts();
-});
-
 // 初始化每輪記數
-const initializeCounts = () => {
-  Object.keys(soundCounts).forEach((key) => delete soundCounts[key]);
-  currentSounds.value.forEach((sound) => {
+const checkCounts = () => {
+  const isEmpty = Object.keys(learningStore.listening_roundCounts).length === 0;
+  if (isEmpty) {
+    currentCharSet.value.forEach((sound) => {
+      if (sound.kana) {
+        learningStore.listening_roundCounts[sound.kana] = 0;
+      }
+    });
+  }
+};
+
+const initializeCounts = (resetCounts = false) => {
+  Object.keys(learningStore.listening_roundCounts).forEach(
+    (key) => delete learningStore.listening_roundCounts[key],
+  );
+
+  currentCharSet.value.forEach((sound) => {
     if (sound.kana) {
-      soundCounts[sound.kana] = 0;
+      learningStore.listening_roundCounts[sound.kana] = 0;
     }
   });
 };
 
+// Event: 切換字符集
+const handleTabChange = () => {
+  learningStore.listening_selectedSound = currentCharSet.value[0];
+  initializeCounts(true);
+};
+
+// Event: 切換模式
+const handleModeChange = () => {
+  ElMessage.success(
+    learningStore.listening_mode
+      ? t("switch_to_random")
+      : t("switch_to_sequential"),
+  );
+};
+
+// Click: 播放單字發音
+const togglePlay = async () => {
+  await playSound();
+};
+
 // 循序尋找下一個單字
 const findNextChar = (currentIndex, direction) => {
-  const totalItems = currentSounds.value.length;
+  const totalItems = currentCharSet.value.length;
   let nextIndex = currentIndex;
   let loopCount = 0;
 
   while (loopCount < totalItems) {
     nextIndex = (nextIndex + direction + totalItems) % totalItems;
-    if (currentSounds.value[nextIndex].kana) {
-      return currentSounds.value[nextIndex];
+    if (currentCharSet.value[nextIndex].kana) {
+      return currentCharSet.value[nextIndex];
     }
     loopCount++;
   }
@@ -355,37 +382,32 @@ const findNextChar = (currentIndex, direction) => {
 };
 
 // 隨機尋找下一個單字
-const getRandomSound = () => {
-  const validSounds = currentSounds.value.filter((sound) => sound.kana);
+const findNextRandomChar = () => {
+  const validSounds = currentCharSet.value.filter((sound) => sound.kana);
   const availableSounds = validSounds.filter(
-    (sound) => soundCounts[sound.kana] < round.value,
+    (sound) =>
+      learningStore.listening_roundCounts[sound.kana] <
+      learningStore.listening_round,
   );
 
   if (availableSounds.length === 0) {
     // 所有音都已經出現了，開始新的一輪
-    round.value++;
-    return getRandomSound(); // 遞迴調用以獲取新一輪的聲音
+    learningStore.listening_round++;
+    return findNextRandomChar(); // 遞迴調用以獲取新一輪的聲音
   }
 
   const randomIndex = Math.floor(Math.random() * availableSounds.length);
-  const selectedSound = availableSounds[randomIndex];
-  return selectedSound;
-};
-
-// Event: 切換模式
-const handleModeChange = () => {
-  ElMessage.success(
-    isRandomMode.value ? t("switch_to_random") : t("switch_to_sequential"),
-  );
+  const nextSound = availableSounds[randomIndex];
+  return nextSound;
 };
 
 // 切換單字
 const changeSound = (type) => {
-  if (isRandomMode.value) {
-    selectSound(getRandomSound());
+  if (learningStore.listening_mode) {
+    learningStore.listening_selectedSound = findNextRandomChar();
   } else {
-    const currentIndex = currentSounds.value.findIndex(
-      (sound) => sound.kana === selectedSound.value.kana,
+    const currentIndex = currentCharSet.value.findIndex(
+      (sound) => sound.kana === learningStore.listening_selectedSound.kana,
     );
 
     const nextSound =
@@ -393,102 +415,52 @@ const changeSound = (type) => {
         ? findNextChar(currentIndex, 1)
         : findNextChar(currentIndex, -1);
 
-    if (nextSound) {
-      selectSound(nextSound);
-    }
+    learningStore.listening_selectedSound = nextSound;
   }
 };
 
-// Click: 播放單字發音
-const togglePlay = async () => {
-  await playSound();
-};
-
-// 切換單字時撥放發音
+// 撥放發音
 const playSound = async () => {
-  const audioUrl = `/sounds/${selectedSound.value.romaji}.mp3`;
+  const audioUrl = `/sounds/${learningStore.listening_selectedSound.romaji}.mp3`;
   await playAudio(audioUrl);
 };
 
-// 切換當前單字
-const selectSound = (sound) => {
-  if (sound.kana) {
-    selectedSound.value = sound;
-  }
-};
-
-/*-- 影像辨識 --*/
-const loading = ref(false);
-const imageRecognition = async (imageBlob) => {
-  loading.value = true;
-  const formData = new FormData();
-  formData.append("char_type", selectedSound.value.type);
-  formData.append("image", imageBlob, "handwriting.png");
-  formData.append("learning_item", selectedSound.value.kana);
-  const predict_res = await MYAPI.post("/predict", formData);
-
-  if (predict_res === "ERR_NETWORK") {
-    ElMessage.error(t("network_error"));
-    return;
-  } else if (predict_res === "ERR_SERVER") {
-    ElMessage.error(t("server_error"));
-    return;
-  }
-
-  if (predict_res.status == "error") {
-    ElMessage.error(predict_res["message"] ?? "伺服器錯誤");
-    return;
-  }
-
-  const { predicted_char, correctness } = predict_res.data;
-  const currentKana = selectedSound.value.kana;
-
-  // 更新辨識結果
-  predictKana.value = predicted_char;
-  if (correctness) {
-    predictKana.value = currentKana;
-    ElMessage.success(t("corrent") + `！: ${currentKana}`);
-    soundCounts[currentKana]++;
-    changeSound("next");
-  } else {
-    ElMessage.error(t("incorrect") + `！: ${predicted_char}`);
-  }
-  loading.value = false;
-};
-
 /*-- Special Learning --*/
-
 const addSpecialLearning = () => {
-  if (!selectedSound.value) return;
-  const isExist = specialLearningList.value.some(
-    (item) => item.kana === selectedSound.value.kana,
+  if (!learningStore.listening_selectedSound) return;
+  const isExist = learningStore.listening_specialLearningList.some(
+    (item) => item.kana === learningStore.listening_selectedSound.kana,
   );
   if (isExist) {
     ElMessage.info(t("already_in_special_learning"));
     return;
   }
-  specialLearningList.value.push(selectedSound.value);
-  // saveSpecialLearningList();
+  learningStore.listening_specialLearningList.push(
+    learningStore.listening_selectedSound,
+  );
   ElMessage.success(t("add_to_special_learning_success"));
 };
 
 const handleSpecialLearning = () => {
-  if (specialLearningList.value.length === 0) {
+  if (learningStore.listening_specialLearningList.length === 0) {
     ElMessage.warning(t("special_learning_list_empty"));
     return;
   }
-  activeTab.value = "special";
+  learningStore.listening_tab = "special";
   ElMessage.success(t("start_special_learning"));
 };
 
 const handleRemoveSpecialLearning = (index) => {
-  specialLearningList.value.splice(index, 1);
-  // saveSpecialLearningList();
+  learningStore.listening_specialLearningList.splice(index, 1);
 
   // 如果 specialLearningList 被清空, 自動跳到平假名練習集
-  if (activeTab.value === "special" && specialLearningList.value.length === 0) {
-    activeTab.value = TAB_TYPES.HIRAGANA;
+  if (
+    learningStore.listening_tab === "special" &&
+    learningStore.listening_specialLearningList.length === 0
+  ) {
+    learningStore.listening_tab = TAB_TYPES.HIRAGANA;
     specialLearningListDialogVisible.value = false;
+    handleTabChange();
   }
 };
 
@@ -502,13 +474,14 @@ const handleClearSpecialLearningList = () => {
       isRotating.value = true;
 
       setTimeout(() => {
-        specialLearningList.value = [];
+        learningStore.listening_specialLearningList = [];
         // saveSpecialLearningList();
         ElMessage.success(t("special_learning_list_cleared"));
 
         // 如果 specialLearningList 被清空, 自動跳到平假名練習集
-        if (activeTab.value === "special") {
-          activeTab.value = TAB_TYPES.HIRAGANA;
+        if (learningStore.listening_tab === "special") {
+          learningStore.listening_tab = TAB_TYPES.HIRAGANA;
+          handleTabChange();
         }
 
         specialLearningListDialogVisible.value = false;
@@ -520,11 +493,53 @@ const handleClearSpecialLearningList = () => {
     });
 };
 
-onMounted(() => {
-  // loadSpecialLearningList();
-  initializeCounts();
+/*-- 影像辨識 --*/
+const imageRecognition = async (imageBlob) => {
+  loading.value = true;
+  try {
+    const formData = new FormData();
+    formData.append("char_type", learningStore.listening_selectedSound.type);
+    formData.append("image", imageBlob, "handwriting.png");
+    formData.append(
+      "learning_item",
+      learningStore.listening_selectedSound.kana,
+    );
+    const predict_res = await MYAPI.post("/predict", formData);
 
-  // 掛載完成後播放聲音並解除掛載標記
+    if (predict_res === "ERR_NETWORK") {
+      ElMessage.error(t("network_error"));
+      return;
+    } else if (predict_res === "ERR_SERVER") {
+      ElMessage.error(t("server_error"));
+      return;
+    }
+
+    if (predict_res.status == "error") {
+      ElMessage.error(predict_res["message"] ?? "伺服器錯誤");
+      return;
+    }
+
+    const { predicted_char, correctness } = predict_res.data;
+    const currentKana = learningStore.listening_selectedSound.kana;
+
+    // 更新辨識結果
+    predictKana.value = predicted_char;
+    if (correctness) {
+      predictKana.value = currentKana;
+      ElMessage.success(t("corrent") + `！: ${currentKana}`);
+      learningStore.listening_roundCounts[currentKana]++;
+      changeSound("next");
+    } else {
+      ElMessage.error(t("incorrect") + `！: ${predicted_char}`);
+    }
+  } catch (error) {}
+  loading.value = false;
+};
+
+onMounted(() => {
+  checkCounts();
+
+  // 掛載完成後解除掛載標記並播放聲音
   nextTick(() => {
     isMounting.value = false;
     playSound();
@@ -541,13 +556,6 @@ onMounted(() => {
     transform 0.2s ease-in-out,
     box-shadow 0.3s ease;
 }
-
-/* h3 {
-  margin: 0 0 10px;
-  text-align: center;
-  color: #333;
-  font-size: 16px;
-} */
 
 .sound-grid {
   display: grid;
