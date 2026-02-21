@@ -397,11 +397,6 @@ const handleVideoClick = (source_id) => {
   const dataToSend = {
     source_id: source_id,
   };
-
-  // 發送數據到後端
-  MYAPI.post("/record_song_activity", dataToSend).catch((error) => {
-    console.error("Error recording activity:", error);
-  });
 };
 
 // Event: 總攬/歌手頁面切換

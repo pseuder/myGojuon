@@ -89,6 +89,7 @@ const isWideLayout = computed(
     route.path.includes("/SongOverview") ||
     route.path.includes("/SongPractice") ||
     route.path.includes("/Backend") ||
+    route.path.includes("/backend") ||
     route.path.includes("/S/") ||
     route.path.includes("/s/"),
 );
