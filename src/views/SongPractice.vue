@@ -7,7 +7,7 @@
       <!-- 影片播放器+功能列 -->
       <div
         class="flex h-full flex-col"
-        :style="{ width: isMobile ? '100%' : `${leftWidth}%` }"
+        :style="{ width: isMobile ? '100%' : `${songStore.leftWidth}%` }"
       >
         <div class="shrink-0">
           <!-- 影片標題＋作者 -->
@@ -68,19 +68,19 @@
               </div>
 
               <div class="flex flex-1 flex-col gap-1">
-                <el-checkbox v-model="autoScroll">{{
+                <el-checkbox v-model="songStore.autoScroll">{{
                   t("scrolling")
                 }}</el-checkbox>
-                <el-checkbox v-model="autoPlayNext">{{
+                <el-checkbox v-model="songStore.autoPlayNext">{{
                   t("auto_play_next_song")
                 }}</el-checkbox>
                 <el-input-number
-                  v-model="playbackRate"
+                  v-model="songStore.playbackRate"
                   :precision="1"
                   :step="0.1"
                   :max="2"
                   :min="0.3"
-                  @change="changePlaybackRate(playbackRate)"
+                  @change="changePlaybackRate"
                 />
               </div>
             </div>
@@ -105,7 +105,9 @@
       <el-scrollbar
         class="h-full overflow-x-auto"
         :style="{
-          width: isMobile ? '100%' : `calc(${100 - leftWidth}% - 4px)`,
+          width: isMobile
+            ? '100%'
+            : `calc(${100 - songStore.leftWidth}% - 4px)`,
         }"
       >
         <div class="">
@@ -135,7 +137,7 @@
                     class="h-3 text-sm"
                     :style="ly.color ? { color: ly.color } : {}"
                   >
-                    {{ display_mode === "both" ? ly.cvt : "" }}
+                    {{ songStore.display_mode === "both" ? ly.cvt : "" }}
                   </div>
                   <div
                     class="text-xl"
@@ -175,6 +177,10 @@ import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
 import { useApi } from "@/composables/useApi.js";
+
+/*-- store --*/
+import { useSongStore } from "@/stores/index.js";
+const songStore = useSongStore();
 
 const { t } = useI18n();
 const MYAPI = useApi();
@@ -247,7 +253,7 @@ const currentVideoIndexInArtistList = computed(() => {
 });
 
 const playNextSong = () => {
-  if (!autoPlayNext.value) {
+  if (!songStore.autoPlayNext) {
     if (player && player.seekTo) player.seekTo(0);
     return;
   }
@@ -267,10 +273,6 @@ const playNextSong = () => {
 };
 
 /*-- 播放器狀態與設定 --*/
-const display_mode = ref("both");
-const playbackRate = ref(1);
-const autoScroll = ref(true);
-const autoPlayNext = ref(false);
 const isPlaying = ref(false);
 
 /*-- 歌詞同步與循環播放 --*/
@@ -315,7 +317,7 @@ const updateCurrentLyric = () => {
     if (currentTime >= lineStartTime && currentTime < nextLineStartTime) {
       if (currentLyricIndex.value !== i) {
         currentLyricIndex.value = i;
-        if (autoScroll.value) scrollToCurrentLyric(i);
+        if (songStore.autoScroll) scrollToCurrentLyric(i);
       }
       break;
     }
@@ -377,9 +379,9 @@ const togglePlayPause = () => {
   }
 };
 
-const changePlaybackRate = (value) => {
+const changePlaybackRate = () => {
   if (player && player.setPlaybackRate) {
-    player.setPlaybackRate(value);
+    player.setPlaybackRate(songStore.playbackRate);
   }
 };
 
@@ -432,7 +434,7 @@ const initializePlayer = () => {
     events: {
       onReady: (event) => {
         setInterval(updateCurrentLyric, 100);
-        event.target.setPlaybackRate(playbackRate.value);
+        event.target.setPlaybackRate(songStore.playbackRate);
       },
       onStateChange: (event) => {
         isPlaying.value = event.data === window.YT.PlayerState.PLAYING;
@@ -480,7 +482,6 @@ const handleKeyPress = (event) => {
 };
 
 /*-- 版面拖拉調整（左右寬度） --*/
-const leftWidth = ref(50);
 const isResizing = ref(false);
 const windowWidth = ref(0);
 const isMobile = computed(() => windowWidth.value < 1024);
@@ -504,7 +505,7 @@ const onResize = (event) => {
   const newLeftWidth =
     ((event.clientX - containerRect.left) / containerRect.width) * 100;
   if (newLeftWidth >= 20 && newLeftWidth <= 80) {
-    leftWidth.value = newLeftWidth;
+    songStore.leftWidth = newLeftWidth;
   }
 };
 
@@ -512,7 +513,6 @@ const stopResize = () => {
   isResizing.value = false;
   document.removeEventListener("mousemove", onResize);
   document.removeEventListener("mouseup", stopResize);
-  localStorage.setItem("myGojuon_leftWidth", JSON.stringify(leftWidth.value));
 };
 
 /*-- Watchers（監聽狀態變化並同步 localStorage） --*/
@@ -526,18 +526,6 @@ watch(videoId, async (newId, oldId) => {
   }
 });
 
-watch(autoPlayNext, (newValue) => {
-  localStorage.setItem("myGojuon_autoPlayNext", JSON.stringify(newValue));
-});
-
-watch(playbackRate, (newValue) => {
-  localStorage.setItem("myGojuon_playbackRate", JSON.stringify(newValue));
-});
-
-watch(autoScroll, (newValue) => {
-  localStorage.setItem("myGojuon_autoScroll", JSON.stringify(newValue));
-});
-
 /*-- 生命週期（初始化 & 清理） --*/
 onMounted(async () => {
   await fetchVideoData(uid);
@@ -545,19 +533,6 @@ onMounted(async () => {
   updateWindowWidth();
   window.addEventListener("resize", updateWindowWidth);
   window.addEventListener("keypress", handleKeyPress, true);
-
-  // 載入 localStorage 設定
-  const savedAutoPlayNext = localStorage.getItem("myGojuon_autoPlayNext");
-  const savedPlaybackRate = localStorage.getItem("myGojuon_playbackRate");
-  const savedAutoScroll = localStorage.getItem("myGojuon_autoScroll");
-  const savedLeftWidth = localStorage.getItem("myGojuon_leftWidth");
-
-  if (savedAutoPlayNext !== null)
-    autoPlayNext.value = JSON.parse(savedAutoPlayNext);
-  if (savedPlaybackRate !== null)
-    playbackRate.value = JSON.parse(savedPlaybackRate);
-  if (savedAutoScroll !== null) autoScroll.value = JSON.parse(savedAutoScroll);
-  if (savedLeftWidth !== null) leftWidth.value = JSON.parse(savedLeftWidth);
 
   fetchAllVideos();
 
