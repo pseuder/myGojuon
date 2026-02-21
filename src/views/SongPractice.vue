@@ -1,5 +1,4 @@
 <template>
-  <!-- 頁面結構基本不變 -->
   <div class="flex h-full flex-col lg:overflow-hidden">
     <div
       v-if="currentVideo"
@@ -13,7 +12,7 @@
         <div class="shrink-0">
           <!-- 影片標題＋作者 -->
           <div class="gradient-text-tech-animated">
-            {{ currentVideo.name }} - {{ currentVideo.author }}
+            {{ currentVideo.name }} - {{ currentVideo.artist }}
           </div>
           <!-- 標籤 -->
           <div
@@ -99,7 +98,7 @@
       <!-- 可拖動分隔線 (只在寬螢幕顯示) -->
       <div
         v-if="!isMobile"
-        class="mr-1 ml-1 hidden w-1 flex-shrink-0 cursor-col-resize items-center justify-center bg-gray-200 transition-colors hover:bg-blue-500 lg:flex"
+        class="mr-1 ml-1 hidden w-1 shrink-0 cursor-col-resize items-center justify-center bg-gray-200 transition-colors hover:bg-blue-500 lg:flex"
         @mousedown="startResize"
       ></div>
 
@@ -121,7 +120,7 @@
             :class="{ 'bg-yellow-200': currentLyricIndex === index }"
             class="flex items-center gap-4 py-2"
           >
-            <div class="flex flex-shrink-0 items-center">
+            <div class="flex shrink-0 items-center">
               <el-button
                 type="primary"
                 link
@@ -206,12 +205,10 @@ const lyrics = computed(() => {
   return [];
 });
 
-const siteUrl = import.meta.env.VITE_SITE_BASE || "https://mygojuon.vercel.app";
-
 const fetchVideoData = async (id) => {
   if (!id) return;
   try {
-    const response = await MYAPI.get(`/get_video/${id}`);
+    const response = await MYAPI.get(`/get_song/${id}`);
     if (response.data) {
       videoData.value = response.data;
     }
@@ -244,12 +241,11 @@ const isMobile = computed(() => windowWidth.value < 1024);
 const allVideos = ref([]);
 const fetchAllVideos = async () => {
   try {
-    // 使用 $fetch
     const params = {
-      author_id: currentVideo.value?.author_id || "",
+      artist_id: currentVideo.value?.artist_id || "",
     };
-    const res = await MYAPI.get("/get_all_videos", params);
-    allVideos.value = res.data.data;
+    const res = await MYAPI.get("/get_artist_songs", params);
+    allVideos.value = res.data;
   } catch (error) {
     console.error("Error fetching all videos:", error);
     ElMessage.error("無法獲取所有歌曲列表");
@@ -257,25 +253,25 @@ const fetchAllVideos = async () => {
   }
 };
 
-const authorFilteredVideos = computed(() => {
+const artistFilteredVideos = computed(() => {
   if (
     !currentVideo.value ||
-    !currentVideo.value.author ||
+    !currentVideo.value.artist ||
     !allVideos.value.length
   ) {
     return [];
   }
   return allVideos.value
-    .filter((video) => video.author === currentVideo.value.author)
+    .filter((video) => video.artist === currentVideo.value.artist)
     .sort((a, b) => a.uid - b.uid);
 });
 
-const currentVideoIndexInAuthorList = computed(() => {
-  if (!currentVideo.value || !authorFilteredVideos.value.length) {
+const currentVideoIndexInArtistList = computed(() => {
+  if (!currentVideo.value || !artistFilteredVideos.value.length) {
     return -1;
   }
   // 注意：原來的 videoId 是 YouTube ID，這裡假設 uid 是影片的唯一標識符
-  return authorFilteredVideos.value.findIndex(
+  return artistFilteredVideos.value.findIndex(
     (v) => v.source_id === videoId.value,
   );
 });
@@ -342,14 +338,14 @@ const playNextSong = () => {
     return;
   }
 
-  if (currentVideoIndexInAuthorList.value === -1) {
+  if (currentVideoIndexInArtistList.value === -1) {
     if (player && player.seekTo) player.seekTo(0);
     return;
   }
 
-  const nextIndex = currentVideoIndexInAuthorList.value + 1;
-  if (nextIndex < authorFilteredVideos.value.length) {
-    const nextSong = authorFilteredVideos.value[nextIndex];
+  const nextIndex = currentVideoIndexInArtistList.value + 1;
+  if (nextIndex < artistFilteredVideos.value.length) {
+    const nextSong = artistFilteredVideos.value[nextIndex];
     ElMessage.info(`${t("play_next_song")}: ${nextSong.name}`);
     // [變更] 使用 Nuxt router 導航
     router.push(localePath(`/SongPractice/${nextSong.source_id}`));
