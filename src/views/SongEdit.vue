@@ -400,12 +400,6 @@
         <div class="mb-4 flex h-[7%] gap-2">
           <el-input v-model="searchQuery" placeholder="輸入搜尋關鍵字" />
           <el-button type="primary" @click="searchYouTube">搜尋</el-button>
-          <el-button
-            v-if="nextPageToken"
-            type="warning "
-            @click="loadMoreResults"
-            >載入更多</el-button
-          >
         </div>
 
         <div class="h-[90%] overflow-y-auto">
@@ -417,7 +411,7 @@
                     :src="item.snippet.thumbnails.high.url"
                     :alt="item.snippet.title"
                     style="width: 40%; height: auto; object-fit: cover"
-                    class="flex-shrink-0"
+                    class="shrink-0"
                   />
                   <div class="flex flex-col gap-2" style="width: 60%">
                     <p class="font-medium">{{ item.snippet.title }}</p>
@@ -468,8 +462,13 @@
 import { ref, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { Delete, Switch, Plus, CopyDocument } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import axios from "axios";
+
 import { useApi } from "@/composables/useApi.js";
+
 import { useRoute } from "vue-router";
+const route = useRoute();
+
 const MYAPI = useApi();
 
 const isDirty = ref(false);
@@ -502,7 +501,7 @@ const convertedLyrics = ref("");
 
 // YouTube 搜尋 Dialog
 const searchDialogVisible = ref(false);
-const searchQuery = ref("nelke");
+const searchQuery = ref("");
 const searchResults = ref([]);
 const loading = ref(false);
 const nextPageToken = ref(false);
@@ -538,7 +537,7 @@ const formData = ref({
   id: "",
   source_id: "",
   name: "",
-  author: "",
+  artist: "",
   tags: "",
   is_public: true,
   original: "",
@@ -1005,30 +1004,32 @@ const closeSearchDialog = () => {
 };
 
 // 搜尋 YouTube 影片
-const searchYouTube = async () => {};
-//   loading.value = true;
-//   searchResults.value = []; // 清空之前的搜尋結果
-//   nextPageToken.value = ""; // 重置分頁 token
-//   try {
-//     const searchParams = new URLSearchParams({
-//           part: "snippet",
-//           maxResults: 10,
-//           q: searchQuery.value,
-//           type: "video",
-//           key: apiKey.value,
-//         },
-//       },
-
-//     );
-//     searchResults.value = response.items;
-//     nextPageToken.value = response.nextPageToken || "";
-//   } catch (error) {
-//     console.error("搜尋 YouTube 影片時發生錯誤：", error);
-//     ElMessage.error("搜尋 YouTube 影片時發生錯誤");
-//   } finally {
-//     loading.value = false;
-//   }
-// };
+const searchYouTube = async () => {
+  loading.value = true;
+  searchResults.value = []; // 清空之前的搜尋結果
+  nextPageToken.value = ""; // 重置分頁 token
+  try {
+    const { data } = await axios.get(
+      "https://www.googleapis.com/youtube/v3/search",
+      {
+        params: {
+          part: "snippet",
+          maxResults: 20,
+          q: searchQuery.value,
+          type: "video",
+          key: apiKey.value,
+        },
+      },
+    );
+    searchResults.value = data.items;
+    nextPageToken.value = data.nextPageToken || "";
+  } catch (error) {
+    console.error("搜尋 YouTube 影片時發生錯誤：", error);
+    ElMessage.error("搜尋 YouTube 影片時發生錯誤");
+  } finally {
+    loading.value = false;
+  }
+};
 
 // 選擇 YouTube 影片
 const selectVideo = (videoItemFromSearch) => {
@@ -1038,32 +1039,6 @@ const selectVideo = (videoItemFromSearch) => {
   closeSearchDialog();
   handleReloadYT();
 };
-
-// 載入更多 YouTube 影片
-const loadMoreResults = async () => {};
-//   if (!nextPageToken.value) return;
-
-//   loading.value = true;
-//   try {
-//     const searchParams = new URLSearchParams({
-//           part: "snippet",
-//           maxResults: 10,
-//           q: searchQuery.value,
-//           type: "video",
-//           key: apiKey.value,
-//           pageToken: nextPageToken.value,
-//         },
-//       },
-//     );
-//     searchResults.value = [...searchResults.value, ...response.items];
-//     nextPageToken.value = response.nextPageToken || "";
-//   } catch (error) {
-//     console.error("載入更多 YouTube 影片時發生錯誤：", error);
-//     ElMessage.error("載入更多 YouTube 影片時發生錯誤");
-//   } finally {
-//     loading.value = false;
-//   }
-// };
 
 const handleIncreaseTime = (index, milliseconds) => {
   // 確保索引有效
@@ -1238,7 +1213,7 @@ const loadVideoFromApi = async (videoIdParam) => {
       // 映射 API 回應到元件變數
       videoId.value = data.source_id || "";
       videoTitle.value = data.name || "";
-      videoChannel.value = data.author || "";
+      videoChannel.value = data.artist || "";
       tag.value = data.tags || "";
       originalLyrics.value = data.original || "";
 
@@ -1287,7 +1262,7 @@ const handlePublishSong = async () => {
     // 準備表單數據
     formData.value.source_id = videoId.value;
     formData.value.name = videoTitle.value;
-    formData.value.author = videoChannel.value;
+    formData.value.artist = videoChannel.value;
     formData.value.tags = tag.value;
     formData.value.original = originalLyrics.value;
 
@@ -1321,7 +1296,7 @@ const saveVideo = async () => {
     // 將id轉為int
     formDataCopy.id = parseInt(formDataCopy.id) || 0;
 
-    const res = await MYAPI.post("/upsert_video", formDataCopy);
+    const res = await MYAPI.post("/upsert_song", formDataCopy);
 
     if (res["status"] === "success") {
       ElMessage({
@@ -1400,7 +1375,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-@reference "tailwindcss";
 .lyrics-container {
   max-width: 100%;
   overflow-x: auto;
