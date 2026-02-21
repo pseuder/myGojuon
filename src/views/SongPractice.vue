@@ -12,7 +12,7 @@
         <div class="shrink-0">
           <!-- 影片標題＋作者 -->
           <div class="gradient-text-tech-animated">
-            {{ currentVideo.name }} - {{ currentVideo.artist }}
+            {{ currentVideo.name }} - {{ currentVideo.artists }}
           </div>
           <!-- 標籤 -->
           <div
@@ -91,7 +91,6 @@
               {{ currentVideo.remark }}
             </p>
           </el-alert>
-          <!-- <el-tag v-if="currentVideo.remark" type="success"></el-tag> -->
         </div>
       </div>
 
@@ -109,9 +108,6 @@
           width: isMobile ? '100%' : `calc(${100 - leftWidth}% - 4px)`,
         }"
       >
-        <!-- <el-button type="warning" size="small" @click="handleCopyLyrics" plain>
-          複製歌詞
-        </el-button> -->
         <div class="">
           <div
             v-for="(line, index) in lyrics"
@@ -181,6 +177,8 @@ const { t } = useI18n();
 /*-- API --*/
 import { useApi } from "@/composables/useApi.js";
 const MYAPI = useApi();
+
+/*-- router --*/
 import { useRouter, useRoute } from "vue-router";
 const router = useRouter();
 
@@ -270,7 +268,6 @@ const currentVideoIndexInArtistList = computed(() => {
   if (!currentVideo.value || !artistFilteredVideos.value.length) {
     return -1;
   }
-  // 注意：原來的 videoId 是 YouTube ID，這裡假設 uid 是影片的唯一標識符
   return artistFilteredVideos.value.findIndex(
     (v) => v.source_id === videoId.value,
   );
@@ -288,7 +285,6 @@ const parseTimeToSeconds = (timeString) => {
 
 // YouTube Player 初始化
 const initializePlayer = () => {
-  // 確保 YT API 已載入且在客戶端環境
   if (
     typeof window.YT === "undefined" ||
     typeof window.YT.Player === "undefined"
@@ -347,7 +343,6 @@ const playNextSong = () => {
   if (nextIndex < artistFilteredVideos.value.length) {
     const nextSong = artistFilteredVideos.value[nextIndex];
     ElMessage.info(`${t("play_next_song")}: ${nextSong.name}`);
-    // [變更] 使用 Nuxt router 導航
     router.push(localePath(`/SongPractice/${nextSong.source_id}`));
   } else {
     ElMessage.info(t("last_song_and_replay"));
@@ -392,8 +387,6 @@ watch(autoScroll, (newValue) => {
   }
 });
 
-// --- 以下是大部分可以保留的客戶端互動邏輯 ---
-
 const updateCurrentLyric = () => {
   if (
     player &&
@@ -423,7 +416,6 @@ const updateCurrentLyric = () => {
 };
 
 const scrollToCurrentLyric = (index) => {
-  // `document` 只能在客戶端使用
   if (true) {
     const lyricElement = document.getElementById(`lyric-${index}`);
     if (lyricElement) {
@@ -506,20 +498,6 @@ const toggleLoopCurrentLyric = () => {
     loopStart.value = 0;
     loopEnd.value = 0;
     ElMessage.info("停止循環");
-  }
-};
-
-const handleCopyLyrics = () => {
-  // `navigator` 只能在客戶端使用
-  if (true) {
-    let result = "";
-    for (const line of lyrics.value) {
-      let combinedLyric = "";
-      for (const lyric of line.lyrics) combinedLyric += `${lyric.ori}`;
-      result += `${line.timestamp}${combinedLyric}\n`;
-    }
-    navigator.clipboard.writeText(result);
-    ElMessage.success("複製成功");
   }
 };
 
@@ -658,10 +636,7 @@ onUnmounted(() => {
 });
 </script>
 
-<!-- <style> 區塊保持不變 -->
 <style scoped>
-@reference "tailwindcss";
-/* ... 您的樣式 ... */
 .gradient-text-tech-animated {
   background: linear-gradient(120deg, #4caf50, #2196f3, #673ab7, #4caf50);
   background-size: 300% 100%;
