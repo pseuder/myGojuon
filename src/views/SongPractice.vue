@@ -272,7 +272,7 @@
             index + 1
           }}</span>
           <div class="min-w-0 flex-1">
-            <div class="truncate text-sm">{{ song.name }}</div>
+            <div class="truncate text-sm">{{ song.song_name }}</div>
             <div class="truncate text-xs text-gray-500">
               {{ song.artists }}
             </div>
@@ -315,8 +315,9 @@ import { useRouter, useRoute } from "vue-router";
 import { useApi } from "@/composables/useApi.js";
 
 /*-- store --*/
-import { useSongStore } from "@/stores/index.js";
+import { useSongStore, usePlaylistStore } from "@/stores/index.js";
 const songStore = useSongStore();
+const playlistStore = usePlaylistStore();
 
 const { t } = useI18n();
 const MYAPI = useApi();
@@ -367,6 +368,29 @@ const fetchVideoData = async (id) => {
 const playlist = ref([]);
 
 const fetchplaylist = async () => {
+  const fromParam = route.query.from;
+
+  if (fromParam === "favorites" || fromParam === "playlist") {
+    try {
+      if (!playlistStore.isInitialized) {
+        await playlistStore.fetchPlaylists();
+      }
+      if (fromParam === "favorites") {
+        playlist.value = [...playlistStore.favorites];
+      } else {
+        const playlistId = route.query.playlist_id;
+        const pl = playlistStore.customPlaylists.find(
+          (p) => String(p.id) === String(playlistId),
+        );
+        playlist.value = pl ? [...pl.songs] : [];
+      }
+    } catch (error) {
+      console.error("Error fetching playlist:", error);
+      playlist.value = [];
+    }
+    return;
+  }
+
   try {
     const params = { artist_id: currentVideo.value?.artist_id || "" };
     const res = await MYAPI.get("/get_playlist", params);
@@ -376,6 +400,17 @@ const fetchplaylist = async () => {
     ElMessage.error("無法獲取所有歌曲列表");
     playlist.value = [];
   }
+};
+
+// 保留 playlist 上下文 query params 的路徑產生器
+const buildSongPath = (sourceId) => {
+  const base = localePath(`/SongPractice/${sourceId}`);
+  const from = route.query.from;
+  const playlistId = route.query.playlist_id;
+  if (from === "favorites") return `${base}?from=favorites`;
+  if (from === "playlist" && playlistId)
+    return `${base}?from=playlist&playlist_id=${playlistId}`;
+  return base;
 };
 
 const currentVideoIndexInArtistList = computed(() => {
@@ -422,7 +457,7 @@ const playNextSong = () => {
     isAutoNavigating.value = true;
 
     // 更新網址（保留瀏覽歷史）並更新歌詞資料
-    router.push(localePath(`/SongPractice/${nextSong.source_id}`));
+    router.push(buildSongPath(nextSong.source_id));
     currentLyricIndex.value = -1;
     isLooping.value = false;
     fetchVideoData(nextSong.source_id);
@@ -444,7 +479,7 @@ const goToPreviousSong = () => {
     player.setPlaybackRate(songStore.playbackRate);
   }
   isAutoNavigating.value = true;
-  router.push(localePath(`/SongPractice/${prevSong.source_id}`));
+  router.push(buildSongPath(prevSong.source_id));
   currentLyricIndex.value = -1;
   isLooping.value = false;
   fetchVideoData(prevSong.source_id);
@@ -477,7 +512,7 @@ const navigateToSong = (song) => {
     player.setPlaybackRate(songStore.playbackRate);
   }
   isAutoNavigating.value = true;
-  router.push(localePath(`/SongPractice/${song.source_id}`));
+  router.push(buildSongPath(song.source_id));
   currentLyricIndex.value = -1;
   isLooping.value = false;
   fetchVideoData(song.source_id);

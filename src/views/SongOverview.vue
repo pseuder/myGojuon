@@ -405,7 +405,7 @@
           >
             <div class="p-4">
               <a
-                :href="resolveVideoUrl(video.source_id)"
+                :href="resolvePlaylistVideoUrl(video.source_id)"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="mb-2 block w-full"
@@ -421,7 +421,7 @@
                 />
               </a>
               <a
-                :href="resolveVideoUrl(video.source_id)"
+                :href="resolvePlaylistVideoUrl(video.source_id)"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="mb-2 block w-full truncate text-lg text-blue-400 no-underline hover:text-blue-600 hover:underline"
@@ -669,6 +669,21 @@ const selectedPlaylistSongs = computed(() => {
 // 輔助函式: 解析路由
 const resolveVideoUrl = (source_id) => {
   return localePath("/SongPractice/" + source_id);
+};
+
+// 輔助函式: 解析路由（帶 playlist 上下文，供清單內歌曲使用）
+const resolvePlaylistVideoUrl = (source_id) => {
+  const base = "/SongPractice/" + source_id;
+  if (!selectedPlaylist.value) return localePath(base);
+  if (selectedPlaylist.value.type === "favorites") {
+    return localePath(base + "?from=favorites");
+  }
+  if (selectedPlaylist.value.type === "custom" && selectedPlaylist.value.id) {
+    return localePath(
+      base + `?from=playlist&playlist_id=${selectedPlaylist.value.id}`,
+    );
+  }
+  return localePath(base);
 };
 
 // 輔助函式: 格式化觀看數
