@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full flex-col lg:overflow-hidden">
+  <div class="flex h-full flex-col lg:overflow-hidden" id="myElement">
     <div
       v-if="currentVideo"
       class="flex h-full flex-col gap-4 px-4 py-4 pb-16 md:px-10 lg:flex-row lg:gap-0"
@@ -97,6 +97,7 @@
 
       <!-- 歌詞  -->
       <el-scrollbar
+        ref="lyricsScrollbarRef"
         class="h-full overflow-x-auto"
         :style="{
           width: isMobile
@@ -460,6 +461,7 @@ const playNextSong = () => {
     router.push(buildSongPath(nextSong.source_id));
     currentLyricIndex.value = -1;
     isLooping.value = false;
+    scrollLyricsToTop();
     fetchVideoData(nextSong.source_id);
   } else {
     if (player && player.seekTo) player.seekTo(0);
@@ -482,6 +484,7 @@ const goToPreviousSong = () => {
   router.push(buildSongPath(prevSong.source_id));
   currentLyricIndex.value = -1;
   isLooping.value = false;
+  scrollLyricsToTop();
   fetchVideoData(prevSong.source_id);
 };
 
@@ -515,8 +518,18 @@ const navigateToSong = (song) => {
   router.push(buildSongPath(song.source_id));
   currentLyricIndex.value = -1;
   isLooping.value = false;
+  scrollLyricsToTop();
   fetchVideoData(song.source_id);
   isPlaylistDrawerOpen.value = false;
+};
+
+/*-- 歌詞 scrollbar ref --*/
+const lyricsScrollbarRef = ref(null);
+const scrollLyricsToTop = () => {
+  const lyricElement = document.getElementById(`lyric-0`);
+  if (lyricElement) {
+    lyricElement.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 };
 
 /*-- 播放器狀態與設定 --*/
@@ -816,6 +829,7 @@ watch(videoId, async (newId, oldId) => {
     }
     currentLyricIndex.value = -1;
     isLooping.value = false;
+    scrollLyricsToTop();
     await fetchVideoData(newId);
     await fetchplaylist();
     initializePlayer();
