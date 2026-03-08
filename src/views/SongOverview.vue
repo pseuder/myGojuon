@@ -232,7 +232,7 @@
                     rel="noopener noreferrer"
                     class="mb-2 block w-full truncate text-lg text-blue-400 no-underline hover:text-blue-600 hover:underline"
                   >
-                    {{ video.name }}
+                    {{ video.song_name }}
                   </a>
 
                   <!-- Video metadata: views and publish date -->
@@ -426,7 +426,7 @@
                 rel="noopener noreferrer"
                 class="mb-2 block w-full truncate text-lg text-blue-400 no-underline hover:text-blue-600 hover:underline"
               >
-                {{ video.name }}
+                {{ video.song_name }}
               </a>
               <!-- 移除按鈕 -->
               <div class="mt-2 flex justify-end">
@@ -726,7 +726,7 @@ const filteredVideos = computed(() => {
   }
   const searchTerm = queryInput.value.toLowerCase().trim();
   return allVideos.value.filter((video) => {
-    const nameMatch = video.name?.toLowerCase().includes(searchTerm);
+    const nameMatch = video.song_name?.toLowerCase().includes(searchTerm);
     const tagsMatch = video.tags?.toLowerCase().includes(searchTerm);
     return nameMatch || tagsMatch;
   });
