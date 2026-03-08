@@ -38,8 +38,8 @@ export const useAuthStore = defineStore(
       if (!token.value) return;
       try {
         const myAPI = useApi();
-        const res = await myAPI.post("/auth_me");
-        user.value = res.data.userinfo;
+        const res = await myAPI.get("/auth_me");
+        user.value = res.data;
       } catch {}
     }
 
