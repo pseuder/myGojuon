@@ -10,6 +10,8 @@ export const usePlaylistStore = defineStore("playlist", () => {
   // 我的最愛：{ source_id, name, ... }[]
   const favorites = ref([]);
 
+  const favoritePlaylistId = ref(null);
+
   // 自訂播放清單：{ id, name, songs: video[] }[]
   const customPlaylists = ref([]);
 
@@ -21,10 +23,15 @@ export const usePlaylistStore = defineStore("playlist", () => {
   /** 從後端載入所有清單與最愛（頁面 onMounted 呼叫） */
   const fetchPlaylists = async () => {
     try {
-      const res = await MYAPI.get("/api/playlists");
+      const res = await MYAPI.get("/get_user_playlists");
       if (res.status === "success") {
-        favorites.value = res.data.favorites ?? [];
-        customPlaylists.value = res.data.playlists ?? [];
+        favorites.value = res.data.find(
+          (item) => item.name === "My Favorite",
+        ).songs;
+        favoritePlaylistId.value = res.data.find(
+          (item) => item.name === "My Favorite",
+        ).playlist_id;
+        customPlaylists.value = res.data ?? [];
         isInitialized.value = true;
       }
     } catch (error) {
@@ -39,41 +46,49 @@ export const usePlaylistStore = defineStore("playlist", () => {
     return favorites.value.some((v) => v.source_id === sourceId);
   };
 
-  /** 切換最愛，回傳新的 is_favorite 值 */
-  const toggleFavorite = async (video) => {
-    const res = await MYAPI.post("/api/playlists/favorites/toggle", {
-      source_id: video.source_id,
-      song_name: video.name,
-    });
-    if (res.status === "success") {
-      const nowFavorite = res.data.is_favorite;
-      if (nowFavorite) {
-        if (!favorites.value.some((v) => v.source_id === video.source_id)) {
-          favorites.value.push({ ...video });
-        }
-      } else {
-        const idx = favorites.value.findIndex(
-          (v) => v.source_id === video.source_id,
-        );
-        if (idx !== -1) favorites.value.splice(idx, 1);
-      }
-      return nowFavorite;
+  const toggleFavorite = (source_id) => {
+    if (isFavorite(source_id)) {
+      removeFavorite(source_id);
+      return "移除成功";
+    } else {
+      addFavorite(source_id);
+      return "添加成功";
     }
-    throw new Error(res.message);
   };
 
-  /** 從最愛移除（清單內刪除按鈕使用） */
-  const removeFavorite = async (sourceId) => {
-    const video = favorites.value.find((v) => v.source_id === sourceId);
-    if (!video) return;
-    const res = await MYAPI.post("/api/playlists/favorites/toggle", {
-      source_id: sourceId,
-      song_name: video.name,
+  /** 切換最愛，回傳新的 is_favorite 值 */
+  const addPlaylistSong = async (playlist_id, source_id) => {
+    const res = await MYAPI.post("/add_playlist_song", {
+      playlist_id: playlist_id,
+      source_id: source_id,
     });
-    if (res.status === "success" && !res.data.is_favorite) {
-      const idx = favorites.value.findIndex((v) => v.source_id === sourceId);
-      if (idx !== -1) favorites.value.splice(idx, 1);
+    if (res.status === "success") {
+      favorites.value = res.data.find(
+        (item) => item.name === "My Favorite",
+      ).songs;
+      customPlaylists.value = res.data ?? [];
     }
+  };
+
+  const removePlaylistSong = async (playlist_id, source_id) => {
+    const res = await MYAPI.post("/remove_playlist_song", {
+      playlist_id: playlist_id,
+      source_id: source_id,
+    });
+    if (res.status === "success") {
+      favorites.value = res.data.find(
+        (item) => item.name === "My Favorite",
+      ).songs;
+      customPlaylists.value = res.data ?? [];
+    }
+  };
+
+  const addFavorite = async (source_id) => {
+    addPlaylistSong(favoritePlaylistId.value, source_id);
+  };
+
+  const removeFavorite = async (source_id) => {
+    removePlaylistSong(favoritePlaylistId.value, source_id);
   };
 
   // --- 自訂清單 ---
@@ -146,6 +161,7 @@ export const usePlaylistStore = defineStore("playlist", () => {
     fetchPlaylists,
     isFavorite,
     toggleFavorite,
+    addFavorite,
     removeFavorite,
     createPlaylist,
     deletePlaylist,

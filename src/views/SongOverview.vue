@@ -288,7 +288,7 @@
                             : ''
                         "
                         :disabled="!authStore.isLoggedIn"
-                        @click.prevent="handleToggleFavorite(video)"
+                        @click.prevent="handleToggleFavorite(video.source_id)"
                       >
                         <el-icon>
                           <StarFilled
@@ -870,12 +870,10 @@ const fetchVideos = async () => {
 // Event: 切換我的最愛
 const handleToggleFavorite = async (video) => {
   try {
-    const isNowFavorite = await playlistStore.toggleFavorite(video);
+    const message = await playlistStore.toggleFavorite(video);
     ElMessage({
-      type: isNowFavorite ? "success" : "info",
-      message: isNowFavorite
-        ? t("added_to_favorites")
-        : t("removed_from_favorites"),
+      type: "success",
+      message: message,
     });
   } catch (error) {
     console.error("Error toggling favorite:", error);
