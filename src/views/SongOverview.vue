@@ -339,8 +339,8 @@
                           </el-dropdown-item>
                           <el-dropdown-item
                             v-for="pl in playlistStore.customPlaylists"
-                            :key="pl.id"
-                            :command="pl.id"
+                            :key="pl.playlist_id"
+                            :command="pl.playlist_id"
                           >
                             <el-icon><Headset /></el-icon>
                             {{ pl.name }}
@@ -491,45 +491,46 @@
           </div>
 
           <!-- 自訂清單 -->
-          <div
+          <template
             v-for="pl in playlistStore.customPlaylists"
-            :key="pl.id"
-            class="flex flex-col"
+            :key="pl.playlist_id"
           >
-            <el-card
-              class="relative h-52 w-80 cursor-pointer p-0 hover:scale-105 md:w-96"
-              shadow="hover"
-              @click="openCustomPlaylist(pl)"
-            >
-              <div
-                class="flex h-full w-full items-center justify-center bg-linear-to-br from-blue-100 to-indigo-200 dark:from-blue-900 dark:to-indigo-900"
+            <div v-if="pl.name !== 'My Favorite'" class="flex flex-col">
+              <el-card
+                class="relative h-52 w-80 cursor-pointer p-0 hover:scale-105 md:w-96"
+                shadow="hover"
+                @click="openCustomPlaylist(pl)"
               >
-                <el-icon class="text-8xl text-blue-400"><Headset /></el-icon>
-              </div>
-              <!-- 操作按鈕 (右上角) -->
-              <div class="absolute right-2 top-2 flex gap-1" @click.stop>
-                <el-button
-                  circle
-                  size="small"
-                  type="warning"
-                  @click="openRenameDialog(pl)"
+                <div
+                  class="flex h-full w-full items-center justify-center bg-linear-to-br from-blue-100 to-indigo-200 dark:from-blue-900 dark:to-indigo-900"
                 >
-                  <el-icon><Edit /></el-icon>
-                </el-button>
-                <el-button
-                  circle
-                  size="small"
-                  type="danger"
-                  @click="handleDeletePlaylist(pl.id)"
-                >
-                  <el-icon><Delete /></el-icon>
-                </el-button>
+                  <el-icon class="text-8xl text-blue-400"><Headset /></el-icon>
+                </div>
+                <!-- 操作按鈕 (右上角) -->
+                <div class="absolute right-2 top-2 flex gap-1" @click.stop>
+                  <el-button
+                    circle
+                    size="small"
+                    type="warning"
+                    @click="openRenameDialog(pl)"
+                  >
+                    <el-icon><Edit /></el-icon>
+                  </el-button>
+                  <el-button
+                    circle
+                    size="small"
+                    type="danger"
+                    @click="handleDeletePlaylist(pl.playlist_id)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </div>
+              </el-card>
+              <div class="mt-1 text-lg font-bold">
+                {{ pl.name }} — {{ pl.songs.length }} {{ t("songs") }}
               </div>
-            </el-card>
-            <div class="mt-1 text-lg font-bold">
-              {{ pl.name }} — {{ pl.songs.length }} {{ t("songs") }}
             </div>
-          </div>
+          </template>
 
           <!-- 空清單提示 -->
           <div
@@ -661,7 +662,7 @@ const selectedPlaylistSongs = computed(() => {
     return playlistStore.favorites;
   }
   const pl = playlistStore.customPlaylists.find(
-    (p) => p.id === selectedPlaylist.value.id,
+    (p) => p.playlist_id === selectedPlaylist.value.playlist_id,
   );
   return pl ? pl.songs : [];
 });
@@ -678,9 +679,12 @@ const resolvePlaylistVideoUrl = (source_id) => {
   if (selectedPlaylist.value.type === "favorites") {
     return localePath(base + "?from=favorites");
   }
-  if (selectedPlaylist.value.type === "custom" && selectedPlaylist.value.id) {
+  if (
+    selectedPlaylist.value.type === "custom" &&
+    selectedPlaylist.value.playlist_id
+  ) {
     return localePath(
-      base + `?from=playlist&playlist_id=${selectedPlaylist.value.id}`,
+      base + `?from=playlist&playlist_id=${selectedPlaylist.value.playlist_id}`,
     );
   }
   return localePath(base);
@@ -911,7 +915,10 @@ const handleCreatePlaylist = async () => {
     const pl = await playlistStore.createPlaylist(newPlaylistName.value);
     // 如果是從歌曲卡片觸發的「建立新清單」，建立後自動加入
     if (pendingAddVideo.value) {
-      await playlistStore.addSongToPlaylist(pl.id, pendingAddVideo.value);
+      await playlistStore.addSongToPlaylist(
+        pl.playlist_id,
+        pendingAddVideo.value,
+      );
       pendingAddVideo.value = null;
       ElMessage({ type: "success", message: t("added_to_playlist") });
     } else {
@@ -946,7 +953,7 @@ const handleDeletePlaylist = (playlistId) => {
 
 // Event: 開啟改名 Dialog
 const openRenameDialog = (pl) => {
-  renamingPlaylistId.value = pl.id;
+  renamingPlaylistId.value = pl.playlist_id;
   renameInput.value = pl.name;
   showRenameDialog.value = true;
 };
@@ -975,7 +982,11 @@ const openFavoritesPlaylist = () => {
 
 // Event: 點擊自訂清單卡片
 const openCustomPlaylist = (pl) => {
-  selectedPlaylist.value = { type: "custom", id: pl.id, name: pl.name };
+  selectedPlaylist.value = {
+    type: "custom",
+    id: pl.playlist_id,
+    name: pl.name,
+  };
 };
 
 // Event: 從清單內移除歌曲
@@ -987,7 +998,7 @@ const handleRemoveFromSelectedPlaylist = async (sourceId) => {
       ElMessage({ type: "info", message: t("removed_from_favorites") });
     } else {
       await playlistStore.removeSongFromPlaylist(
-        selectedPlaylist.value.id,
+        selectedPlaylist.value.playlist_id,
         sourceId,
       );
     }

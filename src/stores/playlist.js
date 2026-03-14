@@ -95,7 +95,7 @@ export const usePlaylistStore = defineStore("playlist", () => {
 
   /** 建立新清單，回傳新清單物件 */
   const createPlaylist = async (name) => {
-    const res = await MYAPI.post("/api/playlists", { name: name.trim() });
+    const res = await MYAPI.post("/create_playlist", { name: name.trim() });
     if (res.status === "success") {
       customPlaylists.value.push(res.data);
       return res.data;
@@ -105,17 +105,20 @@ export const usePlaylistStore = defineStore("playlist", () => {
 
   /** 刪除清單 */
   const deletePlaylist = async (playlistId) => {
-    await MYAPI.del(`/api/playlists/${playlistId}`);
-    const idx = customPlaylists.value.findIndex((p) => p.id === playlistId);
+    await MYAPI.post("/delete_playlist", { playlist_id: playlistId });
+    const idx = customPlaylists.value.findIndex(
+      (p) => p.playlist_id === playlistId,
+    );
     if (idx !== -1) customPlaylists.value.splice(idx, 1);
   };
 
   /** 改名清單 */
   const renamePlaylist = async (playlistId, newName) => {
-    await MYAPI.patch(`/api/playlists/${playlistId}`, {
-      name: newName.trim(),
+    await MYAPI.post(`/rename_playlist`, {
+      playlist_id: playlistId,
+      newName: newName.trim(),
     });
-    const pl = customPlaylists.value.find((p) => p.id === playlistId);
+    const pl = customPlaylists.value.find((p) => p.playlist_id === playlistId);
     if (pl) pl.name = newName.trim();
   };
 
@@ -126,7 +129,9 @@ export const usePlaylistStore = defineStore("playlist", () => {
         source_id: video.source_id,
         song_name: video.name,
       });
-      const pl = customPlaylists.value.find((p) => p.id === playlistId);
+      const pl = customPlaylists.value.find(
+        (p) => p.playlist_id === playlistId,
+      );
       if (pl && !pl.songs.some((v) => v.source_id === video.source_id)) {
         pl.songs.push({ ...video });
       }
@@ -141,7 +146,7 @@ export const usePlaylistStore = defineStore("playlist", () => {
   /** 從清單移除歌曲 */
   const removeSongFromPlaylist = async (playlistId, sourceId) => {
     await MYAPI.del(`/api/playlists/${playlistId}/songs/${sourceId}`);
-    const pl = customPlaylists.value.find((p) => p.id === playlistId);
+    const pl = customPlaylists.value.find((p) => p.playlist_id === playlistId);
     if (pl) {
       const idx = pl.songs.findIndex((v) => v.source_id === sourceId);
       if (idx !== -1) pl.songs.splice(idx, 1);
@@ -150,7 +155,7 @@ export const usePlaylistStore = defineStore("playlist", () => {
 
   /** 查詢歌曲是否在某清單（同步） */
   const isInPlaylist = (playlistId, sourceId) => {
-    const pl = customPlaylists.value.find((p) => p.id === playlistId);
+    const pl = customPlaylists.value.find((p) => p.playlist_id === playlistId);
     return pl ? pl.songs.some((v) => v.source_id === sourceId) : false;
   };
 

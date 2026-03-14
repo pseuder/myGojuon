@@ -137,5 +137,6 @@
   "no_playlists_yet": "尚未建立清單",
   "enter_playlist_name": "輸入清單名稱",
   "login_to_use_playlist": "請先登入以使用清單功能",
-  "login_required": "請先登入"
+  "login_required": "請先登入",
+  "all": "全部"
 }

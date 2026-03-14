@@ -30,7 +30,11 @@
           'wide-layout': isWideLayout,
         }"
       >
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <keep-alive include="SongOverview">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </div>
     </main>
   </div>
