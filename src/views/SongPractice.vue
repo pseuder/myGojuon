@@ -381,7 +381,7 @@ const fetchplaylist = async () => {
       } else {
         const playlistId = route.query.playlist_id;
         const pl = playlistStore.customPlaylists.find(
-          (p) => String(p.id) === String(playlistId),
+          (p) => String(p.playlist_id) === String(playlistId),
         );
         playlist.value = pl ? [...pl.songs] : [];
       }
