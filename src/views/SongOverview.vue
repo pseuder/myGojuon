@@ -303,18 +303,18 @@
                     </el-tooltip>
 
                     <!-- 加入自訂清單 -->
-                    <el-dropdown
-                      trigger="click"
-                      :disabled="!authStore.isLoggedIn"
-                      @command="(cmd) => handleAddToPlaylist(cmd, video)"
+                    <el-tooltip
+                      :content="
+                        !authStore.isLoggedIn
+                          ? t('login_required')
+                          : t('add_to_playlist')
+                      "
+                      placement="top"
                     >
-                      <el-tooltip
-                        :content="
-                          !authStore.isLoggedIn
-                            ? t('login_required')
-                            : t('add_to_playlist')
-                        "
-                        placement="top"
+                      <el-dropdown
+                        trigger="click"
+                        :disabled="!authStore.isLoggedIn"
+                        @command="(cmd) => handleAddToPlaylist(cmd, video)"
                       >
                         <el-button
                           circle
@@ -323,34 +323,34 @@
                         >
                           <el-icon><Plus /></el-icon>
                         </el-button>
-                      </el-tooltip>
-                      <template #dropdown>
-                        <el-dropdown-menu>
-                          <el-dropdown-item command="__new__">
-                            <el-icon><FolderAdd /></el-icon>
-                            {{ t("create_playlist") }}
-                          </el-dropdown-item>
-                          <el-dropdown-item
-                            divided
-                            v-if="playlistStore.customPlaylists.length === 0"
-                            disabled
-                          >
-                            {{ t("no_playlists_yet") }}
-                          </el-dropdown-item>
-                          <el-dropdown-item
-                            v-for="pl in playlistStore.customPlaylists"
-                            :key="pl.playlist_id"
-                            :command="pl.playlist_id"
-                          >
-                            <el-icon><Headset /></el-icon>
-                            {{ pl.name }}
-                            <span class="ml-1 text-xs text-gray-400"
-                              >({{ pl.songs.length }})</span
+                        <template #dropdown>
+                          <el-dropdown-menu>
+                            <el-dropdown-item command="__new__">
+                              <el-icon><FolderAdd /></el-icon>
+                              {{ t("create_playlist") }}
+                            </el-dropdown-item>
+                            <el-dropdown-item
+                              divided
+                              v-if="playlistStore.customPlaylists.length === 0"
+                              disabled
                             >
-                          </el-dropdown-item>
-                        </el-dropdown-menu>
-                      </template>
-                    </el-dropdown>
+                              {{ t("no_playlists_yet") }}
+                            </el-dropdown-item>
+                            <el-dropdown-item
+                              v-for="pl in playlistStore.customPlaylists"
+                              :key="pl.playlist_id"
+                              :command="pl.playlist_id"
+                            >
+                              <el-icon><Headset /></el-icon>
+                              {{ pl.name }}
+                              <span class="ml-1 text-xs text-gray-400"
+                                >({{ pl.songs.length }})</span
+                              >
+                            </el-dropdown-item>
+                          </el-dropdown-menu>
+                        </template>
+                      </el-dropdown>
+                    </el-tooltip>
                   </div>
                 </div>
               </el-card>
