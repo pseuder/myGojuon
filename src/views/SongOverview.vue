@@ -647,7 +647,6 @@ const currentArtistName = ref("");
 const mainTab = ref("artists"); // 'artists' | 'playlists'
 
 // --- 我的清單分頁狀態 ---
-// selectedPlaylist: null | { type: 'favorites'|'custom', id?, name }
 const selectedPlaylist = ref(null);
 const showCreatePlaylistDialog = ref(false);
 const newPlaylistName = ref("");
@@ -893,8 +892,12 @@ const handleAddToPlaylist = async (command, video) => {
     showCreatePlaylistDialog.value = true;
     return;
   }
+  let playlistID = command;
   try {
-    const added = await playlistStore.addSongToPlaylist(command, video);
+    const added = await playlistStore.addSongToCustomPlaylist(
+      playlistID,
+      video.source_id,
+    );
     ElMessage({
       type: added ? "success" : "warning",
       message: added ? t("added_to_playlist") : t("song_already_in_playlist"),
@@ -915,7 +918,7 @@ const handleCreatePlaylist = async () => {
     const pl = await playlistStore.createPlaylist(newPlaylistName.value);
     // 如果是從歌曲卡片觸發的「建立新清單」，建立後自動加入
     if (pendingAddVideo.value) {
-      await playlistStore.addSongToPlaylist(
+      await playlistStore.addSongToCustomPlaylist(
         pl.playlist_id,
         pendingAddVideo.value,
       );
@@ -984,7 +987,7 @@ const openFavoritesPlaylist = () => {
 const openCustomPlaylist = (pl) => {
   selectedPlaylist.value = {
     type: "custom",
-    id: pl.playlist_id,
+    playlist_id: pl.playlist_id,
     name: pl.name,
   };
 };
@@ -997,7 +1000,7 @@ const handleRemoveFromSelectedPlaylist = async (sourceId) => {
       await playlistStore.removeFavorite(sourceId);
       ElMessage({ type: "info", message: t("removed_from_favorites") });
     } else {
-      await playlistStore.removeSongFromPlaylist(
+      await playlistStore.removeSongFromCustomPlaylist(
         selectedPlaylist.value.playlist_id,
         sourceId,
       );

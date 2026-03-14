@@ -23,7 +23,7 @@ export const usePlaylistStore = defineStore("playlist", () => {
   /** 從後端載入所有清單與最愛（頁面 onMounted 呼叫） */
   const fetchPlaylists = async () => {
     try {
-      const res = await MYAPI.get("/get_user_playlists");
+      const res = await MYAPI.get("/get_user_all_playlists");
       if (res.status === "success") {
         favorites.value = res.data.find(
           (item) => item.name === "My Favorite",
@@ -56,17 +56,13 @@ export const usePlaylistStore = defineStore("playlist", () => {
     }
   };
 
-  /** 切換最愛，回傳新的 is_favorite 值 */
   const addPlaylistSong = async (playlist_id, source_id) => {
     const res = await MYAPI.post("/add_playlist_song", {
       playlist_id: playlist_id,
       source_id: source_id,
     });
     if (res.status === "success") {
-      favorites.value = res.data.find(
-        (item) => item.name === "My Favorite",
-      ).songs;
-      customPlaylists.value = res.data ?? [];
+      return res.data;
     }
   };
 
@@ -76,19 +72,49 @@ export const usePlaylistStore = defineStore("playlist", () => {
       source_id: source_id,
     });
     if (res.status === "success") {
-      favorites.value = res.data.find(
-        (item) => item.name === "My Favorite",
-      ).songs;
-      customPlaylists.value = res.data ?? [];
+      return res.data;
     }
   };
 
   const addFavorite = async (source_id) => {
-    addPlaylistSong(favoritePlaylistId.value, source_id);
+    let newPlayListInfo = await addPlaylistSong(
+      favoritePlaylistId.value,
+      source_id,
+    );
+
+    favorites.value = newPlayListInfo[0].songs;
   };
 
   const removeFavorite = async (source_id) => {
-    removePlaylistSong(favoritePlaylistId.value, source_id);
+    let newPlayListInfo = await removePlaylistSong(
+      favoritePlaylistId.value,
+      source_id,
+    );
+    favorites.value = newPlayListInfo[0].songs;
+  };
+
+  const addSongToCustomPlaylist = async (playlist_id, source_id) => {
+    let newPlayListInfo = await addPlaylistSong(playlist_id, source_id);
+
+    const idx = customPlaylists.value.findIndex(
+      (item) => item.playlist_id === playlist_id,
+    );
+
+    if (idx !== -1) {
+      customPlaylists.value[idx] = newPlayListInfo[0];
+    }
+  };
+
+  const removeSongFromCustomPlaylist = async (playlist_id, source_id) => {
+    let newPlayListInfo = await removePlaylistSong(playlist_id, source_id);
+
+    const idx = customPlaylists.value.findIndex(
+      (item) => item.playlist_id === playlist_id,
+    );
+
+    if (idx !== -1) {
+      customPlaylists.value[idx] = newPlayListInfo[0];
+    }
   };
 
   // --- 自訂清單 ---
@@ -122,37 +148,6 @@ export const usePlaylistStore = defineStore("playlist", () => {
     if (pl) pl.name = newName.trim();
   };
 
-  /** 加入歌曲到清單，回傳 true=成功 / false=已存在 */
-  const addSongToPlaylist = async (playlistId, video) => {
-    try {
-      await MYAPI.post(`/api/playlists/${playlistId}/songs`, {
-        source_id: video.source_id,
-        song_name: video.name,
-      });
-      const pl = customPlaylists.value.find(
-        (p) => p.playlist_id === playlistId,
-      );
-      if (pl && !pl.songs.some((v) => v.source_id === video.source_id)) {
-        pl.songs.push({ ...video });
-      }
-      return true;
-    } catch (error) {
-      const msg = error.response?.data?.message;
-      if (msg === "song_already_in_playlist") return false;
-      throw error;
-    }
-  };
-
-  /** 從清單移除歌曲 */
-  const removeSongFromPlaylist = async (playlistId, sourceId) => {
-    await MYAPI.del(`/api/playlists/${playlistId}/songs/${sourceId}`);
-    const pl = customPlaylists.value.find((p) => p.playlist_id === playlistId);
-    if (pl) {
-      const idx = pl.songs.findIndex((v) => v.source_id === sourceId);
-      if (idx !== -1) pl.songs.splice(idx, 1);
-    }
-  };
-
   /** 查詢歌曲是否在某清單（同步） */
   const isInPlaylist = (playlistId, sourceId) => {
     const pl = customPlaylists.value.find((p) => p.playlist_id === playlistId);
@@ -167,12 +162,12 @@ export const usePlaylistStore = defineStore("playlist", () => {
     isFavorite,
     toggleFavorite,
     addFavorite,
+    addSongToCustomPlaylist,
+    removeSongFromCustomPlaylist,
     removeFavorite,
     createPlaylist,
     deletePlaylist,
     renamePlaylist,
-    addSongToPlaylist,
-    removeSongFromPlaylist,
     isInPlaylist,
   };
   // 不使用 persist：資料由後端管理，無需 localStorage 快取
