@@ -76,8 +76,7 @@
             circle
             size="small"
             :type="
-              authStore.isLoggedIn &&
-              playlistStore.isFavorite(video.source_id)
+              authStore.isLoggedIn && playlistStore.isFavorite(video.source_id)
                 ? 'danger'
                 : ''
             "
@@ -99,22 +98,26 @@
         <!-- 加入自訂清單 -->
         <el-tooltip
           :content="
-            !authStore.isLoggedIn
-              ? t('login_required')
-              : t('add_to_playlist')
+            !authStore.isLoggedIn ? t('login_required') : t('add_to_playlist')
           "
           placement="top"
         >
           <el-dropdown
             trigger="click"
             :disabled="!authStore.isLoggedIn"
-            @command="(cmd) => emit('add-to-playlist', cmd, video)"
+            @command="
+              (cmd) => {
+                if (cmd === '__new__') {
+                  emit('add-to-playlist', cmd, video);
+                } else if (playlistStore.isInPlaylist(cmd, video.source_id)) {
+                  emit('remove-from-playlist', cmd, video);
+                } else {
+                  emit('add-to-playlist', cmd, video);
+                }
+              }
+            "
           >
-            <el-button
-              circle
-              size="small"
-              :disabled="!authStore.isLoggedIn"
-            >
+            <el-button circle size="small" :disabled="!authStore.isLoggedIn">
               <el-icon><Plus /></el-icon>
             </el-button>
             <template #dropdown>
@@ -130,17 +133,29 @@
                 >
                   {{ t("no_playlists_yet") }}
                 </el-dropdown-item>
-                <el-dropdown-item
+                <template
                   v-for="pl in playlistStore.customPlaylists"
                   :key="pl.playlist_id"
-                  :command="pl.playlist_id"
                 >
-                  <el-icon><Headset /></el-icon>
-                  {{ pl.name }}
-                  <span class="ml-1 text-xs text-gray-400"
-                    >({{ pl.songs.length }})</span
+                  <el-dropdown-item
+                    v-if="pl.name != 'My Favorite'"
+                    :command="pl.playlist_id"
+                    :class="{
+                      'in-playlist': playlistStore.isInPlaylist(
+                        pl.playlist_id,
+                        video.source_id,
+                      ),
+                    }"
                   >
-                </el-dropdown-item>
+                    <el-icon>
+                      <Headset />
+                    </el-icon>
+                    {{ pl.name }}
+                    <span class="ml-1 text-xs text-gray-400"
+                      >({{ pl.songs.length }})</span
+                    >
+                  </el-dropdown-item>
+                </template>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -159,6 +174,7 @@ import {
   Delete,
   FolderAdd,
   Headset,
+  Check,
 } from "@element-plus/icons-vue";
 import { usePlaylistStore, useAuthStore } from "@/stores";
 
@@ -168,7 +184,12 @@ const props = defineProps({
   showRemove: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["toggle-favorite", "add-to-playlist", "remove"]);
+const emit = defineEmits([
+  "toggle-favorite",
+  "add-to-playlist",
+  "remove-from-playlist",
+  "remove",
+]);
 
 const { t } = useI18n();
 const playlistStore = usePlaylistStore();
@@ -192,3 +213,12 @@ const formatDate = (dateString) => {
   return `${year}-${month}-${day}`;
 };
 </script>
+
+<style scoped>
+:deep(.in-playlist) {
+  background-color: #e1f3d8 !important;
+}
+:deep(.in-playlist:hover) {
+  background-color: #e1f3d8 !important;
+}
+</style>

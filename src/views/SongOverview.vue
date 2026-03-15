@@ -212,6 +212,7 @@
                 :url="resolveVideoUrl(video.source_id)"
                 @toggle-favorite="handleToggleFavorite"
                 @add-to-playlist="handleAddToPlaylist"
+                @remove-from-playlist="handleRemoveFromPlaylist"
               />
             </template>
           </el-space>
@@ -264,6 +265,7 @@
             show-remove
             @toggle-favorite="handleToggleFavorite"
             @add-to-playlist="handleAddToPlaylist"
+            @remove-from-playlist="handleRemoveFromPlaylist"
             @remove="handleRemoveFromSelectedPlaylist"
           />
         </el-space>
@@ -694,6 +696,15 @@ const handleAddToPlaylist = async (command, video) => {
     );
   } catch (error) {
     console.error("Error adding to playlist:", error);
+    ElMessage({ type: "error", message: t("error_loading_data") });
+  }
+};
+
+const handleRemoveFromPlaylist = async (playlistId, video) => {
+  try {
+    await playlistStore.removeSongFromCustomPlaylist(playlistId, video.source_id);
+  } catch (error) {
+    console.error("Error removing from playlist:", error);
     ElMessage({ type: "error", message: t("error_loading_data") });
   }
 };
