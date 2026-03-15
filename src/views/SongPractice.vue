@@ -401,6 +401,8 @@ const fetchplaylist = async () => {
     ElMessage.error("無法獲取所有歌曲列表");
     playlist.value = [];
   }
+  // playlist 更新後重置 shuffle 池
+  shufflePool.value = [];
 };
 
 // 保留 playlist 上下文 query params 的路徑產生器
@@ -495,6 +497,7 @@ const cyclePlayMode = () => {
     ElMessage.success(t("loop_song"));
   } else if (songStore.playMode === "loop") {
     songStore.playMode = "shuffle";
+    shufflePool.value = []; // 清空舊池，讓下次重新填充
     computeShuffleNextIndex();
     ElMessage.success(t("shuffle_playback"));
   } else {
@@ -540,8 +543,16 @@ const isAutoNavigating = ref(false);
 const isLoopingSong = computed(() => songStore.playMode === "loop");
 const isPlaylistDrawerOpen = ref(false);
 
-/*-- Shuffle 下一首預計算 --*/
+/*-- Shuffle 下一首預計算（剩餘池算法） --*/
 const nextShuffleIndex = ref(-1);
+const shufflePool = ref([]); // 尚未播放的索引池
+
+const refillShufflePool = () => {
+  const currIdx = currentVideoIndexInArtistList.value;
+  shufflePool.value = playlist.value
+    .map((_, i) => i)
+    .filter((i) => i !== currIdx);
+};
 
 const computeShuffleNextIndex = () => {
   if (!playlist.value.length) {
@@ -552,12 +563,14 @@ const computeShuffleNextIndex = () => {
     nextShuffleIndex.value = 0;
     return;
   }
-  const currIdx = currentVideoIndexInArtistList.value;
-  let idx;
-  do {
-    idx = Math.floor(Math.random() * playlist.value.length);
-  } while (idx === currIdx);
-  nextShuffleIndex.value = idx;
+  // 池空了就重新填充（新一輪）
+  if (!shufflePool.value.length) {
+    refillShufflePool();
+  }
+  // 從池中隨機取出一個索引
+  const pickPos = Math.floor(Math.random() * shufflePool.value.length);
+  nextShuffleIndex.value = shufflePool.value[pickPos];
+  shufflePool.value.splice(pickPos, 1);
 };
 
 // 依照當前模式計算「下一首」的 source_id
