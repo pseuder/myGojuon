@@ -873,14 +873,9 @@ const fetchVideos = async () => {
 // Event: 切換我的最愛
 const handleToggleFavorite = async (video) => {
   try {
-    const message = await playlistStore.toggleFavorite(video);
-    ElMessage({
-      type: "success",
-      message: message,
-    });
+    const result = await playlistStore.toggleFavorite(video);
   } catch (error) {
     console.error("Error toggling favorite:", error);
-    ElMessage({ type: "error", message: t("error_loading_data") });
   }
 };
 
@@ -894,14 +889,10 @@ const handleAddToPlaylist = async (command, video) => {
   }
   let playlistID = command;
   try {
-    const added = await playlistStore.addSongToCustomPlaylist(
+    const result = await playlistStore.addSongToCustomPlaylist(
       playlistID,
       video.source_id,
     );
-    ElMessage({
-      type: added ? "success" : "warning",
-      message: added ? t("added_to_playlist") : t("song_already_in_playlist"),
-    });
   } catch (error) {
     console.error("Error adding to playlist:", error);
     ElMessage({ type: "error", message: t("error_loading_data") });
@@ -920,7 +911,7 @@ const handleCreatePlaylist = async () => {
     if (pendingAddVideo.value) {
       await playlistStore.addSongToCustomPlaylist(
         pl.playlist_id,
-        pendingAddVideo.value,
+        pendingAddVideo.value.source_id,
       );
       pendingAddVideo.value = null;
       ElMessage({ type: "success", message: t("added_to_playlist") });
@@ -931,7 +922,14 @@ const handleCreatePlaylist = async () => {
     showCreatePlaylistDialog.value = false;
   } catch (error) {
     console.error("Error creating playlist:", error);
-    ElMessage({ type: "error", message: t("error_loading_data") });
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    if (errorMessage === "playlist_already_exists") {
+      ElMessage({ type: "error", message: t("playlist_already_exists") });
+    } else {
+      ElMessage({ type: "error", message: t("error_loading_data") });
+    }
   }
 };
 
@@ -997,10 +995,9 @@ const handleRemoveFromSelectedPlaylist = async (sourceId) => {
   if (!selectedPlaylist.value) return;
   try {
     if (selectedPlaylist.value.type === "favorites") {
-      await playlistStore.removeFavorite(sourceId);
-      ElMessage({ type: "info", message: t("removed_from_favorites") });
+      const result = await playlistStore.removeFavorite(sourceId);
     } else {
-      await playlistStore.removeSongFromCustomPlaylist(
+      const result = await playlistStore.removeSongFromCustomPlaylist(
         selectedPlaylist.value.playlist_id,
         sourceId,
       );

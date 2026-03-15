@@ -366,7 +366,7 @@ const handleSongDelete = (row) => {
     type: "warning",
   })
     .then(async () => {
-      await MYAPI.del("/delete_song/" + row.song_id);
+      await MYAPI.del("/delete_song/" + row.source_id);
       fetchArtistData();
       ElMessage({ type: "success", message: "刪除成功" });
     })
@@ -436,7 +436,7 @@ const authorinitSortable = () => {
 
 const updateAuthorOrder = async (orderData) => {
   try {
-    const res = await MYAPI.post("/update_author_order", {
+    const res = await MYAPI.post("/update_artist_order", {
       new_orders: orderData,
     });
     if (res.status === "success") {

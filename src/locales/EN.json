@@ -138,5 +138,6 @@
   "enter_playlist_name": "Enter playlist name",
   "login_to_use_playlist": "Please login to use playlist features",
   "login_required": "Login required",
-  "all": "All"
+  "all": "All",
+  "playlist_already_exists": "Playlist already exists"
 }

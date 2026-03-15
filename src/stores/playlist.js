@@ -39,6 +39,22 @@ export const usePlaylistStore = defineStore("playlist", () => {
     }
   };
 
+  const addSongToPlaylist = async (playlist_id, source_id) => {
+    const result = await MYAPI.post("/add_song_to_playlist", {
+      playlist_id: playlist_id,
+      source_id: source_id,
+    });
+    return result;
+  };
+
+  const removePlaylistSong = async (playlist_id, source_id) => {
+    const result = await MYAPI.post("/remove_song_from_playlist", {
+      playlist_id: playlist_id,
+      source_id: source_id,
+    });
+    return result;
+  };
+
   // --- 我的最愛 ---
 
   /** 查詢是否在最愛（同步，直接讀 local state） */
@@ -48,72 +64,56 @@ export const usePlaylistStore = defineStore("playlist", () => {
 
   const toggleFavorite = (source_id) => {
     if (isFavorite(source_id)) {
-      removeFavorite(source_id);
-      return "移除成功";
+      return removeFavorite(source_id);
     } else {
-      addFavorite(source_id);
-      return "添加成功";
-    }
-  };
-
-  const addPlaylistSong = async (playlist_id, source_id) => {
-    const res = await MYAPI.post("/add_playlist_song", {
-      playlist_id: playlist_id,
-      source_id: source_id,
-    });
-    if (res.status === "success") {
-      return res.data;
-    }
-  };
-
-  const removePlaylistSong = async (playlist_id, source_id) => {
-    const res = await MYAPI.post("/remove_playlist_song", {
-      playlist_id: playlist_id,
-      source_id: source_id,
-    });
-    if (res.status === "success") {
-      return res.data;
+      return addFavorite(source_id);
     }
   };
 
   const addFavorite = async (source_id) => {
-    let newPlayListInfo = await addPlaylistSong(
-      favoritePlaylistId.value,
-      source_id,
-    );
-
-    favorites.value = newPlayListInfo[0].songs;
+    let result = await addSongToPlaylist(favoritePlaylistId.value, source_id);
+    favorites.value = result.data[0].songs;
+    return {
+      status: result.status,
+      message: result.message,
+    };
   };
 
   const removeFavorite = async (source_id) => {
-    let newPlayListInfo = await removePlaylistSong(
-      favoritePlaylistId.value,
-      source_id,
-    );
-    favorites.value = newPlayListInfo[0].songs;
+    let result = await removePlaylistSong(favoritePlaylistId.value, source_id);
+    favorites.value = result.data[0].songs;
+    return {
+      status: result.status,
+      message: result.message,
+    };
   };
 
   const addSongToCustomPlaylist = async (playlist_id, source_id) => {
-    let newPlayListInfo = await addPlaylistSong(playlist_id, source_id);
+    let result = await addSongToPlaylist(playlist_id, source_id);
 
     const idx = customPlaylists.value.findIndex(
       (item) => item.playlist_id === playlist_id,
     );
 
     if (idx !== -1) {
-      customPlaylists.value[idx] = newPlayListInfo[0];
+      customPlaylists.value[idx] = result.data[0];
     }
+
+    return {
+      status: result.status,
+      message: result.message,
+    };
   };
 
   const removeSongFromCustomPlaylist = async (playlist_id, source_id) => {
-    let newPlayListInfo = await removePlaylistSong(playlist_id, source_id);
+    let result = await removePlaylistSong(playlist_id, source_id);
 
     const idx = customPlaylists.value.findIndex(
       (item) => item.playlist_id === playlist_id,
     );
 
     if (idx !== -1) {
-      customPlaylists.value[idx] = newPlayListInfo[0];
+      customPlaylists.value[idx] = result.data[0];
     }
   };
 
@@ -126,6 +126,7 @@ export const usePlaylistStore = defineStore("playlist", () => {
       customPlaylists.value.push(res.data);
       return res.data;
     }
+
     throw new Error(res.message);
   };
 
