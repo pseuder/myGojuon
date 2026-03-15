@@ -207,153 +207,12 @@
               v-for="video in sortedVideos"
               :key="video.source_id"
             >
-              <el-card class="h-fit w-80 md:w-96" shadow="hover">
-                <div class="p-4">
-                  <a
-                    :href="resolveVideoUrl(video.source_id)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="mb-2 block w-full"
-                  >
-                    <img
-                      :src="
-                        'https://i.ytimg.com/vi/' +
-                        video.source_id +
-                        '/hqdefault.jpg'
-                      "
-                      class="h-48 w-full cursor-pointer object-cover"
-                      alt="video thumbnail"
-                    />
-                  </a>
-
-                  <a
-                    :href="resolveVideoUrl(video.source_id)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="mb-2 block w-full truncate text-lg text-blue-400 no-underline hover:text-blue-600 hover:underline"
-                  >
-                    {{ video.song_name }}
-                  </a>
-
-                  <!-- Video metadata: views and publish date -->
-                  <div
-                    class="mb-2 flex flex-wrap gap-2 text-sm text-gray-600 dark:text-gray-400"
-                  >
-                    <span v-if="video.views" class="flex items-center gap-1">
-                      <el-tag type="info" effect="light" round>
-                        {{ t("views") }}
-                        {{ formatViews(video.views) }}
-                      </el-tag>
-                    </span>
-                    <span
-                      v-if="video.publish_date"
-                      class="flex items-center gap-1"
-                    >
-                      <el-tag type="info" effect="light" round>
-                        {{ t("publish_date") }}
-                        {{ formatDate(video.publish_date) }}
-                      </el-tag>
-                    </span>
-                  </div>
-
-                  <div class="flex gap-2" v-if="video.tags">
-                    <el-tag
-                      v-for="tag in video.tags?.split(',')"
-                      :key="tag"
-                      type="success"
-                      >{{ tag }}</el-tag
-                    >
-                  </div>
-
-                  <!-- 歌單操作 icon -->
-                  <div class="mt-3 flex items-center justify-end gap-2">
-                    <!-- 我的最愛 -->
-                    <el-tooltip
-                      :content="
-                        !authStore.isLoggedIn
-                          ? t('login_required')
-                          : playlistStore.isFavorite(video.source_id)
-                            ? t('remove_from_favorites')
-                            : t('add_to_favorites')
-                      "
-                      placement="top"
-                    >
-                      <el-button
-                        circle
-                        size="small"
-                        :type="
-                          authStore.isLoggedIn &&
-                          playlistStore.isFavorite(video.source_id)
-                            ? 'danger'
-                            : ''
-                        "
-                        :disabled="!authStore.isLoggedIn"
-                        @click.prevent="handleToggleFavorite(video.source_id)"
-                      >
-                        <el-icon>
-                          <StarFilled
-                            v-if="
-                              authStore.isLoggedIn &&
-                              playlistStore.isFavorite(video.source_id)
-                            "
-                          />
-                          <Star v-else />
-                        </el-icon>
-                      </el-button>
-                    </el-tooltip>
-
-                    <!-- 加入自訂清單 -->
-                    <el-tooltip
-                      :content="
-                        !authStore.isLoggedIn
-                          ? t('login_required')
-                          : t('add_to_playlist')
-                      "
-                      placement="top"
-                    >
-                      <el-dropdown
-                        trigger="click"
-                        :disabled="!authStore.isLoggedIn"
-                        @command="(cmd) => handleAddToPlaylist(cmd, video)"
-                      >
-                        <el-button
-                          circle
-                          size="small"
-                          :disabled="!authStore.isLoggedIn"
-                        >
-                          <el-icon><Plus /></el-icon>
-                        </el-button>
-                        <template #dropdown>
-                          <el-dropdown-menu>
-                            <el-dropdown-item command="__new__">
-                              <el-icon><FolderAdd /></el-icon>
-                              {{ t("create_playlist") }}
-                            </el-dropdown-item>
-                            <el-dropdown-item
-                              divided
-                              v-if="playlistStore.customPlaylists.length === 0"
-                              disabled
-                            >
-                              {{ t("no_playlists_yet") }}
-                            </el-dropdown-item>
-                            <el-dropdown-item
-                              v-for="pl in playlistStore.customPlaylists"
-                              :key="pl.playlist_id"
-                              :command="pl.playlist_id"
-                            >
-                              <el-icon><Headset /></el-icon>
-                              {{ pl.name }}
-                              <span class="ml-1 text-xs text-gray-400"
-                                >({{ pl.songs.length }})</span
-                              >
-                            </el-dropdown-item>
-                          </el-dropdown-menu>
-                        </template>
-                      </el-dropdown>
-                    </el-tooltip>
-                  </div>
-                </div>
-              </el-card>
+              <VideoCard
+                :video="video"
+                :url="resolveVideoUrl(video.source_id)"
+                @toggle-favorite="handleToggleFavorite"
+                @add-to-playlist="handleAddToPlaylist"
+              />
             </template>
           </el-space>
         </div>
@@ -397,50 +256,16 @@
           class="w-full flex-1 justify-center overflow-x-hidden overflow-y-auto"
           wrap
         >
-          <el-card
+          <VideoCard
             v-for="video in selectedPlaylistSongs"
             :key="video.source_id"
-            class="h-fit w-80 md:w-96"
-            shadow="hover"
-          >
-            <div class="p-4">
-              <a
-                :href="resolvePlaylistVideoUrl(video.source_id)"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="mb-2 block w-full"
-              >
-                <img
-                  :src="
-                    'https://i.ytimg.com/vi/' +
-                    video.source_id +
-                    '/hqdefault.jpg'
-                  "
-                  class="h-48 w-full cursor-pointer object-cover"
-                  alt="video thumbnail"
-                />
-              </a>
-              <a
-                :href="resolvePlaylistVideoUrl(video.source_id)"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="mb-2 block w-full truncate text-lg text-blue-400 no-underline hover:text-blue-600 hover:underline"
-              >
-                {{ video.song_name }}
-              </a>
-              <!-- 移除按鈕 -->
-              <div class="mt-2 flex justify-end">
-                <el-button
-                  type="danger"
-                  size="small"
-                  plain
-                  @click="handleRemoveFromSelectedPlaylist(video.source_id)"
-                >
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </div>
-            </div>
-          </el-card>
+            :video="video"
+            :url="resolvePlaylistVideoUrl(video.source_id)"
+            show-remove
+            @toggle-favorite="handleToggleFavorite"
+            @add-to-playlist="handleAddToPlaylist"
+            @remove="handleRemoveFromSelectedPlaylist"
+          />
         </el-space>
 
         <div
@@ -608,14 +433,13 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import {
   ArrowLeft,
   Back,
-  Star,
   StarFilled,
   Plus,
   Delete,
   Edit,
-  FolderAdd,
   Headset,
 } from "@element-plus/icons-vue";
+import VideoCard from "@/components/VideoCard.vue";
 
 /*-- router --*/
 const router = useRouter();
@@ -689,31 +513,6 @@ const resolvePlaylistVideoUrl = (source_id) => {
   return localePath(base);
 };
 
-// 輔助函式: 格式化觀看數
-const formatViews = (views) => {
-  const num = parseInt(views);
-  if (isNaN(num)) return "0";
-
-  if (num >= 100000000) {
-    return (num / 100000000).toFixed(1) + "億";
-  } else if (num >= 10000) {
-    return (num / 10000).toFixed(1) + "萬";
-  }
-  return num.toLocaleString();
-};
-
-// 輔助函式: 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return dateString;
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-};
 
 /*-- 紀錄滾動位置 --*/
 const artistListScrollPosition = ref(0);
