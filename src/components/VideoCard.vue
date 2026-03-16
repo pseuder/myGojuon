@@ -50,18 +50,7 @@
 
       <!-- 歌單操作 -->
       <div class="mt-3 flex items-center justify-end gap-2">
-        <!-- 移除按鈕 (僅清單內顯示) -->
-        <el-button
-          v-if="showRemove"
-          type="danger"
-          size="small"
-          plain
-          @click="emit('remove', video.source_id)"
-        >
-          <el-icon><Delete /></el-icon>
-        </el-button>
-
-        <!-- 我的最愛 -->
+          <!-- 我的最愛 -->
         <el-tooltip
           :content="
             !authStore.isLoggedIn
@@ -171,7 +160,6 @@ import {
   Star,
   StarFilled,
   Plus,
-  Delete,
   FolderAdd,
   Headset,
   Check,
@@ -181,14 +169,12 @@ import { usePlaylistStore, useAuthStore } from "@/stores";
 const props = defineProps({
   video: { type: Object, required: true },
   url: { type: String, required: true },
-  showRemove: { type: Boolean, default: false },
 });
 
 const emit = defineEmits([
   "toggle-favorite",
   "add-to-playlist",
   "remove-from-playlist",
-  "remove",
 ]);
 
 const { t } = useI18n();
