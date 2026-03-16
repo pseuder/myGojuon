@@ -46,21 +46,7 @@
             <el-icon class=""><ArrowLeft /></el-icon>
           </el-button>
         </div>
-        <el-tabs
-          v-else
-          v-model="activeTab"
-          @tab-change="handleTabChange"
-          class="w-full"
-        >
-          <el-tab-pane label="ALL" name="all"> </el-tab-pane>
-          <el-tab-pane
-            v-for="artist in allArtists"
-            :key="artist.artist_id"
-            :label="artist.name"
-            :name="String(artist.artist_id)"
-          >
-          </el-tab-pane>
-        </el-tabs>
+        <div v-else></div>
       </div>
 
       <!-- 全部歌手清單 -->
@@ -870,9 +856,6 @@ onUnmounted(() => {});
   }
 }
 
-:deep(.el-tabs__content) {
-  display: none;
-}
 
 .thumbnail-background::before {
   content: "";
@@ -908,7 +891,4 @@ onUnmounted(() => {});
   padding: 0px;
 }
 
-:deep(.el-tabs__header) {
-  display: none;
-}
 </style>
