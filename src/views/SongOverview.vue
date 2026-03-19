@@ -1,61 +1,15 @@
 <template>
   <div class="flex h-[88vh] w-full flex-col p-2 lg:h-full">
-    <!-- 主分頁: 歌手 / 我的清單 -->
-    <div class="mb-2 flex-none border-b border-gray-200 dark:border-gray-700">
-      <div class="flex gap-1">
-        <button
-          @click="handleMainTabChange('artists')"
-          class="rounded-t px-4 py-2 text-sm font-semibold transition-colors"
-          :class="
-            mainTab === 'artists'
-              ? 'border-b-2 border-blue-500 text-blue-500'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-          "
-        >
-          {{ t("artists") }}
-        </button>
-        <button
-          @click="handleMainTabChange('playlists')"
-          class="rounded-t px-4 py-2 text-sm font-semibold transition-colors"
-          :class="
-            mainTab === 'playlists'
-              ? 'border-b-2 border-blue-500 text-blue-500'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-          "
-        >
-          {{ t("my_playlists") }}
-        </button>
-      </div>
-    </div>
-
-    <!-- ===== 歌手分頁 ===== -->
-    <template v-if="mainTab === 'artists'">
-      <!-- 指定歌手歌曲頁面 -->
-      <div class="mb-4 flex-none">
+    <el-tabs
+      v-model="activeTabName"
+      type="border-card"
+      class="song-overview-tabs flex h-full flex-col overflow-hidden"
+      @tab-remove="handleCloseArtistTab"
+    >
+      <!-- ===== Tab 1: 歌手 ===== -->
+      <el-tab-pane :label="t('artists')" name="artists">
         <div
-          v-if="activeTab !== 'all'"
-          class="flex items-center gap-4 border-b border-gray-200 py-2 dark:border-gray-700"
-        >
-          <el-button @click="handleBackToAll" type="primary" plain>
-            <el-icon class=""><Back /></el-icon>
-          </el-button>
-          <h2 class="gradient-text-tech mx-auto text-2xl font-bold">
-            {{ currentArtistName || "" }}
-          </h2>
-          <el-button class="invisible">
-            <el-icon class=""><ArrowLeft /></el-icon>
-          </el-button>
-        </div>
-        <div v-else></div>
-      </div>
-
-      <!-- 全部歌手清單 -->
-      <div
-        class="flex w-full grow flex-col items-center gap-4 overflow-x-hidden"
-      >
-        <div
-          v-if="activeTab === 'all'"
-          class="flex w-full flex-1 flex-wrap content-start justify-center gap-4 overflow-y-auto p-2"
+          class="flex w-full flex-1 flex-wrap content-start justify-center gap-4 overflow-y-auto p-2 h-full"
         >
           <template v-if="isLoading && allArtists.length === 0">
             <div
@@ -96,14 +50,173 @@
             </div>
           </template>
         </div>
+      </el-tab-pane>
 
-        <!-- Video list view -->
-        <div v-else class="flex w-full flex-1 flex-col overflow-hidden">
+      <!-- ===== Tab 2: 我的清單 ===== -->
+      <el-tab-pane :label="t('my_playlists')" name="playlists">
+        <!-- 未登入提示 -->
+        <div
+          v-if="!authStore.isLoggedIn"
+          class="flex h-full flex-col items-center justify-center gap-4 text-gray-400"
+        >
+          <el-icon class="text-6xl"><StarFilled /></el-icon>
+          <p class="text-lg">{{ t("login_to_use_playlist") }}</p>
+        </div>
+
+        <!-- 查看清單內歌曲 -->
+        <div
+          v-else-if="selectedPlaylist"
+          class="flex h-full flex-col overflow-hidden"
+        >
+          <!-- 返回按鈕 -->
+          <div
+            class="mb-4 flex flex-none items-center gap-4 border-b border-gray-200 py-2 dark:border-gray-700"
+          >
+            <el-button @click="selectedPlaylist = null" type="primary" plain>
+              <el-icon><Back /></el-icon>
+            </el-button>
+            <h2 class="gradient-text-tech mx-auto text-2xl font-bold">
+              {{ selectedPlaylist.name }}
+            </h2>
+            <el-button class="invisible"
+              ><el-icon><Back /></el-icon
+            ></el-button>
+          </div>
+
+          <!-- 清單內歌曲 -->
+          <el-space
+            v-if="selectedPlaylistSongs.length > 0"
+            class="w-full flex-1 justify-center overflow-x-hidden overflow-y-auto"
+            wrap
+          >
+            <VideoCard
+              v-for="video in selectedPlaylistSongs"
+              :key="video.source_id"
+              :video="video"
+              :url="resolvePlaylistVideoUrl(video.source_id)"
+              @toggle-favorite="handleToggleFavorite"
+              @add-to-playlist="handleAddToPlaylist"
+              @remove-from-playlist="handleRemoveFromPlaylist"
+            />
+          </el-space>
+
+          <div
+            v-else
+            class="flex flex-1 items-center justify-center text-gray-400"
+          >
+            {{ t("empty_playlist") }}
+          </div>
+        </div>
+
+        <!-- 播放清單總覽 -->
+        <div
+          v-else-if="authStore.isLoggedIn"
+          class="flex h-full flex-col overflow-hidden"
+        >
+          <!-- 標題列 -->
+          <div class="mb-4 flex flex-none items-center justify-between">
+            <span
+              class="text-base font-semibold text-gray-600 dark:text-gray-300"
+              >{{ t("my_playlists") }}</span
+            >
+            <el-button type="primary" @click="showCreatePlaylistDialog = true">
+              <el-icon class="mr-1"><Plus /></el-icon>
+              {{ t("create_playlist") }}
+            </el-button>
+          </div>
+
+          <!-- 清單卡片 grid -->
+          <div
+            class="flex w-full flex-1 flex-wrap content-start justify-center gap-4 overflow-y-auto p-2"
+          >
+            <!-- 我的最愛 (固定第一個) -->
+            <div
+              class="flex cursor-pointer flex-col hover:scale-105"
+              @click="openFavoritesPlaylist"
+            >
+              <el-card class="h-52 w-80 p-0 md:w-96" shadow="hover">
+                <div
+                  class="flex h-full w-full items-center justify-center bg-linear-to-br from-red-100 to-pink-200 dark:from-red-900 dark:to-pink-900"
+                >
+                  <el-icon class="text-8xl text-red-400"
+                    ><StarFilled
+                  /></el-icon>
+                </div>
+              </el-card>
+              <div class="mt-1 text-lg font-bold">
+                {{ t("my_favorites") }} — {{ playlistStore.favorites.length }}
+                {{ t("songs") }}
+              </div>
+            </div>
+
+            <!-- 自訂清單 -->
+            <template
+              v-for="pl in playlistStore.customPlaylists"
+              :key="pl.playlist_id"
+            >
+              <div v-if="pl.name !== 'My Favorite'" class="flex flex-col">
+                <el-card
+                  class="relative h-52 w-80 cursor-pointer p-0 hover:scale-105 md:w-96"
+                  shadow="hover"
+                  @click="openCustomPlaylist(pl)"
+                >
+                  <div
+                    class="flex h-full w-full items-center justify-center bg-linear-to-br from-blue-100 to-indigo-200 dark:from-blue-900 dark:to-indigo-900"
+                  >
+                    <el-icon class="text-8xl text-blue-400"
+                      ><Headset
+                    /></el-icon>
+                  </div>
+                  <!-- 操作按鈕 (右上角) -->
+                  <div class="absolute right-2 top-2 flex gap-1" @click.stop>
+                    <el-button
+                      circle
+                      size="small"
+                      type="warning"
+                      @click="openRenameDialog(pl)"
+                    >
+                      <el-icon><Edit /></el-icon>
+                    </el-button>
+                    <el-button
+                      circle
+                      size="small"
+                      type="danger"
+                      @click="handleDeletePlaylist(pl.playlist_id)"
+                    >
+                      <el-icon><Delete /></el-icon>
+                    </el-button>
+                  </div>
+                </el-card>
+                <div class="mt-1 text-lg font-bold">
+                  {{ pl.name }} — {{ pl.songs.length }} {{ t("songs") }}
+                </div>
+              </div>
+            </template>
+
+            <!-- 空清單提示 -->
+            <div
+              v-if="playlistStore.customPlaylists.length === 0"
+              class="w-full pt-8 text-center text-gray-400"
+            >
+              {{ t("no_playlists_yet") }}
+            </div>
+          </div>
+        </div>
+      </el-tab-pane>
+
+      <!-- ===== Tab 3: 歌手歌曲 (dynamic, closable) ===== -->
+      <el-tab-pane
+        v-if="artistTab"
+        :label="artistTab.name"
+        name="artist-detail"
+        :closable="true"
+      >
+        <div class="flex h-full flex-col overflow-hidden">
           <!-- Sorting controls -->
           <div class="mb-2 flex gap-4">
             <el-input
               v-model="queryInput"
-              calss="grow"
+              class="grow"
               :placeholder="t('search_placeholder')"
               clearable
             />
@@ -157,12 +270,11 @@
             </button>
           </div>
 
-          <!-- Video cards container -->
+          <!-- Video cards -->
           <el-space
             class="w-full flex-1 justify-center overflow-x-hidden overflow-y-auto"
             wrap
           >
-            <!-- Skeleton loading for videos -->
             <template v-if="isLoading && allVideos.length === 0">
               <el-card
                 v-for="i in 8"
@@ -187,7 +299,6 @@
               </el-card>
             </template>
 
-            <!-- Actual video cards -->
             <template
               v-else
               v-for="video in sortedVideos"
@@ -203,158 +314,8 @@
             </template>
           </el-space>
         </div>
-      </div>
-    </template>
-
-    <!-- ===== 我的清單分頁 ===== -->
-    <template v-else-if="mainTab === 'playlists'">
-      <!-- 未登入提示 -->
-      <div
-        v-if="!authStore.isLoggedIn"
-        class="flex flex-1 flex-col items-center justify-center gap-4 text-gray-400"
-      >
-        <el-icon class="text-6xl"><StarFilled /></el-icon>
-        <p class="text-lg">{{ t("login_to_use_playlist") }}</p>
-      </div>
-
-      <!-- 查看清單內歌曲 -->
-      <div
-        v-else-if="selectedPlaylist"
-        class="flex h-full flex-col overflow-hidden"
-      >
-        <!-- 返回按鈕 -->
-        <div
-          class="mb-4 flex flex-none items-center gap-4 border-b border-gray-200 py-2 dark:border-gray-700"
-        >
-          <el-button @click="selectedPlaylist = null" type="primary" plain>
-            <el-icon><Back /></el-icon>
-          </el-button>
-          <h2 class="gradient-text-tech mx-auto text-2xl font-bold">
-            {{ selectedPlaylist.name }}
-          </h2>
-          <el-button class="invisible"
-            ><el-icon><Back /></el-icon
-          ></el-button>
-        </div>
-
-        <!-- 清單內歌曲 -->
-        <el-space
-          v-if="selectedPlaylistSongs.length > 0"
-          class="w-full flex-1 justify-center overflow-x-hidden overflow-y-auto"
-          wrap
-        >
-          <VideoCard
-            v-for="video in selectedPlaylistSongs"
-            :key="video.source_id"
-            :video="video"
-            :url="resolvePlaylistVideoUrl(video.source_id)"
-            show-remove
-            @toggle-favorite="handleToggleFavorite"
-            @add-to-playlist="handleAddToPlaylist"
-            @remove-from-playlist="handleRemoveFromPlaylist"
-            @remove="handleRemoveFromSelectedPlaylist"
-          />
-        </el-space>
-
-        <div
-          v-else
-          class="flex flex-1 items-center justify-center text-gray-400"
-        >
-          {{ t("empty_playlist") }}
-        </div>
-      </div>
-
-      <!-- 播放清單總覽 -->
-      <div
-        v-else-if="authStore.isLoggedIn"
-        class="flex h-full flex-col overflow-hidden"
-      >
-        <!-- 標題列 -->
-        <div class="mb-4 flex flex-none items-center justify-between">
-          <span
-            class="text-base font-semibold text-gray-600 dark:text-gray-300"
-            >{{ t("my_playlists") }}</span
-          >
-          <el-button type="primary" @click="showCreatePlaylistDialog = true">
-            <el-icon class="mr-1"><Plus /></el-icon>
-            {{ t("create_playlist") }}
-          </el-button>
-        </div>
-
-        <!-- 清單卡片 grid -->
-        <div
-          class="flex w-full flex-1 flex-wrap content-start justify-center gap-4 overflow-y-auto p-2"
-        >
-          <!-- 我的最愛 (固定第一個) -->
-          <div
-            class="flex cursor-pointer flex-col hover:scale-105"
-            @click="openFavoritesPlaylist"
-          >
-            <el-card class="h-52 w-80 p-0 md:w-96" shadow="hover">
-              <div
-                class="flex h-full w-full items-center justify-center bg-linear-to-br from-red-100 to-pink-200 dark:from-red-900 dark:to-pink-900"
-              >
-                <el-icon class="text-8xl text-red-400"><StarFilled /></el-icon>
-              </div>
-            </el-card>
-            <div class="mt-1 text-lg font-bold">
-              {{ t("my_favorites") }} — {{ playlistStore.favorites.length }}
-              {{ t("songs") }}
-            </div>
-          </div>
-
-          <!-- 自訂清單 -->
-          <template
-            v-for="pl in playlistStore.customPlaylists"
-            :key="pl.playlist_id"
-          >
-            <div v-if="pl.name !== 'My Favorite'" class="flex flex-col">
-              <el-card
-                class="relative h-52 w-80 cursor-pointer p-0 hover:scale-105 md:w-96"
-                shadow="hover"
-                @click="openCustomPlaylist(pl)"
-              >
-                <div
-                  class="flex h-full w-full items-center justify-center bg-linear-to-br from-blue-100 to-indigo-200 dark:from-blue-900 dark:to-indigo-900"
-                >
-                  <el-icon class="text-8xl text-blue-400"><Headset /></el-icon>
-                </div>
-                <!-- 操作按鈕 (右上角) -->
-                <div class="absolute right-2 top-2 flex gap-1" @click.stop>
-                  <el-button
-                    circle
-                    size="small"
-                    type="warning"
-                    @click="openRenameDialog(pl)"
-                  >
-                    <el-icon><Edit /></el-icon>
-                  </el-button>
-                  <el-button
-                    circle
-                    size="small"
-                    type="danger"
-                    @click="handleDeletePlaylist(pl.playlist_id)"
-                  >
-                    <el-icon><Delete /></el-icon>
-                  </el-button>
-                </div>
-              </el-card>
-              <div class="mt-1 text-lg font-bold">
-                {{ pl.name }} — {{ pl.songs.length }} {{ t("songs") }}
-              </div>
-            </div>
-          </template>
-
-          <!-- 空清單提示 -->
-          <div
-            v-if="playlistStore.customPlaylists.length === 0"
-            class="w-full pt-8 text-center text-gray-400"
-          >
-            {{ t("no_playlists_yet") }}
-          </div>
-        </div>
-      </div>
-    </template>
+      </el-tab-pane>
+    </el-tabs>
 
     <!-- 建立清單 Dialog -->
     <el-dialog
@@ -419,7 +380,6 @@ import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
-  ArrowLeft,
   Back,
   StarFilled,
   Plus,
@@ -451,12 +411,11 @@ const authStore = useAuthStore();
 const allVideos = ref([]);
 const allArtists = ref([]);
 const selectedArtist = ref(null);
-const activeTab = ref("all");
 const isLoading = ref(true);
-const currentArtistName = ref("");
 
-// --- 主分頁 ---
-const mainTab = ref("artists"); // 'artists' | 'playlists'
+// --- Tab 狀態 ---
+const activeTabName = ref("artists"); // 'artists' | 'artist-detail' | 'playlists'
+const artistTab = ref(null); // { name: string, artist_id: string } | null
 
 // --- 我的清單分頁狀態 ---
 const selectedPlaylist = ref(null);
@@ -500,7 +459,6 @@ const resolvePlaylistVideoUrl = (source_id) => {
   }
   return localePath(base);
 };
-
 
 /*-- 紀錄滾動位置 --*/
 const artistListScrollPosition = ref(0);
@@ -561,60 +519,40 @@ const toggleSort = (field) => {
   }
 };
 
-// Event: 切換主分頁
-const handleMainTabChange = (tab) => {
-  mainTab.value = tab;
-  selectedPlaylist.value = null;
-};
-
 // Event: 點擊歌手
-const handleArtistSelect = (artistId, artistName) => {
+const handleArtistSelect = async (artistId, artistName) => {
   const artistListContainer = document.querySelector(
-    ".flex.w-full.flex-1.flex-wrap.content-start.justify-center.gap-4.overflow-y-auto",
+    ".el-tab-pane[aria-labelledby] .overflow-y-auto",
   );
   if (artistListContainer) {
     artistListScrollPosition.value = artistListContainer.scrollTop;
   }
 
   const artistIdStr = String(artistId);
-  activeTab.value = artistIdStr;
-  handleTabChange(artistIdStr);
+  artistTab.value = { name: artistName, artist_id: artistIdStr };
+  activeTabName.value = "artist-detail";
 
-  currentArtistName.value = artistName;
+  selectedArtist.value = artistIdStr;
+  router.push({ query: { artist: artistIdStr } });
+  allVideos.value = [];
+  await fetchVideos();
 };
 
-// Event: 點擊返回
-const handleBackToAll = async () => {
-  activeTab.value = "all";
-  await handleTabChange("all");
+// Event: 關閉歌手 Tab
+const handleCloseArtistTab = async () => {
+  artistTab.value = null;
+  allVideos.value = [];
+  selectedArtist.value = null;
+  activeTabName.value = "artists";
+  router.push({ query: {} });
 
   await nextTick();
   const artistListContainer = document.querySelector(
-    ".flex.w-full.flex-1.flex-wrap.content-start.justify-center.gap-4.overflow-y-auto",
+    ".song-overview-tabs .el-tab-pane .overflow-y-auto",
   );
   if (artistListContainer && artistListScrollPosition.value > 0) {
     artistListContainer.scrollTop = artistListScrollPosition.value;
   }
-};
-
-// Event: 點擊特定影片
-const handleVideoClick = (source_id) => {
-  const dataToSend = {
-    source_id: source_id,
-  };
-};
-
-// Event: 總攬/歌手頁面切換
-const handleTabChange = async (tabName) => {
-  if (tabName === "all") {
-    selectedArtist.value = null;
-    router.push({ query: {} });
-  } else {
-    selectedArtist.value = tabName;
-    router.push({ query: { artist: tabName } });
-  }
-  allVideos.value = [];
-  await fetchVideos();
 };
 
 // 獲取某歌手所有影片
@@ -688,7 +626,10 @@ const handleAddToPlaylist = async (command, video) => {
 
 const handleRemoveFromPlaylist = async (playlistId, video) => {
   try {
-    await playlistStore.removeSongFromCustomPlaylist(playlistId, video.source_id);
+    await playlistStore.removeSongFromCustomPlaylist(
+      playlistId,
+      video.source_id,
+    );
   } catch (error) {
     console.error("Error removing from playlist:", error);
     ElMessage({ type: "error", message: t("error_loading_data") });
@@ -703,7 +644,6 @@ const handleCreatePlaylist = async () => {
   if (!newPlaylistName.value.trim()) return;
   try {
     const pl = await playlistStore.createPlaylist(newPlaylistName.value);
-    // 如果是從歌曲卡片觸發的「建立新清單」，建立後自動加入
     if (pendingAddVideo.value) {
       await playlistStore.addSongToCustomPlaylist(
         pl.playlist_id,
@@ -786,34 +726,24 @@ const openCustomPlaylist = (pl) => {
   };
 };
 
-// Event: 從清單內移除歌曲
-const handleRemoveFromSelectedPlaylist = async (sourceId) => {
-  if (!selectedPlaylist.value) return;
-  try {
-    if (selectedPlaylist.value.type === "favorites") {
-      const result = await playlistStore.removeFavorite(sourceId);
-    } else {
-      const result = await playlistStore.removeSongFromCustomPlaylist(
-        selectedPlaylist.value.playlist_id,
-        sourceId,
-      );
-    }
-  } catch (error) {
-    console.error("Error removing song:", error);
-    ElMessage({ type: "error", message: t("error_loading_data") });
-  }
-};
-
 onMounted(async () => {
-  // 並行載入：歌手/歌曲資料 + 使用者歌單
   const artist_id = route.query.artist;
   if (artist_id) {
     selectedArtist.value = artist_id;
-    activeTab.value = artist_id;
-  } else {
-    activeTab.value = "all";
+    activeTabName.value = "artist-detail";
+    // 歌手名稱從 allArtists 取得，先用 id 暫代
+    artistTab.value = { name: artist_id, artist_id: String(artist_id) };
   }
   await Promise.all([fetchVideos(), playlistStore.fetchPlaylists()]);
+  // 取得歌手名稱後更新 tab 標題
+  if (artist_id && allArtists.value.length > 0) {
+    const found = allArtists.value.find(
+      (a) => String(a.artist_id) === String(artist_id),
+    );
+    if (found) {
+      artistTab.value = { name: found.name, artist_id: String(artist_id) };
+    }
+  }
 });
 
 onUnmounted(() => {});
@@ -826,18 +756,6 @@ onUnmounted(() => {});
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: gradient-animation 8s ease infinite;
-  font-weight: bold;
-}
-
-.gradient-text-tech-animated :deep(.el-tabs__item) {
-  background: linear-gradient(120deg, #4caf50, #2196f3, #673ab7, #4caf50);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  /* 為了 Safari 瀏覽器 */
-  background-clip: text;
-  color: transparent;
-  /* 文字顏色設為透明，顯示背景漸層 */
   animation: gradient-animation 8s ease infinite;
   font-weight: bold;
 }
@@ -856,39 +774,25 @@ onUnmounted(() => {});
   }
 }
 
-
-.thumbnail-background::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  /* 变淡效果：50% 透明度的白色叠加层 */
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.thumbnail-text {
-  position: relative;
-  z-index: 2;
-  /* 确保文字在半透明层之上 */
-
-  color: white;
-  /* 文字颜色设置为白色 */
-
-  /* 使用 text-shadow 模拟黑框 (描边) */
-  /* 设置四个方向的黑色阴影，偏移量和模糊半径为 0 */
-  text-shadow:
-    -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px 1px 0 #000,
-    1px 1px 0 #000;
-}
-
 :deep(.el-card__body) {
   height: 100%;
   width: 100%;
   padding: 0px;
 }
 
+/* Make el-tabs fill available height */
+.song-overview-tabs {
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.song-overview-tabs .el-tabs__content) {
+  flex: 1;
+  overflow: hidden;
+}
+
+:deep(.song-overview-tabs .el-tab-pane) {
+  height: 100%;
+  overflow: hidden;
+}
 </style>
