@@ -50,7 +50,7 @@
 
       <!-- 歌單操作 -->
       <div class="mt-3 flex items-center justify-end gap-2">
-          <!-- 我的最愛 -->
+        <!-- 我的最愛 -->
         <el-tooltip
           :content="
             !authStore.isLoggedIn
@@ -93,6 +93,7 @@
         >
           <el-dropdown
             trigger="click"
+            :hide-on-click="false"
             :disabled="!authStore.isLoggedIn"
             @command="
               (cmd) => {
@@ -201,10 +202,9 @@ const formatDate = (dateString) => {
 </script>
 
 <style scoped>
-:deep(.in-playlist) {
-  background-color: #e1f3d8 !important;
-}
+:deep(.in-playlist),
 :deep(.in-playlist:hover) {
-  background-color: #e1f3d8 !important;
+  background-color: #ecf5ff !important;
+  color: #409eff !important;
 }
 </style>
