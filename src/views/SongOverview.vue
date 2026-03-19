@@ -4,7 +4,7 @@
       v-model="activeTabName"
       type="border-card"
       class="song-overview-tabs flex h-full flex-col overflow-hidden"
-      @tab-remove="handleCloseArtistTab"
+      @tab-remove="handleTabRemove"
     >
       <!-- ===== Tab 1: 歌手 ===== -->
       <el-tab-pane :label="t('artists')" name="artists">
@@ -52,60 +52,127 @@
         </div>
       </el-tab-pane>
 
-      <!-- ===== Tab 2: 我的清單 ===== -->
+      <!-- ===== Tab 2: 歌手歌曲 (dynamic, closable) ===== -->
+      <el-tab-pane
+        v-if="artistTab"
+        :label="artistTab.name"
+        name="artist-detail"
+        :closable="true"
+      >
+        <div class="flex h-full flex-col overflow-hidden">
+          <!-- Sorting controls -->
+          <div class="mb-2 flex gap-4">
+            <el-input
+              v-model="queryInput"
+              class="grow"
+              :placeholder="t('search_placeholder')"
+              clearable
+            />
+
+            <button
+              @click="toggleSort('views')"
+              class="flex shrink-0 items-center gap-1 rounded px-3 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+              :class="{ 'bg-gray-100 dark:bg-gray-700': sortBy === 'views' }"
+            >
+              <el-icon><View /></el-icon>
+              <span class="flex flex-col text-xs leading-none">
+                <span
+                  :class="{
+                    'text-blue-500': sortBy === 'views' && sortOrder === 'desc',
+                  }"
+                  >▲</span
+                >
+                <span
+                  :class="{
+                    'text-blue-500': sortBy === 'views' && sortOrder === 'asc',
+                  }"
+                  >▼</span
+                >
+              </span>
+            </button>
+
+            <button
+              @click="toggleSort('publish_date')"
+              class="flex shrink-0 items-center gap-1 rounded px-3 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+              :class="{
+                'bg-gray-100 dark:bg-gray-700': sortBy === 'publish_date',
+              }"
+            >
+              <el-icon><Calendar /></el-icon>
+              <span class="flex flex-col text-xs leading-none">
+                <span
+                  :class="{
+                    'text-blue-500':
+                      sortBy === 'publish_date' && sortOrder === 'desc',
+                  }"
+                  >▲</span
+                >
+                <span
+                  :class="{
+                    'text-blue-500':
+                      sortBy === 'publish_date' && sortOrder === 'asc',
+                  }"
+                  >▼</span
+                >
+              </span>
+            </button>
+          </div>
+
+          <!-- Video cards -->
+          <el-space
+            class="w-full flex-1 justify-center overflow-x-hidden overflow-y-auto"
+            wrap
+          >
+            <template v-if="isLoading && allVideos.length === 0">
+              <el-card
+                v-for="i in 8"
+                :key="`skeleton-video-${i}`"
+                class="h-fit w-80 md:w-96"
+                shadow="hover"
+              >
+                <div class="p-4">
+                  <el-skeleton animated>
+                    <template #template>
+                      <el-skeleton-item variant="image" class="h-48 w-full" />
+                      <div class="mt-4">
+                        <el-skeleton-item variant="text" class="w-full" />
+                      </div>
+                      <div class="mt-2 flex gap-2">
+                        <el-skeleton-item variant="text" class="w-16" />
+                        <el-skeleton-item variant="text" class="w-20" />
+                      </div>
+                    </template>
+                  </el-skeleton>
+                </div>
+              </el-card>
+            </template>
+
+            <template
+              v-else
+              v-for="video in sortedVideos"
+              :key="video.source_id"
+            >
+              <VideoCard
+                :video="video"
+                :url="resolveVideoUrl(video.source_id)"
+                @toggle-favorite="handleToggleFavorite"
+                @add-to-playlist="handleAddToPlaylist"
+                @remove-from-playlist="handleRemoveFromPlaylist"
+              />
+            </template>
+          </el-space>
+        </div>
+      </el-tab-pane>
+
+      <!-- ===== Tab 3: 我的清單 ===== -->
       <el-tab-pane :label="t('my_playlists')" name="playlists">
-        <!-- 未登入提示 -->
+        <!-- 未登入提示 (moved playlist-detail content to its own tab) -->
         <div
           v-if="!authStore.isLoggedIn"
           class="flex h-full flex-col items-center justify-center gap-4 text-gray-400"
         >
           <el-icon class="text-6xl"><StarFilled /></el-icon>
           <p class="text-lg">{{ t("login_to_use_playlist") }}</p>
-        </div>
-
-        <!-- 查看清單內歌曲 -->
-        <div
-          v-else-if="selectedPlaylist"
-          class="flex h-full flex-col overflow-hidden"
-        >
-          <!-- 返回按鈕 -->
-          <div
-            class="mb-4 flex flex-none items-center gap-4 border-b border-gray-200 py-2 dark:border-gray-700"
-          >
-            <el-button @click="selectedPlaylist = null" type="primary" plain>
-              <el-icon><Back /></el-icon>
-            </el-button>
-            <h2 class="gradient-text-tech mx-auto text-2xl font-bold">
-              {{ selectedPlaylist.name }}
-            </h2>
-            <el-button class="invisible"
-              ><el-icon><Back /></el-icon
-            ></el-button>
-          </div>
-
-          <!-- 清單內歌曲 -->
-          <el-space
-            v-if="selectedPlaylistSongs.length > 0"
-            class="w-full flex-1 justify-center overflow-x-hidden overflow-y-auto"
-            wrap
-          >
-            <VideoCard
-              v-for="video in selectedPlaylistSongs"
-              :key="video.source_id"
-              :video="video"
-              :url="resolvePlaylistVideoUrl(video.source_id)"
-              @toggle-favorite="handleToggleFavorite"
-              @add-to-playlist="handleAddToPlaylist"
-              @remove-from-playlist="handleRemoveFromPlaylist"
-            />
-          </el-space>
-
-          <div
-            v-else
-            class="flex flex-1 items-center justify-center text-gray-400"
-          >
-            {{ t("empty_playlist") }}
-          </div>
         </div>
 
         <!-- 播放清單總覽 -->
@@ -204,115 +271,35 @@
         </div>
       </el-tab-pane>
 
-      <!-- ===== Tab 3: 歌手歌曲 (dynamic, closable) ===== -->
+      <!-- ===== Tab 4: 播放清單詳情 (dynamic, closable) ===== -->
       <el-tab-pane
-        v-if="artistTab"
-        :label="artistTab.name"
-        name="artist-detail"
+        v-if="playlistTab"
+        :label="playlistTab.name"
+        name="playlist-detail"
         :closable="true"
       >
         <div class="flex h-full flex-col overflow-hidden">
-          <!-- Sorting controls -->
-          <div class="mb-2 flex gap-4">
-            <el-input
-              v-model="queryInput"
-              class="grow"
-              :placeholder="t('search_placeholder')"
-              clearable
-            />
-
-            <button
-              @click="toggleSort('views')"
-              class="flex shrink-0 items-center gap-1 rounded px-3 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-              :class="{ 'bg-gray-100 dark:bg-gray-700': sortBy === 'views' }"
-            >
-              <span>{{ t("views") }}</span>
-              <span class="flex flex-col text-xs leading-none">
-                <span
-                  :class="{
-                    'text-blue-500': sortBy === 'views' && sortOrder === 'desc',
-                  }"
-                  >▲</span
-                >
-                <span
-                  :class="{
-                    'text-blue-500': sortBy === 'views' && sortOrder === 'asc',
-                  }"
-                  >▼</span
-                >
-              </span>
-            </button>
-
-            <button
-              @click="toggleSort('publish_date')"
-              class="flex shrink-0 items-center gap-1 rounded px-3 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-              :class="{
-                'bg-gray-100 dark:bg-gray-700': sortBy === 'publish_date',
-              }"
-            >
-              <span>{{ t("publish_date") }}</span>
-              <span class="flex flex-col text-xs leading-none">
-                <span
-                  :class="{
-                    'text-blue-500':
-                      sortBy === 'publish_date' && sortOrder === 'desc',
-                  }"
-                  >▲</span
-                >
-                <span
-                  :class="{
-                    'text-blue-500':
-                      sortBy === 'publish_date' && sortOrder === 'asc',
-                  }"
-                  >▼</span
-                >
-              </span>
-            </button>
-          </div>
-
-          <!-- Video cards -->
           <el-space
+            v-if="selectedPlaylistSongs.length > 0"
             class="w-full flex-1 justify-center overflow-x-hidden overflow-y-auto"
             wrap
           >
-            <template v-if="isLoading && allVideos.length === 0">
-              <el-card
-                v-for="i in 8"
-                :key="`skeleton-video-${i}`"
-                class="h-fit w-80 md:w-96"
-                shadow="hover"
-              >
-                <div class="p-4">
-                  <el-skeleton animated>
-                    <template #template>
-                      <el-skeleton-item variant="image" class="h-48 w-full" />
-                      <div class="mt-4">
-                        <el-skeleton-item variant="text" class="w-full" />
-                      </div>
-                      <div class="mt-2 flex gap-2">
-                        <el-skeleton-item variant="text" class="w-16" />
-                        <el-skeleton-item variant="text" class="w-20" />
-                      </div>
-                    </template>
-                  </el-skeleton>
-                </div>
-              </el-card>
-            </template>
-
-            <template
-              v-else
-              v-for="video in sortedVideos"
+            <VideoCard
+              v-for="video in selectedPlaylistSongs"
               :key="video.source_id"
-            >
-              <VideoCard
-                :video="video"
-                :url="resolveVideoUrl(video.source_id)"
-                @toggle-favorite="handleToggleFavorite"
-                @add-to-playlist="handleAddToPlaylist"
-                @remove-from-playlist="handleRemoveFromPlaylist"
-              />
-            </template>
+              :video="video"
+              :url="resolvePlaylistVideoUrl(video.source_id)"
+              @toggle-favorite="handleToggleFavorite"
+              @add-to-playlist="handleAddToPlaylist"
+              @remove-from-playlist="handleRemoveFromPlaylist"
+            />
           </el-space>
+          <div
+            v-else
+            class="flex flex-1 items-center justify-center text-gray-400"
+          >
+            {{ t("empty_playlist") }}
+          </div>
         </div>
       </el-tab-pane>
     </el-tabs>
@@ -380,12 +367,13 @@ import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
-  Back,
   StarFilled,
   Plus,
   Delete,
   Edit,
   Headset,
+  View,
+  Calendar,
 } from "@element-plus/icons-vue";
 import VideoCard from "@/components/VideoCard.vue";
 
@@ -418,7 +406,7 @@ const activeTabName = ref("artists"); // 'artists' | 'artist-detail' | 'playlist
 const artistTab = ref(null); // { name: string, artist_id: string } | null
 
 // --- 我的清單分頁狀態 ---
-const selectedPlaylist = ref(null);
+const playlistTab = ref(null); // { name: string, type: 'favorites' | 'custom', playlist_id?: string } | null
 const showCreatePlaylistDialog = ref(false);
 const newPlaylistName = ref("");
 const showRenameDialog = ref(false);
@@ -427,12 +415,12 @@ const renamingPlaylistId = ref(null);
 
 // 當前選中清單的歌曲列表 (computed)
 const selectedPlaylistSongs = computed(() => {
-  if (!selectedPlaylist.value) return [];
-  if (selectedPlaylist.value.type === "favorites") {
+  if (!playlistTab.value) return [];
+  if (playlistTab.value.type === "favorites") {
     return playlistStore.favorites;
   }
   const pl = playlistStore.customPlaylists.find(
-    (p) => p.playlist_id === selectedPlaylist.value.playlist_id,
+    (p) => p.playlist_id === playlistTab.value.playlist_id,
   );
   return pl ? pl.songs : [];
 });
@@ -445,16 +433,13 @@ const resolveVideoUrl = (source_id) => {
 // 輔助函式: 解析路由（帶 playlist 上下文，供清單內歌曲使用）
 const resolvePlaylistVideoUrl = (source_id) => {
   const base = "/SongPractice/" + source_id;
-  if (!selectedPlaylist.value) return localePath(base);
-  if (selectedPlaylist.value.type === "favorites") {
+  if (!playlistTab.value) return localePath(base);
+  if (playlistTab.value.type === "favorites") {
     return localePath(base + "?from=favorites");
   }
-  if (
-    selectedPlaylist.value.type === "custom" &&
-    selectedPlaylist.value.playlist_id
-  ) {
+  if (playlistTab.value.type === "custom" && playlistTab.value.playlist_id) {
     return localePath(
-      base + `?from=playlist&playlist_id=${selectedPlaylist.value.playlist_id}`,
+      base + `?from=playlist&playlist_id=${playlistTab.value.playlist_id}`,
     );
   }
   return localePath(base);
@@ -538,20 +523,25 @@ const handleArtistSelect = async (artistId, artistName) => {
   await fetchVideos();
 };
 
-// Event: 關閉歌手 Tab
-const handleCloseArtistTab = async () => {
-  artistTab.value = null;
-  allVideos.value = [];
-  selectedArtist.value = null;
-  activeTabName.value = "artists";
-  router.push({ query: {} });
+// Event: 關閉 Tab（歌手 or 播放清單詳情）
+const handleTabRemove = async (tabName) => {
+  if (tabName === "artist-detail") {
+    artistTab.value = null;
+    allVideos.value = [];
+    selectedArtist.value = null;
+    activeTabName.value = "artists";
+    router.push({ query: {} });
 
-  await nextTick();
-  const artistListContainer = document.querySelector(
-    ".song-overview-tabs .el-tab-pane .overflow-y-auto",
-  );
-  if (artistListContainer && artistListScrollPosition.value > 0) {
-    artistListContainer.scrollTop = artistListScrollPosition.value;
+    await nextTick();
+    const artistListContainer = document.querySelector(
+      ".song-overview-tabs .el-tab-pane .overflow-y-auto",
+    );
+    if (artistListContainer && artistListScrollPosition.value > 0) {
+      artistListContainer.scrollTop = artistListScrollPosition.value;
+    }
+  } else if (tabName === "playlist-detail") {
+    playlistTab.value = null;
+    activeTabName.value = "playlists";
   }
 };
 
@@ -714,16 +704,18 @@ const handleRenamePlaylist = async () => {
 
 // Event: 點擊「我的最愛」卡片
 const openFavoritesPlaylist = () => {
-  selectedPlaylist.value = { type: "favorites", name: t("my_favorites") };
+  playlistTab.value = { type: "favorites", name: t("my_favorites") };
+  activeTabName.value = "playlist-detail";
 };
 
 // Event: 點擊自訂清單卡片
 const openCustomPlaylist = (pl) => {
-  selectedPlaylist.value = {
+  playlistTab.value = {
     type: "custom",
     playlist_id: pl.playlist_id,
     name: pl.name,
   };
+  activeTabName.value = "playlist-detail";
 };
 
 onMounted(async () => {
