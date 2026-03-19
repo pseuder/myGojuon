@@ -20,12 +20,12 @@
         rel="noopener noreferrer"
         class="mb-2 block w-full truncate text-lg text-blue-400 no-underline hover:text-blue-600 hover:underline"
       >
-        {{ video.song_name }}
+        {{ video.song_name }} - {{ video.artists }}
       </a>
 
       <!-- Video metadata: views and publish date -->
       <div
-        class="mb-2 flex flex-wrap gap-2 text-sm text-gray-600 dark:text-gray-400"
+        class="mb-2 flex min-h-[28px] flex-wrap gap-2 text-sm text-gray-600 dark:text-gray-400"
       >
         <span v-if="video.views" class="flex items-center gap-1">
           <el-tag type="info" effect="light" round>
@@ -39,17 +39,20 @@
         </span>
       </div>
 
-      <div class="flex gap-2" v-if="video.tags">
-        <el-tag
-          v-for="tag in video.tags?.split(',')"
-          :key="tag"
-          type="success"
-          >{{ tag }}</el-tag
-        >
-      </div>
-
       <!-- 歌單操作 -->
       <div class="mt-3 flex items-center justify-end gap-2">
+        <div class="grow">
+          <el-tag
+            v-for="tag in video.tags?.split(',') ?? []"
+            :key="tag"
+            :class="{
+              'bg-transparent border-transparent': !video.tags,
+            }"
+            type="success"
+            >{{ tag }}</el-tag
+          >
+        </div>
+
         <!-- 我的最愛 -->
         <el-tooltip
           :content="
