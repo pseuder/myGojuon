@@ -15,9 +15,8 @@
           }}</el-menu-item>
         </el-menu>
       </div>
-      <div class="flex w-fit items-center gap-4">
+      <div class="flex w-fit items-center gap-4 mr-4">
         <NavSetting />
-        <myGoogleLogin />
       </div>
     </nav>
 
@@ -44,7 +43,6 @@
 import { ref, watch, computed, onMounted, toRef } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-import myGoogleLogin from "@/components/myGoogleLogin.vue";
 import NavSetting from "@/components/NavSetting.vue";
 
 /*-- 全域設定 --*/

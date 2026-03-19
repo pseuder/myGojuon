@@ -3,6 +3,11 @@
 
   <el-popover placement="bottom" :width="200" trigger="click">
     <div class="flex flex-col gap-2">
+      <!-- 登入 -->
+      <div>
+        <myGoogleLogin />
+      </div>
+
       <!-- 切換語言 -->
       <div class="flex items-center gap-2">
         <span class="text-sm shrink-0 w-[88px]">{{ t("language") }}</span>
@@ -73,7 +78,7 @@
       <el-button
         style="font-size: 28px; color: black"
         class="transition-transform hover:scale-110"
-        :icon="Setting"
+        :icon="Menu"
         circle
         plain
         link
@@ -85,8 +90,14 @@
 <script setup>
 import { ref, watch } from "vue";
 
-import { Setting, ChatLineRound, CloseBold } from "@element-plus/icons-vue";
+import {
+  Setting,
+  ChatLineRound,
+  CloseBold,
+  Menu,
+} from "@element-plus/icons-vue";
 import ContactForm from "@/components/ContactForm.vue";
+import myGoogleLogin from "@/components/myGoogleLogin.vue";
 
 import { useSettingsStore } from "@/stores/index.js";
 const settingsStore = useSettingsStore();

@@ -1,34 +1,23 @@
 <template>
-  <div class="mr-2 flex h-full w-full items-center gap-4 overflow-hidden">
+  <div class="flex h-full w-full items-center overflow-hidden">
     <template v-if="authStore.isLoggedIn">
-      <div class="flex items-center">
-        <el-popover
-          placement="bottom"
-          :width="100"
-          trigger="click"
-          popper-class="logout-popover"
+      <div class="w-full flex flex-col gap-2">
+        <div
+          class="w-20 cursor-pointer truncate text-blue-400 hover:text-blue-600"
         >
-          <template #reference>
-            <div
-              class="w-20 cursor-pointer truncate text-blue-400 hover:text-blue-600"
-            >
-              {{ authStore.userName }}
-            </div>
-          </template>
-          <div class="flex flex-col items-center gap-2">
-            <div>{{ t("left_points") }}: {{ authStore.userPoint }}</div>
+          {{ authStore.userName }}
+        </div>
+        <div>{{ t("left_points") }}: {{ authStore.userPoint }}</div>
 
-            <el-button
-              @click="handleLogout"
-              type="danger"
-              plain
-              size="small"
-              class="w-full"
-            >
-              {{ t("logout") }}
-            </el-button>
-          </div>
-        </el-popover>
+        <el-button
+          @click="handleLogout"
+          type="danger"
+          plain
+          size="small"
+          class="w-full"
+        >
+          {{ t("logout") }}
+        </el-button>
       </div>
     </template>
     <template v-else>
