@@ -180,7 +180,7 @@
 
             <button
               @click="toggleSort('views')"
-              class="flex shrink-0 items-center gap-1 rounded px-3 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="flex shrink-0 items-center gap-1 rounded transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
               :class="{ 'bg-gray-100 dark:bg-gray-700': sortBy === 'views' }"
             >
               <el-icon><View /></el-icon>
@@ -202,7 +202,7 @@
 
             <button
               @click="toggleSort('publish_date')"
-              class="flex shrink-0 items-center gap-1 rounded px-3 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="flex shrink-0 items-center gap-1 rounded transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
               :class="{
                 'bg-gray-100 dark:bg-gray-700': sortBy === 'publish_date',
               }"
@@ -596,6 +596,7 @@ const fetchVideos = async () => {
 const handleToggleFavorite = async (video) => {
   try {
     const result = await playlistStore.toggleFavorite(video);
+    ElMessage.success(result?.message);
   } catch (error) {
     console.error("Error toggling favorite:", error);
   }
@@ -615,6 +616,7 @@ const handleAddToPlaylist = async (command, video) => {
       playlistID,
       video.source_id,
     );
+    ElMessage.success(result?.message);
   } catch (error) {
     console.error("Error adding to playlist:", error);
     ElMessage({ type: "error", message: t("error_loading_data") });
@@ -623,10 +625,11 @@ const handleAddToPlaylist = async (command, video) => {
 
 const handleRemoveFromPlaylist = async (playlistId, video) => {
   try {
-    await playlistStore.removeSongFromCustomPlaylist(
+    const result = await playlistStore.removeSongFromCustomPlaylist(
       playlistId,
       video.source_id,
     );
+    ElMessage.success(result?.message);
   } catch (error) {
     console.error("Error removing from playlist:", error);
     ElMessage({ type: "error", message: t("error_loading_data") });

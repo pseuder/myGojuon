@@ -119,6 +119,11 @@ export const usePlaylistStore = defineStore("playlist", () => {
     if (idx !== -1) {
       customPlaylists.value[idx] = result.data[0];
     }
+
+    return {
+      status: result.status,
+      message: result.message,
+    };
   };
 
   // --- 自訂清單 ---

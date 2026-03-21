@@ -96,7 +96,6 @@
         >
           <el-dropdown
             trigger="click"
-            :hide-on-click="false"
             :disabled="!authStore.isLoggedIn"
             @command="
               (cmd) => {

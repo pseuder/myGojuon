@@ -3,7 +3,7 @@
     <template v-if="authStore.isLoggedIn">
       <div class="w-full flex flex-col gap-2">
         <div
-          class="w-20 cursor-pointer truncate text-blue-400 hover:text-blue-600"
+          class="w-full cursor-pointer truncate text-blue-400 hover:text-blue-600"
         >
           {{ authStore.userName }}
         </div>

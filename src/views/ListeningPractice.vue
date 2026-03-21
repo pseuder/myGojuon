@@ -560,25 +560,29 @@ const imageRecognition = async (imageBlob) => {
     );
     const predict_res = await MYAPI.post("/predict", formData);
 
-    if (predict_res.status == "error") {
-      ElMessage.error(predict_res["message"] ?? "伺服器錯誤");
-      return;
-    }
+    console.log(predict_res);
 
-    const { predicted_char, correctness, last_point } = predict_res.data;
-    if (last_point !== undefined) authStore.updatePoint(last_point);
-    if (!authStore.isLoggedIn) authStore.decrementFreePredictTimes();
-    const currentKana = learningStore.listening_selectedSound.kana;
-
-    // 更新辨識結果
-    predictKana.value = predicted_char;
-    if (correctness) {
-      predictKana.value = currentKana;
-      ElMessage.success(t("corrent") + `！: ${currentKana}`);
-      learningStore.listening_roundCounts[currentKana]++;
-      changeSound("next");
+    if (predict_res.status != "success") {
+      ElMessage({
+        type: predict_res?.status,
+        message: predict_res?.message,
+      });
     } else {
-      ElMessage.error(t("incorrect") + `！: ${predicted_char}`);
+      const { predicted_char, correctness, last_point } = predict_res.data;
+      if (last_point !== undefined) authStore.updatePoint(last_point);
+      if (!authStore.isLoggedIn) authStore.decrementFreePredictTimes();
+      const currentKana = learningStore.listening_selectedSound.kana;
+
+      // 更新辨識結果
+      predictKana.value = predicted_char;
+      if (correctness) {
+        predictKana.value = currentKana;
+        ElMessage.success(t("corrent") + `！: ${currentKana}`);
+        learningStore.listening_roundCounts[currentKana]++;
+        changeSound("next");
+      } else {
+        ElMessage.error(t("incorrect") + `！: ${predicted_char}`);
+      }
     }
   } catch (error) {
     console.log(error);

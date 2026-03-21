@@ -7,7 +7,7 @@ export const useSettingsStore = defineStore(
   () => {
     // --- State ---
     const language = ref("zh-TW");
-    const textfall = ref(true);
+    const textfall = ref(false);
 
     return {
       language,
