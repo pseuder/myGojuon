@@ -149,9 +149,7 @@
     </div>
 
     <!-- 載入中狀態 -->
-    <div v-else class="flex h-full items-center justify-center">
-      <p>Loading song...</p>
-    </div>
+    <div v-else class="flex h-full m-2" v-loading="isLoading"></div>
 
     <!-- 下方固定影片控制bar -->
     <div v-if="currentVideo" class="control-bar px-2">
@@ -331,6 +329,8 @@ const uid = route.params.uid;
 const videoData = ref(null);
 const currentVideo = computed(() => videoData.value);
 
+const isLoading = ref(false);
+
 // 動態 meta title
 watch(
   currentVideo,
@@ -360,8 +360,13 @@ const fetchVideoData = async (id) => {
     if (response.data) {
       videoData.value = response.data;
     }
-  } catch (err) {
-    console.error("Error fetching video data:", err);
+  } catch (error) {
+    console.log(error);
+    if (error.message === "Network Error") {
+      ElMessage.error(t("network_error"));
+    } else {
+      ElMessage.error(t("unexpect_error"));
+    }
   }
 };
 
@@ -398,7 +403,6 @@ const fetchplaylist = async () => {
     playlist.value = res.data;
   } catch (error) {
     console.error("Error fetching all videos:", error);
-    ElMessage.error("無法獲取所有歌曲列表");
     playlist.value = [];
   }
   // playlist 更新後重置 shuffle 池
@@ -851,6 +855,8 @@ watch(videoId, async (newId, oldId) => {
 
 /*-- 生命週期（初始化 & 清理） --*/
 onMounted(async () => {
+  isLoading.value = true;
+
   await fetchVideoData(uid);
 
   updateWindowWidth();
@@ -866,6 +872,8 @@ onMounted(async () => {
   if (window.YT && window.YT.Player) {
     initializePlayer();
   }
+
+  isLoading.value = false;
 });
 
 onUnmounted(() => {

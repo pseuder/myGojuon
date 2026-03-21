@@ -66,6 +66,7 @@
   "logout": "Logout",
   "network_error": "Network error, please try again later",
   "server_error": "Server error, please try again later",
+  "unexpect_error": "Unexpected error, retrial after request or connection manager",
   "online_message": "Online Feedback",
   "name": "Name",
   "email": "Email",

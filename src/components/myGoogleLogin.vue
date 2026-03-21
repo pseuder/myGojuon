@@ -45,16 +45,11 @@ const handleLoginCallback = async (response) => {
     await playlistStore.fetchPlaylists();
     ElMessage.success(t("login_success"));
   } catch (error) {
-    if (error && error.message) {
-      // 無法連接至伺服器
-      if (error.message.includes("Failed to fetch")) {
-        ElMessage.error(t("server_error"));
-        return;
-      }
+    console.log(error);
+    if (error.message === "Network Error") {
+      ElMessage.error(t("network_error"));
     } else {
-      // 伺服器回傳錯誤
-      console.error("login_fail:", error);
-      ElMessage.error(t("login_fail"));
+      ElMessage.error(t("unexpect_error"));
     }
   }
 };

@@ -557,14 +557,6 @@ const imageRecognition = async (imageBlob) => {
     );
     const predict_res = await MYAPI.post("/predict", formData);
 
-    if (predict_res === "ERR_NETWORK") {
-      ElMessage.error(t("network_error"));
-      return;
-    } else if (predict_res === "ERR_SERVER") {
-      ElMessage.error(t("server_error"));
-      return;
-    }
-
     if (predict_res.status == "error") {
       ElMessage.error(predict_res["message"] ?? "伺服器錯誤");
       return;
@@ -585,7 +577,14 @@ const imageRecognition = async (imageBlob) => {
     } else {
       ElMessage.error(t("incorrect") + `！: ${predicted_char}`);
     }
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+    if (error.message === "Network Error") {
+      ElMessage.error(t("network_error"));
+    } else {
+      ElMessage.error(t("unexpect_error"));
+    }
+  }
   loading.value = false;
 };
 

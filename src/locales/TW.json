@@ -66,6 +66,7 @@
   "logout": "登出",
   "network_error": "網絡錯誤，請稍後再試",
   "server_error": "伺服器錯誤，請稍後再試",
+  "unexpect_error": "意外的錯誤，請稍後再試或連繫管理員",
   "online_message": "線上留言",
   "name": "姓名",
   "email": "電子郵件",
