@@ -33,10 +33,10 @@
           </template>
           <template v-else v-for="artist in allArtists" :key="artist.artist_id">
             <div
-              class="w-full sm:w-fit flex cursor-pointer flex-col hover:scale-105"
+              class="flex cursor-pointer flex-col hover:scale-105"
               @click="handleArtistSelect(artist.artist_id, artist.name)"
             >
-              <el-card class="w-full h-52 sm:w-80 p-0 md:w-96" shadow="hover">
+              <el-card class="h-52 w-80 p-0 md:w-96" shadow="hover">
                 <img
                   :src="`/thumbnails/${artist.name}.jpg`"
                   class="h-full w-full"
@@ -88,10 +88,10 @@
           >
             <!-- 我的最愛 (固定第一個) -->
             <div
-              class="w-full sm:w-fit flex cursor-pointer flex-col hover:scale-105"
+              class="flex cursor-pointer flex-col hover:scale-105"
               @click="openFavoritesPlaylist"
             >
-              <el-card class="w-full h-52 sm:w-80 p-0 md:w-96" shadow="hover">
+              <el-card class="h-52 w-80 p-0 md:w-96" shadow="hover">
                 <div
                   class="flex h-full w-full items-center justify-center bg-linear-to-br from-red-100 to-pink-200 dark:from-red-900 dark:to-pink-900"
                 >
@@ -111,12 +111,9 @@
               v-for="pl in playlistStore.customPlaylists"
               :key="pl.playlist_id"
             >
-              <div
-                v-if="pl.name !== 'My Favorite'"
-                class="w-full sm:w-fit flex flex-col"
-              >
+              <div v-if="pl.name !== 'My Favorite'" class="flex flex-col">
                 <el-card
-                  class="relative w-full h-52 sm:w-80 cursor-pointer p-0 hover:scale-105 md:w-96"
+                  class="relative h-52 w-80 cursor-pointer p-0 hover:scale-105 md:w-96"
                   shadow="hover"
                   @click="openCustomPlaylist(pl)"
                 >
@@ -277,7 +274,7 @@
         </div>
       </el-tab-pane>
 
-      <!-- ===== Tab 4: 播放清單歌曲 (dynamic, closable) ===== -->
+      <!-- ===== Tab 4: 播放清單詳情 (dynamic, closable) ===== -->
       <el-tab-pane
         v-if="playlistTab"
         :label="playlistTab.name"
@@ -287,7 +284,7 @@
         <div class="flex h-full flex-col overflow-hidden">
           <el-space
             v-if="selectedPlaylistSongs.length > 0"
-            class="w-full sm:w-fit flex-1 justify-center overflow-x-hidden overflow-y-auto"
+            class="w-full flex-1 justify-center overflow-x-hidden overflow-y-auto"
             wrap
           >
             <VideoCard
