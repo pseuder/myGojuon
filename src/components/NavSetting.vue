@@ -1,13 +1,24 @@
 <template>
   <ContactForm :visible="showContactForm" @close="showContactForm = false" />
 
-  <el-popover placement="bottom" :width="200" trigger="click">
-    <div class="flex flex-col gap-2">
-      <!-- 登入 -->
-      <div>
-        <myGoogleLogin />
-      </div>
+  <el-popover placement="bottom" :width="233" trigger="hover">
+    <div class="flex flex-col gap-2 h-fit">
+      <myGoogleLogin />
+    </div>
+    <template #reference>
+      <el-button
+        style="font-size: 28px; color: black"
+        class="transition-transform hover:scale-110"
+        :icon="User"
+        circle
+        plain
+        link
+      />
+    </template>
+  </el-popover>
 
+  <el-popover placement="bottom" :width="200" trigger="hover">
+    <div class="flex flex-col gap-2">
       <!-- 切換語言 -->
       <div class="flex items-center gap-2">
         <span class="text-sm shrink-0 w-[88px]">{{ t("language") }}</span>
@@ -90,12 +101,7 @@
 <script setup>
 import { ref, watch } from "vue";
 
-import {
-  Setting,
-  ChatLineRound,
-  CloseBold,
-  Menu,
-} from "@element-plus/icons-vue";
+import { User, Menu } from "@element-plus/icons-vue";
 import ContactForm from "@/components/ContactForm.vue";
 import myGoogleLogin from "@/components/myGoogleLogin.vue";
 

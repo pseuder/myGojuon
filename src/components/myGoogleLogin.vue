@@ -21,7 +21,7 @@
       </div>
     </template>
     <template v-else>
-      <GoogleLogin :callback="handleLoginCallback" prompt />
+      <GoogleLogin :callback="handleLoginCallback" class="w-full" prompt />
     </template>
   </div>
 </template>

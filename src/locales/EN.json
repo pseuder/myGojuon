@@ -139,5 +139,6 @@
   "login_to_use_playlist": "Please login to use playlist features",
   "login_required": "Login required",
   "all": "All",
-  "playlist_already_exists": "Playlist already exists"
+  "playlist_already_exists": "Playlist already exists",
+  "google_login": "Google Login"
 }

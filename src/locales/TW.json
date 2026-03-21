@@ -20,7 +20,7 @@
   "random_selection_ai_assessment": "隨機挑選日文音節\n免費AI模型辨識手寫文字",
   "start_handwriting_practice": "開始手寫練習",
   "start_dictation_practice": "開始聽寫練習",
-  "start_song_practice": "開始歌曲練習",
+  "start_song_practice": "開始歌曲推廣",
   "song_promotion": "歌曲推廣",
   "feedback_and_feature_request": "問題回報&聯繫方式",
   "contact_me": "聯繫方式",
@@ -139,5 +139,6 @@
   "login_to_use_playlist": "請先登入以使用清單功能",
   "login_required": "請先登入",
   "all": "全部",
-  "playlist_already_exists": "清單已存在"
+  "playlist_already_exists": "清單已存在",
+  "google_login": "Google 登入"
 }

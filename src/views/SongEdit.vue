@@ -1111,11 +1111,6 @@ onMounted(async () => {
 
   window.addEventListener("keypress", handleKeyPress, true);
   window.addEventListener("beforeunload", beforeUnloadHandler);
-  window.addEventListener("resize", checkIfMobile);
-  window.addEventListener("mousemove", handleMouseMove);
-  window.addEventListener("mouseup", handleMouseUp);
-
-  checkIfMobile();
 
   const urlVideoId = route.params.video_id;
   if (urlVideoId && urlVideoId !== "empty") await loadVideoFromApi(urlVideoId);
@@ -1125,9 +1120,6 @@ onUnmounted(() => {
   if (player) player.destroy();
   window.removeEventListener("keypress", handleKeyPress, true);
   window.removeEventListener("beforeunload", beforeUnloadHandler);
-  window.removeEventListener("resize", checkIfMobile);
-  window.removeEventListener("mousemove", handleMouseMove);
-  window.removeEventListener("mouseup", handleMouseUp);
 });
 </script>
 
