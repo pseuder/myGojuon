@@ -1046,6 +1046,10 @@ const loadVideoFromApi = async (videoIdParam) => {
   }
 };
 
+const enterEditPage = () => {
+  MYAPI.post("/enter_edit_page");
+};
+
 // ============================================================
 // 鍵盤事件
 // ============================================================
@@ -1106,8 +1110,8 @@ watch(
 // ============================================================
 onMounted(async () => {
   await initializePlayer();
-  await enterEditPage();
-  await getApiKey();
+  enterEditPage();
+  getApiKey();
 
   window.addEventListener("keypress", handleKeyPress, true);
   window.addEventListener("beforeunload", beforeUnloadHandler);
