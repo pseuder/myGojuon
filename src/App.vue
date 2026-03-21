@@ -1,24 +1,6 @@
 <template>
   <div class="h-full w-full">
-    <nav class="flex w-full">
-      <div class="user-select-none w-[50%] grow">
-        <el-menu :default-active="activeIndex" mode="horizontal" router>
-          <el-menu-item index="/">{{ t("home") }}</el-menu-item>
-          <el-menu-item index="/WritingPractice">{{
-            t("handwriting_practice")
-          }}</el-menu-item>
-          <el-menu-item index="/ListeningPractice">{{
-            t("dictation_practice")
-          }}</el-menu-item>
-          <el-menu-item index="/SongOverview">{{
-            t("song_practice")
-          }}</el-menu-item>
-        </el-menu>
-      </div>
-      <div class="flex w-fit items-center gap-4 mr-4">
-        <NavSetting />
-      </div>
-    </nav>
+    <NavBar />
 
     <main class="content">
       <!-- 文字瀑布 -->
@@ -40,10 +22,9 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted, toRef } from "vue";
+import { ref, computed, onMounted, toRef } from "vue";
 import { useRoute } from "vue-router";
-import { useI18n } from "vue-i18n";
-import NavSetting from "@/components/NavSetting.vue";
+import NavBar from "@/components/NavBar.vue";
 
 /*-- 全域設定 --*/
 import { useSettingsStore, useAuthStore } from "@/stores/index.js";
@@ -55,7 +36,6 @@ import { useTextWaterfall } from "@/composables/useTextWaterfall";
 const textContainer = ref(null);
 useTextWaterfall(textContainer, toRef(settingsStore, "textfall"));
 
-const { t, locale } = useI18n();
 const route = useRoute();
 
 const isWideLayout = computed(
@@ -67,8 +47,6 @@ const isWideLayout = computed(
     route.path.includes("/S/") ||
     route.path.includes("/s/"),
 );
-
-const activeIndex = computed(() => route.path);
 
 onMounted(() => {
   authStore.fetchFreePredictTimes();
