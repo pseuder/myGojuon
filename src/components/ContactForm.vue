@@ -2,7 +2,7 @@
   <div
     v-if="visible"
     :style="dragStyle"
-    class="fixed z-50 w-[90%] max-w-md overflow-hidden rounded-xl border border-blue-200 bg-white shadow-xl shadow-blue-100"
+    class="fixed z-50 w-[90%] max-w-md overflow-hidden rounded-xl border border-blue-200 bg-white"
   >
     <!-- 標題列 -->
     <div

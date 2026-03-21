@@ -139,6 +139,9 @@
           :disabled="loading"
         >
           {{ t("ai_recognition") }}
+          <span class="ml-1 text-sm opacity-80"
+            >({{ authStore.userPoint }})</span
+          >
           <img
             class="ml-2 h-6 w-6"
             :class="{ 'animate-spin': loading }"
@@ -154,7 +157,7 @@
           :disabled="loading"
         >
           {{ t("ai_recognition") }}
-          <span v-if="!authStore.isLoggedIn" class="ml-1 text-sm opacity-80"
+          <span class="ml-1 text-sm opacity-80"
             >({{ authStore.freePredictTimes }})</span
           >
           <img

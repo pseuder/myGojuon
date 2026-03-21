@@ -237,7 +237,7 @@
               <el-card
                 v-for="i in 8"
                 :key="`skeleton-video-${i}`"
-                class="h-fit w-80 md:w-96"
+                class="h-fit w-full sm:w-80 md:w-96"
                 shadow="hover"
               >
                 <div class="p-4">

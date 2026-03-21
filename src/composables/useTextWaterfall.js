@@ -2,7 +2,7 @@
 import { ref, watch, onMounted } from "vue";
 import fiftySoundsData from "@/data/fifty-sounds.json";
 
-const TEXT_COUNT = 100;
+const TEXT_COUNT = 30;
 
 const textArray = fiftySoundsData.hiragana
   .map((item) => item.kana)
