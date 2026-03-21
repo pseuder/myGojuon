@@ -154,28 +154,30 @@
     <!-- 下方固定影片控制bar -->
     <div v-if="currentVideo" class="control-bar px-2">
       <!-- Left: playback controls -->
-      <div class="flex shrink-0 items-center gap-1">
+      <div class="flex shrink-0 items-center gap-0">
         <el-button
-          circle
-          size="small"
-          :title="t('previous_song')"
+          type="primary"
           @click="goToPreviousSong"
+          :title="t('previous_song')"
+          circle
+          plain
         >
           <el-icon>
             <ArrowLeft />
           </el-icon>
         </el-button>
-        <el-button type="primary" circle @click="togglePlayPause">
+        <el-button type="primary" @click="togglePlayPause" circle>
           <el-icon :size="20">
             <VideoPause v-if="isPlaying" />
             <VideoPlay v-else />
           </el-icon>
         </el-button>
         <el-button
-          circle
-          size="small"
-          :title="t('next_song')"
+          type="primary"
           @click="playNextSong"
+          :title="t('next_song')"
+          circle
+          plain
         >
           <el-icon>
             <ArrowRight />
@@ -184,13 +186,25 @@
       </div>
 
       <!-- Center: song info -->
-      <div class="min-w-0 flex-1 px-2 text-center">
+      <div class="min-w-0 flex-1 px-2">
         <div
-          class="flex flex-col md:flex-row justify-center font-bold text-shadow-sm truncate"
+          class="marquee-wrapper"
+          ref="marqueeRef"
+          :class="{ 'text-center': !shouldMarquee }"
         >
-          <div>{{ currentVideo.name }}</div>
-          <div class="hidden md:block">-</div>
-          <div>{{ currentVideo.artists }}</div>
+          <span
+            class="font-bold text-shadow-sm marquee-item"
+            :class="{ 'is-marquee': shouldMarquee }"
+          >
+            {{ currentVideo.name }} - {{ currentVideo.artists }}
+          </span>
+          <span
+            v-if="shouldMarquee"
+            class="font-bold text-shadow-sm marquee-item is-marquee"
+            aria-hidden="true"
+          >
+            {{ currentVideo.name }} - {{ currentVideo.artists }}
+          </span>
         </div>
       </div>
 
@@ -298,7 +312,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
 import {
   VideoPause,
   VideoPlay,
@@ -394,6 +408,11 @@ const fetchplaylist = async () => {
       console.error("Error fetching playlist:", error);
       playlist.value = [];
     }
+    shufflePool.value = [];
+    playHistory.value = [];
+    if (songStore.playMode === "shuffle") {
+      computeShuffleNextIndex();
+    }
     return;
   }
 
@@ -405,8 +424,12 @@ const fetchplaylist = async () => {
     console.error("Error fetching all videos:", error);
     playlist.value = [];
   }
-  // playlist 更新後重置 shuffle 池
+  // playlist 更新後重置 shuffle 池、歷史紀錄，並預計算下一首
   shufflePool.value = [];
+  playHistory.value = [];
+  if (songStore.playMode === "shuffle") {
+    computeShuffleNextIndex();
+  }
 };
 
 // 保留 playlist 上下文 query params 的路徑產生器
@@ -454,6 +477,9 @@ const playNextSong = () => {
   }
 
   if (nextSong) {
+    // 記錄當前歌曲到歷史，供「上一首」回溯
+    playHistory.value.push(videoId.value);
+
     // 直接在現有播放器中換片，保留自動播放權限（避免背景/行動裝置被封鎖）
     if (player && player.loadVideoById) {
       player.loadVideoById(nextSong.source_id);
@@ -476,12 +502,16 @@ const playNextSong = () => {
 
 /*-- 歌手歌曲列表導航 (上一首) --*/
 const goToPreviousSong = () => {
-  if (currentVideoIndexInArtistList.value <= 0) {
-    ElMessage.info(t("previous_song") + ": " + (playlist.value[0]?.name ?? ""));
+  if (playHistory.value.length === 0) {
+    // ElMessage.info(t("previous_song") + ": " + (playlist.value[0]?.song_name ?? ""));
     return;
   }
-  const prevSong = playlist.value[currentVideoIndexInArtistList.value - 1];
-  ElMessage.info(`${t("previous_song")}: ${prevSong.name}`);
+  const prevId = playHistory.value.pop();
+  const prevSong = playlist.value.find((s) => s.source_id === prevId);
+  if (!prevSong) {
+    ElMessage.warning(t("previous_song") + ": 找不到歌曲");
+    return;
+  }
   if (player && player.loadVideoById) {
     player.loadVideoById(prevSong.source_id);
     player.setPlaybackRate(songStore.playbackRate);
@@ -492,21 +522,24 @@ const goToPreviousSong = () => {
   isLooping.value = false;
   scrollLyricsToTop();
   fetchVideoData(prevSong.source_id);
+  if (songStore.playMode === "shuffle") {
+    computeShuffleNextIndex();
+  }
 };
 
 /*-- 播放模式循環切換 (normal → loop → shuffle → normal) --*/
 const cyclePlayMode = () => {
   if (songStore.playMode === "normal") {
     songStore.playMode = "loop";
-    ElMessage.success(t("loop_song"));
+    // ElMessage.success(t("loop_song"));
   } else if (songStore.playMode === "loop") {
     songStore.playMode = "shuffle";
     shufflePool.value = []; // 清空舊池，讓下次重新填充
     computeShuffleNextIndex();
-    ElMessage.success(t("shuffle_playback"));
+    // ElMessage.success(t("shuffle_playback"));
   } else {
     songStore.playMode = "normal";
-    ElMessage.success(t("auto_play_next_song"));
+    // ElMessage.success(t("auto_play_next_song"));
   }
 };
 
@@ -516,6 +549,8 @@ const navigateToSong = (song) => {
     isPlaylistDrawerOpen.value = false;
     return;
   }
+  // 記錄當前歌曲到歷史，供「上一首」回溯
+  playHistory.value.push(videoId.value);
   // ElMessage.info(`${t("play_next_song")}: ${song.name}`);
   if (player && player.loadVideoById) {
     player.loadVideoById(song.source_id);
@@ -546,6 +581,24 @@ const isAutoNavigating = ref(false);
 /*-- Bottom Control Bar State --*/
 const isLoopingSong = computed(() => songStore.playMode === "loop");
 const isPlaylistDrawerOpen = ref(false);
+
+/*-- Marquee --*/
+const marqueeRef = ref(null);
+const shouldMarquee = ref(false);
+
+const checkMarquee = async () => {
+  await nextTick();
+  if (!marqueeRef.value) return;
+  const span = marqueeRef.value.querySelector("span");
+  if (span) {
+    shouldMarquee.value = span.offsetWidth > marqueeRef.value.clientWidth;
+  }
+};
+
+watch(currentVideo, checkMarquee);
+
+/*-- 播放歷史記錄（用於「上一首」正確回溯） --*/
+const playHistory = ref([]); // source_id 堆疊，記錄每次切換的來源歌曲
 
 /*-- Shuffle 下一首預計算（剩餘池算法） --*/
 const nextShuffleIndex = ref(-1);
@@ -805,6 +858,7 @@ const isMobile = computed(() => windowWidth.value < 1024);
 
 const updateWindowWidth = () => {
   windowWidth.value = window.innerWidth;
+  checkMarquee();
 };
 
 const startResize = (event) => {
@@ -854,14 +908,40 @@ watch(videoId, async (newId, oldId) => {
 });
 
 /*-- 生命週期（初始化 & 清理） --*/
+// Swipe from right edge to open Playlist Drawer
+let touchStartX = 0;
+let touchStartY = 0;
+
+const handleTouchStart = (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+};
+
+const handleTouchEnd = (e) => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  const screenWidth = window.innerWidth;
+  // 從右側 30px 內往左滑超過 60px，且水平移動量大於垂直
+  if (
+    touchStartX > screenWidth - 30 &&
+    dx < -60 &&
+    Math.abs(dx) > Math.abs(dy)
+  ) {
+    isPlaylistDrawerOpen.value = true;
+  }
+};
+
 onMounted(async () => {
   isLoading.value = true;
 
   await fetchVideoData(uid);
+  checkMarquee();
 
   updateWindowWidth();
   window.addEventListener("resize", updateWindowWidth);
   window.addEventListener("keypress", handleKeyPress, true);
+  window.addEventListener("touchstart", handleTouchStart, { passive: true });
+  window.addEventListener("touchend", handleTouchEnd, { passive: true });
 
   fetchplaylist();
 
@@ -883,6 +963,8 @@ onUnmounted(() => {
   }
   window.removeEventListener("keypress", handleKeyPress);
   window.removeEventListener("resize", updateWindowWidth);
+  window.removeEventListener("touchstart", handleTouchStart);
+  window.removeEventListener("touchend", handleTouchEnd);
   document.removeEventListener("mousemove", onResize);
   document.removeEventListener("mouseup", stopResize);
   window.onYouTubeIframeAPIReady = null;
@@ -942,5 +1024,28 @@ onUnmounted(() => {
 
 :deep(.el-drawer__header) {
   margin-bottom: 0px;
+}
+
+.marquee-wrapper {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.marquee-item {
+  display: inline-block;
+}
+
+.is-marquee {
+  padding-right: 3rem;
+  animation: marquee-scroll 12s linear infinite;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 </style>
