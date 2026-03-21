@@ -1,5 +1,5 @@
 <template>
-  <el-card class="h-fit w-80 md:w-96" shadow="hover">
+  <el-card class="w-full sm:w-80 p-0 md:w-96" shadow="hover">
     <div class="p-4">
       <a
         :href="url"

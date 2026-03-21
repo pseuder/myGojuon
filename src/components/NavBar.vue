@@ -1,7 +1,12 @@
 <template>
   <nav class="flex w-full">
     <div class="user-select-none w-[50%] grow">
-      <el-menu :default-active="activeIndex" mode="horizontal" router>
+      <el-menu
+        :default-active="activeIndex"
+        mode="horizontal"
+        router
+        :ellipsis="false"
+      >
         <el-menu-item index="/" class="flex items-center gap-2">
           <img src="/images/home.svg" class="w-5 h-5 shrink-0" />
           <span class="hidden md:inline">{{ t("home") }}</span>
@@ -10,7 +15,10 @@
           <img src="/images/writting.svg" class="w-5 h-5 shrink-0" />
           <span class="hidden md:inline">{{ t("handwriting_practice") }}</span>
         </el-menu-item>
-        <el-menu-item index="/ListeningPractice" class="flex items-center gap-2">
+        <el-menu-item
+          index="/ListeningPractice"
+          class="flex items-center gap-2"
+        >
           <img src="/images/listining.svg" class="w-5 h-5 shrink-0" />
           <span class="hidden md:inline">{{ t("dictation_practice") }}</span>
         </el-menu-item>
@@ -20,7 +28,7 @@
         </el-menu-item>
       </el-menu>
     </div>
-    <div class="flex w-fit items-center gap-4 mr-4">
+    <div class="flex w-fit items-center gap-2 mr-4">
       <NavSetting />
     </div>
   </nav>
