@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-[88vh] w-full flex-col p-2 lg:h-full">
+  <div class="flex w-full flex-col p-2 lg:h-full">
     <el-tabs
       v-model="activeTabName"
       type="border-card"
@@ -11,32 +11,38 @@
         <div
           class="flex w-full flex-1 flex-wrap content-start justify-center gap-4 overflow-y-auto p-2 h-full"
         >
+          <!-- 歌手 loading -->
           <template v-if="isLoading && allArtists.length === 0">
             <div
-              v-for="i in 6"
-              :key="`skeleton-artist-${i}`"
-              class="flex flex-col"
+              class="w-full sm:w-fit flex cursor-pointer flex-col hover:scale-105"
             >
-              <el-card class="h-52 w-80 p-0 md:w-96" shadow="hover">
-                <el-skeleton animated>
+              <div
+                v-for="i in 6"
+                :key="`skeleton-artist-${i}`"
+                class="w-full flex flex-col"
+              >
+                <el-card class="h-52 w-full sm:w-80 md:w-96 p-0" shadow="hover">
+                  <el-skeleton animated>
+                    <template #template>
+                      <el-skeleton-item variant="image" class="h-52 w-full" />
+                    </template>
+                  </el-skeleton>
+                </el-card>
+                <el-skeleton animated class="mt-2">
                   <template #template>
-                    <el-skeleton-item variant="image" class="h-52 w-full" />
+                    <el-skeleton-item variant="text" class="w-48" />
                   </template>
                 </el-skeleton>
-              </el-card>
-              <el-skeleton animated class="mt-2">
-                <template #template>
-                  <el-skeleton-item variant="text" class="w-48" />
-                </template>
-              </el-skeleton>
+              </div>
             </div>
           </template>
+          <!-- 歌手卡片 -->
           <template v-else v-for="artist in allArtists" :key="artist.artist_id">
             <div
-              class="flex cursor-pointer flex-col hover:scale-105"
+              class="w-full sm:w-fit flex cursor-pointer flex-col hover:scale-105"
               @click="handleArtistSelect(artist.artist_id, artist.name)"
             >
-              <el-card class="h-52 w-80 p-0 md:w-96" shadow="hover">
+              <el-card class="h-52 w-full sm:w-80 md:w-96 p-0" shadow="hover">
                 <img
                   :src="`/thumbnails/${artist.name}.jpg`"
                   class="h-full w-full"

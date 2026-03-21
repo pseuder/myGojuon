@@ -2,7 +2,7 @@
   <div class="h-full w-full">
     <NavBar />
 
-    <main class="content">
+    <main class="content p-2 md:p-4 lg:p-6">
       <!-- 文字瀑布 -->
       <div ref="textContainer" class="text-fall-container"></div>
       <div
@@ -57,7 +57,6 @@ onMounted(() => {
 .content {
   height: calc(100% - 60px);
   overflow-y: auto;
-  padding: 20px;
   background-image: url("/images/gojuon-writing.jpg");
   background-size: cover;
   background-position: center;
@@ -74,7 +73,7 @@ onMounted(() => {
 }
 
 .wide-layout {
-  max-width: 90vw !important;
+  max-width: 95vw;
 }
 
 @media (min-width: 1024px) {
