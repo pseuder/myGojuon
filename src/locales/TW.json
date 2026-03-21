@@ -97,7 +97,7 @@
   "logout_fail": "登出失敗",
   "songs": "首",
   "supports_stylus": "按下左右鍵可以切換單字\n可以直接使用觸控筆書寫\niPhone需開啟實體聲音鍵",
-  "left_points": "剩餘點數",
+  "left_points": "本日剩餘點數",
   "play_next_song": "即將播放下一首",
   "last_song_and_replay": "已是此歌手的最後一首歌，將從頭播放目前歌曲",
   "search_placeholder": "搜尋歌名、備註",
