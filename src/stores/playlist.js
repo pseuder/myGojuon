@@ -7,21 +7,24 @@ export const usePlaylistStore = defineStore("playlist", () => {
   const MYAPI = useApi();
 
   // --- State ---
-  // 我的最愛：{ source_id, name, ... }[]
+  // 我的最愛
   const favorites = ref([]);
-
   const favoritePlaylistId = ref(null);
 
-  // 自訂播放清單：{ id, name, songs: video[] }[]
+  // 自訂播放清單
   const customPlaylists = ref([]);
 
   // 是否已從後端初始化完畢
   const isInitialized = ref(false);
 
+  // 載入中
+  const isFetching = ref(false);
+
   // --- 初始化 ---
 
   /** 從後端載入所有清單與最愛（頁面 onMounted 呼叫） */
   const fetchPlaylists = async () => {
+    isFetching.value = true;
     try {
       const res = await MYAPI.get("/get_user_all_playlists");
       if (res.status === "success") {
@@ -37,6 +40,7 @@ export const usePlaylistStore = defineStore("playlist", () => {
     } catch (error) {
       console.error("Error fetching playlists:", error);
     }
+    isFetching.value = false;
   };
 
   const addSongToPlaylist = async (playlist_id, source_id) => {
@@ -158,6 +162,7 @@ export const usePlaylistStore = defineStore("playlist", () => {
   return {
     favorites,
     customPlaylists,
+    isFetching,
     isInitialized,
     fetchPlaylists,
     isFavorite,

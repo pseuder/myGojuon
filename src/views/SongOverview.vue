@@ -170,6 +170,7 @@
         <div
           v-if="!authStore.isLoggedIn"
           class="flex h-full flex-col items-center justify-center gap-4 text-gray-400"
+          v-loading="playlistStore.isFetching"
         >
           <el-icon class="text-6xl"><StarFilled /></el-icon>
           <p class="text-lg">{{ t("login_to_use_playlist") }}</p>
@@ -179,6 +180,7 @@
         <div
           v-else-if="authStore.isLoggedIn"
           class="flex h-full flex-col overflow-hidden"
+          v-loading="playlistStore.isFetching"
         >
           <!-- 標題列 -->
           <div class="mb-4 flex flex-none items-center justify-between">

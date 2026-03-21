@@ -35,11 +35,14 @@ import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 
 /*-- store --*/
-import { useAuthStore } from "@/stores/index.js";
+import { useAuthStore, usePlaylistStore } from "@/stores/index.js";
 const authStore = useAuthStore();
+const playlistStore = usePlaylistStore();
+
 const handleLoginCallback = async (response) => {
   try {
-    authStore.login(response.credential);
+    await authStore.login(response.credential);
+    await playlistStore.fetchPlaylists();
     ElMessage.success(t("login_success"));
   } catch (error) {
     if (error && error.message) {
