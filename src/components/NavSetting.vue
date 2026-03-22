@@ -47,7 +47,7 @@
       </div>
 
       <!-- 文字瀑布 -->
-      <div>
+      <!-- <div>
         <div class="flex items-center gap-2">
           <span class="text-sm shrink-0 w-[88px]">{{
             t("text_waterfall")
@@ -60,7 +60,7 @@
             size="large"
           />
         </div>
-      </div>
+      </div> -->
       <!-- 回饋按鈕 -->
       <div>
         <div class="flex items-center gap-2">
@@ -116,7 +116,7 @@ const showFloatingButton = ref(true);
 
 watch(locale, (newValue) => {
   settingsStore.language = newValue;
-  handleLocaleChange();
+  // handleLocaleChange();
 });
 
 const handleLocaleChange = () => {
