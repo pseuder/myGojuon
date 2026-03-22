@@ -66,6 +66,11 @@ export const useAuthStore = defineStore(
       if (freePredictTimes.value > 0) freePredictTimes.value--;
     }
 
+    async function debugLogin(jwt) {
+      token.value = jwt;
+      await fetchCurrentUser();
+    }
+
     return {
       user,
       token,
@@ -81,6 +86,7 @@ export const useAuthStore = defineStore(
       updatePoint,
       fetchFreePredictTimes,
       decrementFreePredictTimes,
+      debugLogin,
     };
   },
   {

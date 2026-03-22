@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { onMounted } from "vue";
 import { ElMessage } from "element-plus";
 
 /*-- i18n --*/
@@ -59,7 +59,13 @@ const handleLogout = () => {
   ElMessage.success(t("logout_success"));
 };
 
-onMounted(() => {
+onMounted(async () => {
+  const debugJwt = import.meta.env.VITE_DEBUG_JWT;
+  if (debugJwt) {
+    await authStore.debugLogin(debugJwt);
+    await playlistStore.fetchPlaylists();
+    return;
+  }
   // 嘗試根據localStorage獲取使用者訊息
   authStore.fetchCurrentUser();
 });

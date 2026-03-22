@@ -13,9 +13,7 @@
         >
           <!-- 歌手 loading -->
           <template v-if="isLoading && allArtists.length === 0">
-            <div
-              class="w-full sm:w-fit flex cursor-pointer flex-col hover:scale-105"
-            >
+            <div class="w-full sm:w-fit flex cursor-pointer flex-col">
               <div
                 v-for="i in 6"
                 :key="`skeleton-artist-${i}`"
@@ -39,7 +37,7 @@
           <!-- 歌手卡片 -->
           <template v-else v-for="artist in allArtists" :key="artist.artist_id">
             <div
-              class="w-full sm:w-fit flex cursor-pointer flex-col hover:scale-105"
+              class="w-full sm:w-fit flex cursor-pointer flex-col"
               @click="handleArtistSelect(artist.artist_id, artist.name)"
             >
               <el-card class="h-52 w-full sm:w-80 md:w-96 p-0" shadow="hover">
@@ -94,10 +92,10 @@
           >
             <!-- 我的最愛 (固定第一個) -->
             <div
-              class="flex cursor-pointer flex-col hover:scale-105"
+              class="w-full sm:w-fit flex cursor-pointer flex-col"
               @click="openFavoritesPlaylist"
             >
-              <el-card class="h-52 w-80 p-0 md:w-96" shadow="hover">
+              <el-card class="h-52 w-full sm:w-80 md:w-96 p-0" shadow="hover">
                 <div
                   class="flex h-full w-full items-center justify-center bg-linear-to-br from-red-100 to-pink-200 dark:from-red-900 dark:to-pink-900"
                 >
@@ -117,9 +115,12 @@
               v-for="pl in playlistStore.customPlaylists"
               :key="pl.playlist_id"
             >
-              <div v-if="pl.name !== 'My Favorite'" class="flex flex-col">
+              <div
+                v-if="pl.name !== 'My Favorite'"
+                class="w-full sm:w-fit flex flex-col"
+              >
                 <el-card
-                  class="relative h-52 w-80 cursor-pointer p-0 hover:scale-105 md:w-96"
+                  class="relative h-52 w-full sm:w-80 md:w-96 p-0 cursor-pointer"
                   shadow="hover"
                   @click="openCustomPlaylist(pl)"
                 >
@@ -235,7 +236,7 @@
 
           <!-- Video cards -->
           <el-space
-            class="w-full max-w-full flex-1 justify-center overflow-x-hidden overflow-y-auto"
+            class="w-full sm:w-fit flex-1 justify-center overflow-x-hidden overflow-y-auto"
             style="touch-action: pan-y; overflow-x: hidden !important"
             wrap
           >
@@ -243,7 +244,7 @@
               <el-card
                 v-for="i in 8"
                 :key="`skeleton-video-${i}`"
-                class="h-fit w-full sm:w-80 md:w-96"
+                class="h-52 w-full sm:w-80 md:w-96 p-0"
                 shadow="hover"
               >
                 <div class="p-4">
@@ -602,7 +603,7 @@ const fetchVideos = async () => {
 const handleToggleFavorite = async (video) => {
   try {
     const result = await playlistStore.toggleFavorite(video);
-    ElMessage.success(result?.message);
+    // ElMessage.success(result?.message);
   } catch (error) {
     console.error("Error toggling favorite:", error);
   }
@@ -814,5 +815,15 @@ onUnmounted(() => {});
 :deep(.song-overview-tabs .el-tab-pane) {
   height: 100%;
   overflow: hidden;
+}
+
+:deep(.el-space__item) {
+  width: 100%;
+}
+
+@media (min-width: 576px) {
+  :deep(.el-space__item) {
+    width: fit-content;
+  }
 }
 </style>
