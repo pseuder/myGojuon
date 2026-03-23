@@ -110,6 +110,7 @@
   "language": "Language",
   "reset_website": "Reset Website",
   "reset_preference": "Reset Preference",
+  "reset_preference_confirm": "Resetting preference history will only initialize the website; it will not delete existing points or playlists.",
   "basic_learning": "Basic learning",
   "advanced_learning": "Advanced learning",
   "previous_song": "Previous",

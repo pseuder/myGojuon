@@ -197,8 +197,8 @@ const formatDate = (dateString) => {
   color: #409eff !important;
 }
 
-.favorite-btn-wrapper :deep(.el-button:not(.is-disabled):hover),
-.favorite-btn-wrapper :deep(.el-button:not(.is-disabled):focus) {
+:deep(.el-button:not(.is-disabled):hover),
+:deep(.el-button:not(.is-disabled):focus) {
   background-color: var(--el-button-bg-color) !important;
   border-color: var(--el-button-border-color) !important;
   color: var(--el-button-text-color) !important;

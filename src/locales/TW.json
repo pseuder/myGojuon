@@ -110,6 +110,7 @@
   "language": "語言",
   "reset_website": "重置網站",
   "reset_preference": "重置偏好紀錄",
+  "reset_preference_confirm": "重置偏好紀錄只會將網站初始化，不會刪除既有的點數與歌單。",
   "basic_learning": "基礎學習",
   "advanced_learning": "延伸學習",
   "previous_song": "上一首",

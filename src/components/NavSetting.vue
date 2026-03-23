@@ -108,6 +108,8 @@ import myGoogleLogin from "@/components/myGoogleLogin.vue";
 import { useSettingsStore } from "@/stores/index.js";
 const settingsStore = useSettingsStore();
 
+import { ElMessageBox } from "element-plus";
+
 import { useI18n } from "vue-i18n";
 const { t, locale } = useI18n();
 
@@ -135,7 +137,13 @@ const handleTextfallChange = (newValue) => {
   settingsStore.textfall = newValue;
 };
 const handleResetWebsite = () => {
-  localStorage.clear();
-  location.reload(true);
+  ElMessageBox.confirm(t("reset_preference_confirm"), t("reset_preference"), {
+    confirmButtonText: t("confirm"),
+    cancelButtonText: t("cancel"),
+    type: "warning",
+  }).then(() => {
+    localStorage.clear();
+    location.reload(true);
+  });
 };
 </script>

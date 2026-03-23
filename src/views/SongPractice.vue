@@ -268,7 +268,7 @@
       direction="rtl"
       size="fit-content"
     >
-      <div class="flex flex-col gap-1">
+      <div class="w-[40vw] md:w-[30vw] lg:w-[20vw] flex flex-col gap-1">
         <div
           v-for="(song, index) in playlist"
           :key="song.source_id"
@@ -1047,5 +1047,12 @@ onUnmounted(() => {
   100% {
     transform: translateX(-50%);
   }
+}
+
+:deep(.el-button:not(.is-disabled):hover),
+:deep(.el-button:not(.is-disabled):focus) {
+  background-color: var(--el-button-bg-color) !important;
+  border-color: var(--el-button-border-color) !important;
+  color: var(--el-button-text-color) !important;
 }
 </style>
