@@ -113,17 +113,16 @@
             :class="{ 'bg-yellow-200': currentLyricIndex === index }"
             class="flex items-center gap-4 py-2"
           >
-            <div class="flex shrink-0 items-center">
-              <el-button
-                type="primary"
-                link
-                plain
+            <div class="flex shrink-0 items-center anchor-button">
+              <el-icon
                 @click="handleStartVideoClick(line.timestamp)"
+                :size="25"
+                title="跳轉到此"
+                color="#409efc"
+                class="hover:cursor-pointer"
               >
-                <el-icon :size="25" title="跳轉到此">
-                  <Right />
-                </el-icon>
-              </el-button>
+                <Right />
+              </el-icon>
             </div>
             <div class="flex flex-wrap gap-2">
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
@@ -186,25 +185,32 @@
       </div>
 
       <!-- Center: song info -->
-      <div class="min-w-0 flex-1 px-2">
+      <div
+        class="min-w-0 flex-1 px-2 flex flex-col items-center justify-center"
+      >
         <div
-          class="marquee-wrapper"
+          class="marquee-wrapper w-full"
           ref="marqueeRef"
           :class="{ 'text-center': !shouldMarquee }"
         >
-          <span
-            class="font-bold text-shadow-sm marquee-item"
-            :class="{ 'is-marquee': shouldMarquee }"
-          >
-            {{ currentVideo.name }} - {{ currentVideo.artists }}
-          </span>
-          <span
-            v-if="shouldMarquee"
-            class="font-bold text-shadow-sm marquee-item is-marquee"
-            aria-hidden="true"
-          >
-            {{ currentVideo.name }} - {{ currentVideo.artists }}
-          </span>
+          <div :class="{ 'is-marquee': shouldMarquee }">
+            <span
+              class="font-bold text-shadow-sm marquee-item"
+              :class="{ 'pr-10': shouldMarquee }"
+            >
+              {{ currentVideo.name }}
+            </span>
+            <span
+              v-if="shouldMarquee"
+              class="font-bold text-shadow-sm marquee-item pr-10"
+              aria-hidden="true"
+            >
+              {{ currentVideo.name }}
+            </span>
+          </div>
+        </div>
+        <div class="w-full text-sm text-center opacity-70 truncate">
+          {{ currentVideo.artists }}
         </div>
       </div>
 
@@ -281,30 +287,44 @@
           }"
           @click="navigateToSong(song)"
         >
-          <span class="w-6 shrink-0 text-right text-xs text-gray-400">{{
-            index + 1
-          }}</span>
-          <div class="min-w-0 flex-1">
-            <div class="truncate text-sm">{{ song.song_name }}</div>
-            <div class="truncate text-xs text-gray-500">
-              {{ song.artists }}
+          <template v-if="song.source_id === videoId">
+            <el-badge
+              value="Now"
+              type="success"
+              class="w-full shrink-0"
+              :title="t('play_next_song')"
+            >
+              <div class="min-w-0 flex-1">
+                <div class="truncate text-sm">{{ song.song_name }}</div>
+                <div class="truncate text-xs text-gray-500">
+                  {{ song.artists }}
+                </div>
+              </div>
+            </el-badge>
+          </template>
+          <template v-else-if="song.source_id === nextSongId">
+            <el-badge
+              value="Next"
+              type="warning"
+              class="w-full shrink-0"
+              :title="t('play_next_song')"
+            >
+              <div class="min-w-0 flex-1">
+                <div class="truncate text-sm">{{ song.song_name }}</div>
+                <div class="truncate text-xs text-gray-500">
+                  {{ song.artists }}
+                </div>
+              </div>
+            </el-badge>
+          </template>
+          <template v-else>
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-sm">{{ song.song_name }}</div>
+              <div class="truncate text-xs text-gray-500">
+                {{ song.artists }}
+              </div>
             </div>
-          </div>
-          <el-tag
-            v-if="song.source_id === videoId"
-            type="success"
-            class="shrink-0 text-green-500"
-            :title="t('play_next_song')"
-            >Now</el-tag
-          >
-
-          <el-tag
-            v-else-if="song.source_id === nextSongId"
-            type="warning"
-            class="shrink-0 text-orange-400"
-            :title="t('play_next_song')"
-            >Next</el-tag
-          >
+          </template>
         </div>
       </div>
     </el-drawer>
@@ -1036,7 +1056,7 @@ onUnmounted(() => {
 }
 
 .is-marquee {
-  padding-right: 3rem;
+  display: inline-block;
   animation: marquee-scroll 12s linear infinite;
 }
 
