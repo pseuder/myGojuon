@@ -342,6 +342,17 @@
       </template>
     </el-dialog>
 
+    <!-- 回到頂部按鈕 (只在 sm 以下顯示) -->
+    <el-button
+      class="sm:hidden fixed bottom-6 right-6 z-999 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
+      type="primary"
+      @click="scrollToTop"
+      title="回到最上方"
+      circle
+    >
+      <el-icon><Upload /></el-icon>
+    </el-button>
+
     <!-- 改名 Dialog -->
     <el-dialog
       v-model="showRenameDialog"
@@ -384,6 +395,7 @@ import {
   Headset,
   View,
   Calendar,
+  Upload,
 } from "@element-plus/icons-vue";
 import VideoCard from "@/components/VideoCard.vue";
 
@@ -745,6 +757,12 @@ const openCustomPlaylist = (pl) => {
     selectedArtist.value = null;
   }
   activeTabName.value = "playlist-detail";
+};
+
+// ===== 回到頂部 =====
+const scrollToTop = () => {
+  const scrollEl = document.querySelector(".content");
+  scrollEl?.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 onMounted(async () => {
