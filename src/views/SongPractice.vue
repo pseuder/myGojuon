@@ -41,7 +41,7 @@
         <!-- 功能列 -->
         <div class="flex shrink-0 flex-col gap-2">
           <div class="my-4 flex h-full w-full flex-col items-center gap-2">
-            <div class="flex w-full flex-row">
+            <div class="flex w-full flex-row items-center gap-2">
               <div class="flex flex-1 flex-col gap-1">
                 <el-input-number
                   v-model="songStore.playbackRate"
@@ -52,6 +52,78 @@
                   @change="changePlaybackRate"
                 />
               </div>
+
+              <!-- 我的最愛 -->
+              <el-button
+                circle
+                size="small"
+                :type="
+                  authStore.isLoggedIn && playlistStore.isFavorite(currentVideo.source_id)
+                    ? 'danger'
+                    : ''
+                "
+                :disabled="!authStore.isLoggedIn"
+                @click="handleToggleFavorite"
+              >
+                <el-icon>
+                  <StarFilled
+                    v-if="authStore.isLoggedIn && playlistStore.isFavorite(currentVideo.source_id)"
+                  />
+                  <Star v-else />
+                </el-icon>
+              </el-button>
+
+              <!-- 加入自訂清單 -->
+              <el-dropdown
+                trigger="hover"
+                :disabled="!authStore.isLoggedIn"
+                @command="
+                  (cmd) => {
+                    if (cmd === '__new__') {
+                      handleAddToPlaylist(cmd);
+                    } else if (playlistStore.isInPlaylist(cmd, currentVideo.source_id)) {
+                      handleRemoveFromPlaylist(cmd);
+                    } else {
+                      handleAddToPlaylist(cmd);
+                    }
+                  }
+                "
+              >
+                <el-button circle size="small" :disabled="!authStore.isLoggedIn">
+                  <el-icon><Plus /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="__new__">
+                      <el-icon><FolderAdd /></el-icon>
+                      {{ t("create_playlist") }}
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      divided
+                      v-if="playlistStore.customPlaylists.length === 0"
+                      disabled
+                    >
+                      {{ t("no_playlists_yet") }}
+                    </el-dropdown-item>
+                    <template
+                      v-for="pl in playlistStore.customPlaylists"
+                      :key="pl.playlist_id"
+                    >
+                      <el-dropdown-item
+                        v-if="pl.name != 'My Favorite'"
+                        :command="pl.playlist_id"
+                        :class="{
+                          'in-playlist': playlistStore.isInPlaylist(pl.playlist_id, currentVideo.source_id),
+                        }"
+                      >
+                        <el-icon><Headset /></el-icon>
+                        {{ pl.name }}
+                        <span class="ml-1 text-xs text-gray-400">({{ pl.songs.length }})</span>
+                      </el-dropdown-item>
+                    </template>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </div>
 
@@ -242,6 +314,32 @@
       </div>
     </div>
 
+    <!-- 建立清單 Dialog -->
+    <el-dialog
+      v-model="showCreatePlaylistDialog"
+      :title="t('create_playlist')"
+      width="320px"
+      :close-on-click-modal="false"
+    >
+      <el-input
+        v-model="newPlaylistName"
+        :placeholder="t('enter_playlist_name')"
+        @keyup.enter="handleCreatePlaylist"
+        maxlength="30"
+        show-word-limit
+      />
+      <template #footer>
+        <el-button @click="showCreatePlaylistDialog = false">{{ t("cancel") }}</el-button>
+        <el-button
+          type="primary"
+          :disabled="!newPlaylistName.trim()"
+          @click="handleCreatePlaylist"
+        >
+          {{ t("confirm") }}
+        </el-button>
+      </template>
+    </el-dialog>
+
     <!-- Playlist Drawer -->
     <el-drawer
       v-model="isPlaylistDrawerOpen"
@@ -316,6 +414,11 @@ import {
   ArrowRight,
   Refresh,
   Sort,
+  Star,
+  StarFilled,
+  Plus,
+  FolderAdd,
+  Headset,
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
@@ -323,9 +426,10 @@ import { useRouter, useRoute } from "vue-router";
 import { useApi } from "@/composables/useApi.js";
 
 /*-- store --*/
-import { useSongStore, usePlaylistStore } from "@/stores/index.js";
+import { useSongStore, usePlaylistStore, useAuthStore } from "@/stores/index.js";
 const songStore = useSongStore();
 const playlistStore = usePlaylistStore();
+const authStore = useAuthStore();
 
 const { t } = useI18n();
 const MYAPI = useApi();
@@ -591,6 +695,69 @@ const checkMarquee = async () => {
 };
 
 watch(currentVideo, checkMarquee);
+
+/*-- 我的最愛 & 自訂清單 --*/
+const showCreatePlaylistDialog = ref(false);
+const newPlaylistName = ref("");
+const pendingAddVideo = ref(null);
+
+const handleToggleFavorite = async () => {
+  try {
+    await playlistStore.toggleFavorite(currentVideo.value);
+  } catch (error) {
+    console.error("Error toggling favorite:", error);
+  }
+};
+
+const handleAddToPlaylist = async (command) => {
+  if (command === "__new__") {
+    pendingAddVideo.value = currentVideo.value;
+    newPlaylistName.value = "";
+    showCreatePlaylistDialog.value = true;
+    return;
+  }
+  try {
+    const result = await playlistStore.addSongToCustomPlaylist(command, currentVideo.value.source_id);
+    ElMessage.success(result?.message);
+  } catch (error) {
+    console.error("Error adding to playlist:", error);
+    ElMessage({ type: "error", message: t("error_loading_data") });
+  }
+};
+
+const handleRemoveFromPlaylist = async (playlistId) => {
+  try {
+    const result = await playlistStore.removeSongFromCustomPlaylist(playlistId, currentVideo.value.source_id);
+    ElMessage.success(result?.message);
+  } catch (error) {
+    console.error("Error removing from playlist:", error);
+    ElMessage({ type: "error", message: t("error_loading_data") });
+  }
+};
+
+const handleCreatePlaylist = async () => {
+  if (!newPlaylistName.value.trim()) return;
+  try {
+    const pl = await playlistStore.createPlaylist(newPlaylistName.value);
+    if (pendingAddVideo.value) {
+      await playlistStore.addSongToCustomPlaylist(pl.playlist_id, pendingAddVideo.value.source_id);
+      pendingAddVideo.value = null;
+      ElMessage({ type: "success", message: t("added_to_playlist") });
+    } else {
+      ElMessage({ type: "success", message: t("playlist_created") });
+    }
+    newPlaylistName.value = "";
+    showCreatePlaylistDialog.value = false;
+  } catch (error) {
+    console.error("Error creating playlist:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage === "playlist_already_exists") {
+      ElMessage({ type: "error", message: t("playlist_already_exists") });
+    } else {
+      ElMessage({ type: "error", message: t("error_loading_data") });
+    }
+  }
+};
 
 /*-- 播放歷史記錄（用於「上一首」正確回溯） --*/
 const playHistory = ref([]); // source_id 堆疊，記錄每次切換的來源歌曲
@@ -1042,6 +1209,12 @@ onUnmounted(() => {
   100% {
     transform: translateX(-50%);
   }
+}
+
+:deep(.in-playlist),
+:deep(.in-playlist:hover) {
+  background-color: #ecf5ff !important;
+  color: #409eff !important;
 }
 
 :deep(.el-button:not(.is-disabled):hover),
