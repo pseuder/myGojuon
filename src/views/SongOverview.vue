@@ -345,6 +345,7 @@
     <!-- 回到頂部按鈕 (只在 sm 以下顯示) -->
     <el-button
       class="sm:hidden fixed bottom-6 right-6 z-999 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
+      style="width: 40px; height: 40px; font-size: 20px"
       type="primary"
       @click="scrollToTop"
       title="回到最上方"

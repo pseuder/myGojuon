@@ -39,34 +39,9 @@
         </div>
 
         <!-- 功能列 -->
-        <!-- <div class="flex shrink-0 flex-col gap-2">
+        <div class="flex shrink-0 flex-col gap-2">
           <div class="my-4 flex h-full w-full flex-col items-center gap-2">
             <div class="flex w-full flex-row">
-              <div class="flex w-full flex-1 flex-col justify-between gap-4">
-                <div
-                  class="cursor-pointer hover:text-blue-500"
-                  @click="goToPreviousLyric()"
-                >
-                  <el-tag type="warning">A</el-tag>{{ t("jump_previous_line") }}
-                </div>
-                <div
-                  class="cursor-pointer hover:text-blue-500"
-                  @click="goToNextLyric()"
-                >
-                  <el-tag type="warning">D</el-tag>{{ t("jump_next_line") }}
-                </div>
-                <div
-                  class="cursor-pointer hover:text-blue-500"
-                  @click="toggleLoopCurrentLyric()"
-                >
-                  <el-tag type="warning">S</el-tag>
-                  <span v-if="isLooping" class="text-red-600">
-                    {{ t("stop_looping") }}</span
-                  >
-                  <span v-else> {{ t("loop_playback") }}</span>
-                </div>
-              </div>
-
               <div class="flex flex-1 flex-col gap-1">
                 <el-input-number
                   v-model="songStore.playbackRate"
@@ -85,7 +60,7 @@
               {{ currentVideo.remark }}
             </p>
           </el-alert>
-        </div> -->
+        </div>
       </div>
 
       <!-- 可拖動分隔線 (只在寬螢幕顯示) -->
