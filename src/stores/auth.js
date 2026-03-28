@@ -40,7 +40,10 @@ export const useAuthStore = defineStore(
         const myAPI = useApi();
         const res = await myAPI.get("/auth_me");
         user.value = res.data;
-      } catch {}
+        return res.data;
+      } catch (error) {
+        console.log(error);
+      }
     }
 
     function logout() {

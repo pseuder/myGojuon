@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full w-full items-center overflow-hidden">
     <template v-if="authStore.isLoggedIn">
-      <div class="w-full flex flex-col gap-2">
+      <div class="flex w-full flex-col gap-2">
         <div
           class="w-full cursor-pointer truncate text-blue-400 hover:text-blue-600"
         >
@@ -67,6 +67,10 @@ onMounted(async () => {
     return;
   }
   // 嘗試根據localStorage獲取使用者訊息
-  authStore.fetchCurrentUser();
+  let res = await authStore.fetchCurrentUser();
+
+  if (res) {
+    await playlistStore.fetchPlaylists();
+  }
 });
 </script>
