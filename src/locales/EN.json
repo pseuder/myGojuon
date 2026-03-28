@@ -62,7 +62,7 @@
   "scrolling": "Auto Scrolling",
   "normal": "Normal",
   "mixed": "Mixed",
-  "auto_play_next_song": "Auto Play Next Song",
+  "auto_play_next_song": "Play in sequence",
   "logout": "Logout",
   "network_error": "Network error, please try again later",
   "server_error": "Server error, please try again later",

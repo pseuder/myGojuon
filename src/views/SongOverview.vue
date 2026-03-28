@@ -9,17 +9,17 @@
       <!-- ===== Tab 1: 歌手 ===== -->
       <el-tab-pane :label="t('artists')" name="artists">
         <div
-          class="flex w-full flex-1 flex-wrap content-start justify-center gap-4 overflow-y-auto p-2 h-full"
+          class="flex h-full w-full flex-1 flex-wrap content-start justify-center gap-4 overflow-y-auto p-2"
         >
           <!-- 歌手 loading -->
           <template v-if="isLoading && allArtists.length === 0">
-            <div class="w-full sm:w-fit flex cursor-pointer flex-col">
+            <div class="flex w-full cursor-pointer flex-col sm:w-fit">
               <div
                 v-for="i in 6"
                 :key="`skeleton-artist-${i}`"
-                class="w-full flex flex-col"
+                class="flex w-full flex-col"
               >
-                <el-card class="h-52 w-full sm:w-80 md:w-96 p-0" shadow="hover">
+                <el-card class="h-52 w-full p-0 sm:w-80 md:w-96" shadow="hover">
                   <el-skeleton animated>
                     <template #template>
                       <el-skeleton-item variant="image" class="h-52 w-full" />
@@ -37,10 +37,10 @@
           <!-- 歌手卡片 -->
           <template v-else v-for="artist in allArtists" :key="artist.artist_id">
             <div
-              class="w-full sm:w-fit flex cursor-pointer flex-col"
+              class="flex w-full cursor-pointer flex-col sm:w-fit"
               @click="handleArtistSelect(artist.artist_id, artist.name)"
             >
-              <el-card class="h-52 w-full sm:w-80 md:w-96 p-0" shadow="hover">
+              <el-card class="h-52 w-full p-0 sm:w-80 md:w-96" shadow="hover">
                 <img
                   :src="`/thumbnails/${artist.name}.jpg`"
                   class="h-full w-full"
@@ -75,11 +75,7 @@
           v-loading="playlistStore.isFetching"
         >
           <!-- 標題列 -->
-          <div class="mb-4 flex flex-none items-center justify-between">
-            <span
-              class="text-base font-semibold text-gray-600 dark:text-gray-300"
-              >{{ t("my_playlists") }}</span
-            >
+          <div class="mb-4 flex flex-none items-center justify-end">
             <el-button type="primary" @click="showCreatePlaylistDialog = true">
               <el-icon class="mr-1"><Plus /></el-icon>
               {{ t("create_playlist") }}
@@ -92,10 +88,10 @@
           >
             <!-- 我的最愛 (固定第一個) -->
             <div
-              class="w-full sm:w-fit flex cursor-pointer flex-col"
+              class="flex w-full cursor-pointer flex-col sm:w-fit"
               @click="openFavoritesPlaylist"
             >
-              <el-card class="h-52 w-full sm:w-80 md:w-96 p-0" shadow="hover">
+              <el-card class="h-52 w-full p-0 sm:w-80 md:w-96" shadow="hover">
                 <div
                   class="flex h-full w-full items-center justify-center bg-linear-to-br from-red-100 to-pink-200 dark:from-red-900 dark:to-pink-900"
                 >
@@ -117,10 +113,10 @@
             >
               <div
                 v-if="pl.name !== 'My Favorite'"
-                class="w-full sm:w-fit flex flex-col"
+                class="flex w-full flex-col sm:w-fit"
               >
                 <el-card
-                  class="relative h-52 w-full sm:w-80 md:w-96 p-0 cursor-pointer"
+                  class="relative h-52 w-full cursor-pointer p-0 sm:w-80 md:w-96"
                   shadow="hover"
                   @click="openCustomPlaylist(pl)"
                 >
@@ -132,7 +128,7 @@
                     /></el-icon>
                   </div>
                   <!-- 操作按鈕 (右上角) -->
-                  <div class="absolute right-2 top-2 flex gap-1" @click.stop>
+                  <div class="absolute top-2 right-2 flex gap-1" @click.stop>
                     <el-button
                       circle
                       size="small"
@@ -236,7 +232,7 @@
 
           <!-- Video cards -->
           <el-space
-            class="w-full sm:w-fit flex-1 justify-center overflow-x-hidden overflow-y-auto"
+            class="w-full flex-1 justify-center overflow-x-hidden overflow-y-auto sm:w-fit"
             style="touch-action: pan-y; overflow-x: hidden !important"
             wrap
           >
@@ -244,7 +240,7 @@
               <el-card
                 v-for="i in 8"
                 :key="`skeleton-video-${i}`"
-                class="h-52 w-full sm:w-80 md:w-96 p-0"
+                class="h-52 w-full p-0 sm:w-80 md:w-96"
                 shadow="hover"
               >
                 <div class="p-4">
@@ -344,7 +340,7 @@
 
     <!-- 回到頂部按鈕 (只在 sm 以下顯示) -->
     <el-button
-      class="sm:hidden fixed bottom-6 right-6 z-999 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
+      class="fixed right-6 bottom-6 z-999 shadow-[0_4px_12px_rgba(0,0,0,0.2)] sm:hidden"
       style="width: 40px; height: 40px; font-size: 20px"
       type="primary"
       @click="scrollToTop"

@@ -88,7 +88,7 @@
                 href="https://www.facebook.com/Pseuder/"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="underline text-blue-700"
+                class="text-blue-700 underline"
               >
                 https://www.facebook.com/Pseuder
               </a>

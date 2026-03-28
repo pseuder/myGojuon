@@ -1,8 +1,11 @@
 <template>
-  <div class="flex h-full flex-col lg:overflow-hidden" id="myElement">
+  <div
+    class="flex h-[85vh] flex-col lg:h-[80vh] lg:overflow-hidden"
+    id="myElement"
+  >
     <div
       v-if="currentVideo"
-      class="flex h-full flex-col gap-4 px-4 py-4 pb-16 md:px-10 lg:flex-row lg:gap-0"
+      class="flex h-full flex-col gap-4 px-4 py-8 md:flex-row md:px-10 lg:gap-0"
     >
       <!-- 影片播放器+功能列 -->
       <div
@@ -11,7 +14,7 @@
       >
         <div class="shrink-0">
           <!-- 影片標題＋作者 -->
-          <div class="gradient-text-tech-animated font-bold text-2xl">
+          <div class="gradient-text-tech-animated text-2xl font-bold">
             {{ currentVideo.name }} - {{ currentVideo.artists }}
           </div>
           <!-- 標籤 -->
@@ -39,9 +42,16 @@
         </div>
 
         <!-- 功能列 -->
-        <div class="flex shrink-0 flex-col gap-2">
-          <div class="my-4 flex h-full w-full flex-col items-center gap-2">
+        <div class="mt-2 flex shrink-0 flex-col gap-2">
+          <el-alert v-if="currentVideo.remark" type="success">
+            <p class="w-[88%] wrap-break-word">
+              {{ currentVideo.remark }}
+            </p>
+          </el-alert>
+
+          <div class="flex h-full w-full flex-col items-center gap-2">
             <div class="flex w-full flex-row items-center gap-2">
+              <!-- 速度調整 -->
               <div class="flex flex-1 flex-col gap-1">
                 <el-input-number
                   v-model="songStore.playbackRate"
@@ -58,7 +68,8 @@
                 circle
                 size="small"
                 :type="
-                  authStore.isLoggedIn && playlistStore.isFavorite(currentVideo.source_id)
+                  authStore.isLoggedIn &&
+                  playlistStore.isFavorite(currentVideo.source_id)
                     ? 'danger'
                     : ''
                 "
@@ -67,7 +78,10 @@
               >
                 <el-icon>
                   <StarFilled
-                    v-if="authStore.isLoggedIn && playlistStore.isFavorite(currentVideo.source_id)"
+                    v-if="
+                      authStore.isLoggedIn &&
+                      playlistStore.isFavorite(currentVideo.source_id)
+                    "
                   />
                   <Star v-else />
                 </el-icon>
@@ -81,7 +95,9 @@
                   (cmd) => {
                     if (cmd === '__new__') {
                       handleAddToPlaylist(cmd);
-                    } else if (playlistStore.isInPlaylist(cmd, currentVideo.source_id)) {
+                    } else if (
+                      playlistStore.isInPlaylist(cmd, currentVideo.source_id)
+                    ) {
                       handleRemoveFromPlaylist(cmd);
                     } else {
                       handleAddToPlaylist(cmd);
@@ -89,7 +105,11 @@
                   }
                 "
               >
-                <el-button circle size="small" :disabled="!authStore.isLoggedIn">
+                <el-button
+                  circle
+                  size="small"
+                  :disabled="!authStore.isLoggedIn"
+                >
                   <el-icon><Plus /></el-icon>
                 </el-button>
                 <template #dropdown>
@@ -113,12 +133,17 @@
                         v-if="pl.name != 'My Favorite'"
                         :command="pl.playlist_id"
                         :class="{
-                          'in-playlist': playlistStore.isInPlaylist(pl.playlist_id, currentVideo.source_id),
+                          'in-playlist': playlistStore.isInPlaylist(
+                            pl.playlist_id,
+                            currentVideo.source_id,
+                          ),
                         }"
                       >
                         <el-icon><Headset /></el-icon>
                         {{ pl.name }}
-                        <span class="ml-1 text-xs text-gray-400">({{ pl.songs.length }})</span>
+                        <span class="ml-1 text-xs text-gray-400"
+                          >({{ pl.songs.length }})</span
+                        >
                       </el-dropdown-item>
                     </template>
                   </el-dropdown-menu>
@@ -126,12 +151,6 @@
               </el-dropdown>
             </div>
           </div>
-
-          <el-alert v-if="currentVideo.remark" type="success">
-            <p class="w-[88%] wrap-break-word">
-              {{ currentVideo.remark }}
-            </p>
-          </el-alert>
         </div>
       </div>
 
@@ -160,7 +179,7 @@
             :class="{ 'bg-yellow-200': currentLyricIndex === index }"
             class="flex items-center gap-4 py-2"
           >
-            <div class="flex shrink-0 items-center anchor-button">
+            <div class="anchor-button flex shrink-0 items-center">
               <el-icon
                 @click="handleStartVideoClick(line.timestamp)"
                 :size="25"
@@ -194,11 +213,11 @@
       </el-scrollbar>
     </div>
 
-    <!-- 載入中狀態 -->
-    <div v-else class="flex h-full m-2" v-loading="isLoading"></div>
-
     <!-- 下方固定影片控制bar -->
-    <div v-if="currentVideo" class="control-bar px-2">
+    <div
+      v-if="currentVideo"
+      class="fixed right-0 bottom-0 left-0 z-50 flex h-16 items-center justify-between gap-2 border-t border-gray-200 bg-white/70 px-2 backdrop-blur-md"
+    >
       <!-- Left: playback controls -->
       <div class="flex shrink-0 items-center gap-0">
         <el-button
@@ -212,12 +231,22 @@
             <ArrowLeft />
           </el-icon>
         </el-button>
-        <el-button type="primary" @click="togglePlayPause" circle>
-          <el-icon :size="20">
-            <VideoPause v-if="isPlaying" />
-            <VideoPlay v-else />
-          </el-icon>
-        </el-button>
+        <el-button
+          v-show="isPlaying"
+          type="primary"
+          class="text-2xl"
+          :icon="VideoPause"
+          @click="togglePlayPause"
+          circle
+        />
+        <el-button
+          v-show="!isPlaying"
+          type="primary"
+          class="text-2xl"
+          :icon="VideoPlay"
+          @click="togglePlayPause"
+          circle
+        />
         <el-button
           type="primary"
           @click="playNextSong"
@@ -233,7 +262,7 @@
 
       <!-- Center: song info -->
       <div
-        class="min-w-0 flex-1 px-2 flex flex-col items-center justify-center"
+        class="flex min-w-0 flex-1 flex-col items-center justify-center px-2"
       >
         <div
           class="marquee-wrapper w-full"
@@ -242,21 +271,21 @@
         >
           <div :class="{ 'is-marquee': shouldMarquee }">
             <span
-              class="font-bold text-shadow-sm marquee-item"
+              class="marquee-item font-bold text-shadow-sm"
               :class="{ 'pr-10': shouldMarquee }"
             >
               {{ currentVideo.name }}
             </span>
             <span
               v-if="shouldMarquee"
-              class="font-bold text-shadow-sm marquee-item pr-10"
+              class="marquee-item pr-10 font-bold text-shadow-sm"
               aria-hidden="true"
             >
               {{ currentVideo.name }}
             </span>
           </div>
         </div>
-        <div class="w-full text-sm text-center opacity-70 truncate">
+        <div class="w-full truncate text-center text-sm opacity-70">
           {{ currentVideo.artists }}
         </div>
       </div>
@@ -289,16 +318,20 @@
           circle
         >
           <img
-            v-if="songStore.playMode === 'loop'"
+            v-show="songStore.playMode === 'loop'"
             src="/images/replay.png"
             class="h-4 w-4"
           />
           <img
-            v-else-if="songStore.playMode === 'shuffle'"
+            v-show="songStore.playMode === 'shuffle'"
             src="/images/random.svg"
             class="h-4 w-4"
           />
-          <img v-else src="/images/arrow-right.svg" class="h-4 w-4" />
+          <img
+            v-show="songStore.playMode === 'normal'"
+            src="/images/arrow-right.svg"
+            class="h-4 w-4"
+          />
         </el-button>
 
         <!-- Playlist drawer toggle -->
@@ -329,7 +362,9 @@
         show-word-limit
       />
       <template #footer>
-        <el-button @click="showCreatePlaylistDialog = false">{{ t("cancel") }}</el-button>
+        <el-button @click="showCreatePlaylistDialog = false">{{
+          t("cancel")
+        }}</el-button>
         <el-button
           type="primary"
           :disabled="!newPlaylistName.trim()"
@@ -347,7 +382,7 @@
       direction="rtl"
       size="fit-content"
     >
-      <div class="w-[40vw] md:w-[30vw] lg:w-[20vw] flex flex-col gap-1">
+      <div class="flex w-[40vw] flex-col gap-1 md:w-[30vw] lg:w-[20vw]">
         <div
           v-for="(song, index) in playlist"
           :key="song.source_id"
@@ -426,7 +461,11 @@ import { useRouter, useRoute } from "vue-router";
 import { useApi } from "@/composables/useApi.js";
 
 /*-- store --*/
-import { useSongStore, usePlaylistStore, useAuthStore } from "@/stores/index.js";
+import {
+  useSongStore,
+  usePlaylistStore,
+  useAuthStore,
+} from "@/stores/index.js";
 const songStore = useSongStore();
 const playlistStore = usePlaylistStore();
 const authStore = useAuthStore();
@@ -703,7 +742,7 @@ const pendingAddVideo = ref(null);
 
 const handleToggleFavorite = async () => {
   try {
-    await playlistStore.toggleFavorite(currentVideo.value);
+    await playlistStore.toggleFavorite(currentVideo.value.source_id);
   } catch (error) {
     console.error("Error toggling favorite:", error);
   }
@@ -717,7 +756,10 @@ const handleAddToPlaylist = async (command) => {
     return;
   }
   try {
-    const result = await playlistStore.addSongToCustomPlaylist(command, currentVideo.value.source_id);
+    const result = await playlistStore.addSongToCustomPlaylist(
+      command,
+      currentVideo.value.source_id,
+    );
     ElMessage.success(result?.message);
   } catch (error) {
     console.error("Error adding to playlist:", error);
@@ -727,7 +769,10 @@ const handleAddToPlaylist = async (command) => {
 
 const handleRemoveFromPlaylist = async (playlistId) => {
   try {
-    const result = await playlistStore.removeSongFromCustomPlaylist(playlistId, currentVideo.value.source_id);
+    const result = await playlistStore.removeSongFromCustomPlaylist(
+      playlistId,
+      currentVideo.value.source_id,
+    );
     ElMessage.success(result?.message);
   } catch (error) {
     console.error("Error removing from playlist:", error);
@@ -740,7 +785,10 @@ const handleCreatePlaylist = async () => {
   try {
     const pl = await playlistStore.createPlaylist(newPlaylistName.value);
     if (pendingAddVideo.value) {
-      await playlistStore.addSongToCustomPlaylist(pl.playlist_id, pendingAddVideo.value.source_id);
+      await playlistStore.addSongToCustomPlaylist(
+        pl.playlist_id,
+        pendingAddVideo.value.source_id,
+      );
       pendingAddVideo.value = null;
       ElMessage({ type: "success", message: t("added_to_playlist") });
     } else {
@@ -1135,22 +1183,6 @@ onUnmounted(() => {
 
 <style scoped>
 @reference "tailwindcss";
-.control-bar {
-  @apply fixed 
-  bottom-0 
-  left-0 
-  right-0 
-  h-16 
-  z-50 
-  flex 
-  gap-2 
-  items-center 
-  justify-between 
-  bg-white/70 
-  border-t
-  border-gray-200 
-  backdrop-blur-md;
-}
 
 .gradient-text-tech-animated {
   background: linear-gradient(120deg, #4caf50, #2196f3, #673ab7, #4caf50);

@@ -9,6 +9,7 @@
         class="main-component relative h-fit"
         :class="{
           'wide-layout': isWideLayout,
+          'song-layout': isSongLayout,
         }"
       >
         <router-view v-slot="{ Component }">
@@ -48,6 +49,8 @@ const isWideLayout = computed(
     route.path.includes("/s/"),
 );
 
+const isSongLayout = computed(() => route.path.includes("/SongPractice"));
+
 onMounted(() => {
   authStore.fetchFreePredictTimes();
 });
@@ -79,6 +82,16 @@ onMounted(() => {
 @media (min-width: 1024px) {
   .wide-layout {
     height: 100%;
+  }
+}
+
+.song-layout {
+  max-width: 95vw;
+}
+
+@media (min-width: 1024px) {
+  .song-layout {
+    height: fit-content;
   }
 }
 

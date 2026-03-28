@@ -92,13 +92,13 @@
           <img
             src="/images/arrow-circle-left-solid.svg"
             alt="上一個"
-            class="h-10 w-10 cursor-pointer md:h-8 md:w-8 transition-all duration-100 active:scale-90 active:opacity-60 select-none"
+            class="h-10 w-10 cursor-pointer transition-all duration-100 select-none active:scale-90 active:opacity-60 md:h-8 md:w-8"
             @click="changeSound('prev')"
           />
           <img
             src="/images/arrow-circle-right-solid.svg"
             alt="下一個"
-            class="h-10 w-10 cursor-pointer md:h-8 md:w-8 transition-all duration-100 active:scale-90 active:opacity-60 select-none"
+            class="h-10 w-10 cursor-pointer transition-all duration-100 select-none active:scale-90 active:opacity-60 md:h-8 md:w-8"
             @click="changeSound('next')"
           />
         </div>
