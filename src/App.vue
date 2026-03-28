@@ -4,7 +4,7 @@
 
     <main class="content p-2 md:p-4 lg:p-6">
       <!-- 文字瀑布 -->
-      <div ref="textContainer" class="text-fall-container"></div>
+      <!-- <div ref="textContainer" class="text-fall-container"></div> -->
       <div
         class="main-component relative h-fit"
         :class="{
@@ -42,7 +42,6 @@ const route = useRoute();
 const isWideLayout = computed(
   () =>
     route.path.includes("/SongOverview") ||
-    route.path.includes("/SongPractice") ||
     route.path.includes("/Backend") ||
     route.path.includes("/backend") ||
     route.path.includes("/S/") ||
@@ -91,7 +90,8 @@ onMounted(() => {
 
 @media (min-width: 1024px) {
   .song-layout {
-    height: fit-content;
+    height: 90%;
+    width: 100%;
   }
 }
 

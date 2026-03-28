@@ -1,11 +1,11 @@
 <template>
   <div
-    class="mb-20 flex h-full flex-col lg:mb-0 lg:h-[80vh] lg:overflow-hidden"
+    class="mb-20 flex h-full flex-col lg:mb-0 lg:overflow-hidden"
     id="myElement"
   >
     <div
       v-if="currentVideo"
-      class="flex h-full flex-col gap-4 px-4 py-8 md:px-10 lg:flex-row lg:gap-0"
+      class="flex h-full flex-col gap-4 px-4 py-4 md:px-10 lg:flex-row lg:gap-0"
     >
       <!-- 影片播放器+功能列 -->
       <div
@@ -14,7 +14,7 @@
       >
         <div class="shrink-0">
           <!-- 影片標題＋作者 -->
-          <div class="gradient-text-tech-animated text-2xl font-bold">
+          <div class="gradient-text-tech-animated text-3xl font-bold">
             {{ currentVideo.name }} - {{ currentVideo.artists }}
           </div>
           <!-- 標籤 -->

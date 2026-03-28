@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full flex-col gap-4 px-4 py-4 md:flex-row">
+  <div class="flex h-full flex-col gap-4 px-4 py-4 lg:flex-row">
     <!-- 左側50音列表 -->
     <div class="flex w-full flex-col gap-2 md:gap-4">
       <div class="flex items-center gap-4">
