@@ -93,7 +93,7 @@
             >
               <el-card class="h-52 w-full p-0 sm:w-80 md:w-96" shadow="hover">
                 <div
-                  class="flex h-full w-full items-center justify-center bg-linear-to-br from-red-100 to-pink-200 dark:from-red-900 dark:to-pink-900"
+                  class="flex h-full w-full items-center justify-center bg-linear-to-br from-red-100 to-pink-200"
                 >
                   <el-icon class="text-8xl text-red-400"
                     ><StarFilled
@@ -102,7 +102,7 @@
 
                 <template #footer
                   ><div
-                    class="bg-linear-to-br from-red-100 to-pink-200 p-2 text-lg font-bold dark:from-red-900 dark:to-pink-900"
+                    class="bg-linear-to-br from-red-100 to-pink-200 p-2 text-lg font-bold"
                   >
                     {{ t("my_favorites") }} —
                     {{ playlistStore.favorites.length }}
