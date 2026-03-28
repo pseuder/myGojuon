@@ -124,6 +124,7 @@
               <el-tag type="info">s - 暫停/開始</el-tag>
               <el-tag type="info">d - 往後3秒</el-tag>
               <el-tag type="info">enter - 紀錄時間</el-tag>
+              <el-tag type="info">f - 清除上一格時間</el-tag>
             </el-space>
           </div>
         </div>
@@ -211,26 +212,29 @@
                     <el-button
                       class="text-sm text-yellow-500"
                       @click="handleDoubleClick(index, lyIndex, ly.ori)"
-                      link
+                      type="text"
                       >推</el-button
                     >
                     <el-button
                       class="text-sm text-blue-500"
                       @click="handleWidthenLyric(index, lyIndex)"
-                      link
+                      type="text"
                     >
+                      寬
                     </el-button>
                     <el-button
                       class="text-sm text-red-500"
                       @click="handleDeleteLyric(index, lyIndex)"
-                      link
+                      type="text"
                     >
+                      刪
                     </el-button>
                     <el-button
                       class="text-sm text-yellow-800"
                       @click="handleAddLyric(index, lyIndex)"
-                      link
+                      type="text"
                     >
+                      加
                     </el-button>
                   </span>
 
@@ -711,6 +715,18 @@ const handleClearTime = () => {
   ElMessage.success("已清空所有時間戳記");
 };
 
+const handleClearPreviousTimestamp = () => {
+  const emptyIndex = allLyrics.value.findIndex((line) => !line.timestamp);
+  let targetIndex;
+  if (emptyIndex === -1) {
+    targetIndex = allLyrics.value.length - 1;
+  } else {
+    targetIndex = emptyIndex - 1;
+  }
+  if (targetIndex < 0) return;
+  allLyrics.value[targetIndex].timestamp = "";
+};
+
 const handleInsert = () => {
   if (!window.player) return;
   const currentTime = window.player.getCurrentTime();
@@ -1066,6 +1082,9 @@ const handleKeyPress = (event) => {
       break;
     case "d":
       handleYTForward(3);
+      break;
+    case "f":
+      handleClearPreviousTimestamp();
       break;
   }
 };
