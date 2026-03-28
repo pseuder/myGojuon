@@ -1,11 +1,11 @@
 <template>
   <div
-    class="flex h-[85vh] flex-col lg:h-[80vh] lg:overflow-hidden"
+    class="mb-20 flex h-full flex-col lg:mb-0 lg:h-[80vh] lg:overflow-hidden"
     id="myElement"
   >
     <div
       v-if="currentVideo"
-      class="flex h-full flex-col gap-4 px-4 py-8 md:flex-row md:px-10 lg:gap-0"
+      class="flex h-full flex-col gap-4 px-4 py-8 md:px-10 lg:flex-row lg:gap-0"
     >
       <!-- 影片播放器+功能列 -->
       <div
@@ -52,7 +52,7 @@
           <div class="flex h-full w-full flex-col items-center gap-2">
             <div class="flex w-full flex-row items-center gap-2">
               <!-- 速度調整 -->
-              <div class="flex flex-1 flex-col gap-1">
+              <div class="flex flex-1 gap-1">
                 <el-input-number
                   v-model="songStore.playbackRate"
                   :precision="1"
@@ -66,7 +66,6 @@
               <!-- 我的最愛 -->
               <el-button
                 circle
-                size="small"
                 :type="
                   authStore.isLoggedIn &&
                   playlistStore.isFavorite(currentVideo.source_id)
@@ -105,11 +104,7 @@
                   }
                 "
               >
-                <el-button
-                  circle
-                  size="small"
-                  :disabled="!authStore.isLoggedIn"
-                >
+                <el-button circle :disabled="!authStore.isLoggedIn">
                   <el-icon><Plus /></el-icon>
                 </el-button>
                 <template #dropdown>
@@ -447,8 +442,6 @@ import {
   Right,
   ArrowLeft,
   ArrowRight,
-  Refresh,
-  Sort,
   Star,
   StarFilled,
   Plus,
