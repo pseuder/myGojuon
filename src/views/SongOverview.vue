@@ -99,11 +99,17 @@
                     ><StarFilled
                   /></el-icon>
                 </div>
+
+                <template #footer
+                  ><div
+                    class="bg-linear-to-br from-red-100 to-pink-200 p-2 text-lg font-bold dark:from-red-900 dark:to-pink-900"
+                  >
+                    {{ t("my_favorites") }} —
+                    {{ playlistStore.favorites.length }}
+                    {{ t("songs") }}
+                  </div></template
+                >
               </el-card>
-              <div class="mt-1 text-lg font-bold">
-                {{ t("my_favorites") }} — {{ playlistStore.favorites.length }}
-                {{ t("songs") }}
-              </div>
             </div>
 
             <!-- 自訂清單 -->
@@ -121,7 +127,7 @@
                   @click="openCustomPlaylist(pl)"
                 >
                   <div
-                    class="flex h-full w-full items-center justify-center bg-linear-to-br from-blue-100 to-indigo-200 dark:from-blue-900 dark:to-indigo-900"
+                    class="flex h-full w-full items-center justify-center bg-linear-to-br from-blue-100 to-indigo-200"
                   >
                     <el-icon class="text-8xl text-blue-400"
                       ><Headset
@@ -146,10 +152,18 @@
                       <el-icon><Delete /></el-icon>
                     </el-button>
                   </div>
+
+                  <template #footer
+                    ><div
+                      class="bg-linear-to-br from-blue-100 to-indigo-200 p-2 text-lg font-bold"
+                    >
+                      {{ pl.name }} — {{ pl.songs.length }} {{ t("songs") }}
+                    </div></template
+                  >
                 </el-card>
-                <div class="mt-1 text-lg font-bold">
+                <!-- <div class="mt-1 text-lg font-bold">
                   {{ pl.name }} — {{ pl.songs.length }} {{ t("songs") }}
-                </div>
+                </div> -->
               </div>
             </template>
 
@@ -321,7 +335,7 @@
         v-model="newPlaylistName"
         :placeholder="t('enter_playlist_name')"
         @keyup.enter="handleCreatePlaylist"
-        maxlength="30"
+        maxlength="50"
         show-word-limit
       />
       <template #footer>
@@ -361,7 +375,7 @@
         v-model="renameInput"
         :placeholder="t('enter_playlist_name')"
         @keyup.enter="handleRenamePlaylist"
-        maxlength="30"
+        maxlength="50"
         show-word-limit
       />
       <template #footer>
@@ -834,6 +848,10 @@ onUnmounted(() => {});
 
 :deep(.el-space__item) {
   width: 100%;
+}
+
+:deep(.el-card__footer) {
+  padding: 0;
 }
 
 @media (min-width: 576px) {

@@ -353,7 +353,7 @@
         v-model="newPlaylistName"
         :placeholder="t('enter_playlist_name')"
         @keyup.enter="handleCreatePlaylist"
-        maxlength="30"
+        maxlength="50"
         show-word-limit
       />
       <template #footer>
