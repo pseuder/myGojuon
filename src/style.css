@@ -57,7 +57,6 @@ canvas {
   cursor: url("/cursors/boom.png"), pointer !important;
 }
 
-.el-tabs,
 .el-menu {
   user-select: none;
 }

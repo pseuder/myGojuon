@@ -36,16 +36,14 @@
           </template>
           <!-- 歌手卡片 -->
           <template v-else v-for="artist in allArtists" :key="artist.artist_id">
-            <div
-              class="flex w-full cursor-pointer flex-col sm:w-fit"
-              @click="handleArtistSelect(artist.artist_id, artist.name)"
-            >
+            <div class="flex w-full cursor-pointer flex-col sm:w-fit">
               <el-card class="h-52 w-full p-0 sm:w-80 md:w-96" shadow="hover">
                 <img
                   :src="`/thumbnails/${artist.name}.jpg`"
                   class="h-full w-full"
                   :alt="artist.name"
                   style="object-fit: cover; object-position: top"
+                  @click="handleArtistSelect(artist.artist_id, artist.name)"
                 />
               </el-card>
               <div class="text-lg font-bold">
@@ -87,13 +85,11 @@
             class="flex w-full flex-1 flex-wrap content-start justify-center gap-4 overflow-y-auto p-2"
           >
             <!-- 我的最愛 (固定第一個) -->
-            <div
-              class="flex w-full cursor-pointer flex-col sm:w-fit"
-              @click="openFavoritesPlaylist"
-            >
+            <div class="flex w-full cursor-pointer flex-col sm:w-fit">
               <el-card class="h-52 w-full p-0 sm:w-80 md:w-96" shadow="hover">
                 <div
                   class="flex h-full w-full items-center justify-center bg-linear-to-br from-red-100 to-pink-200"
+                  @click="openFavoritesPlaylist"
                 >
                   <el-icon class="text-8xl text-red-400"
                     ><StarFilled

@@ -1,5 +1,5 @@
 <template>
-  <el-card class="w-full sm:w-80 p-0 md:w-96" shadow="hover">
+  <el-card class="w-full p-0 sm:w-80 md:w-96" shadow="hover">
     <div class="p-4">
       <a
         :href="url"
@@ -14,14 +14,17 @@
         />
       </a>
 
-      <a
+      <!-- <a
         :href="url"
         target="_blank"
         rel="noopener noreferrer"
         class="mb-2 block w-full truncate text-lg text-blue-400 no-underline hover:text-blue-600 hover:underline"
       >
         {{ video.song_name }} - {{ video.artists }}
-      </a>
+      </a> -->
+      <div class="mb-2 block w-full truncate text-lg text-blue-400">
+        {{ video.song_name }} - {{ video.artists }}
+      </div>
 
       <!-- Video metadata: views and publish date -->
       <div
@@ -41,12 +44,12 @@
 
       <!-- 歌單操作 -->
       <div class="mt-3 flex items-center justify-end gap-2">
-        <div class="grow">
+        <div class="flex grow gap-2">
           <el-tag
             v-for="tag in video.tags?.split(',') ?? []"
             :key="tag"
             :class="{
-              'bg-transparent border-transparent': !video.tags,
+              'border-transparent bg-transparent': !video.tags,
             }"
             type="success"
             >{{ tag }}</el-tag
