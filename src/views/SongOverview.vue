@@ -456,7 +456,11 @@ const selectedPlaylistSongs = computed(() => {
 
 // 輔助函式: 解析路由
 const resolveVideoUrl = (source_id) => {
-  return localePath("/SongPractice/" + source_id);
+  const base = "/SongPractice/" + source_id;
+  if (artistTab.value?.artist_id) {
+    return localePath(base + `?artist_id=${artistTab.value.artist_id}`);
+  }
+  return localePath(base);
 };
 
 // 輔助函式: 解析路由（帶 playlist 上下文，供清單內歌曲使用）

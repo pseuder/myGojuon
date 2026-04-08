@@ -548,7 +548,7 @@ const fetchplaylist = async () => {
   }
 
   try {
-    const params = { artist_id: currentVideo.value?.artist_id || "" };
+    const params = { artist_id: route.query.artist_id || currentVideo.value?.artist_id || "" };
     const res = await MYAPI.get("/get_artist_songs", params);
     playlist.value = res.data;
   } catch (error) {
