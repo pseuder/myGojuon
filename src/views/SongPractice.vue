@@ -568,9 +568,11 @@ const buildSongPath = (sourceId) => {
   const base = localePath(`/SongPractice/${sourceId}`);
   const from = route.query.from;
   const playlistId = route.query.playlist_id;
-  if (from === "favorites") return `${base}?from=favorites`;
+  const artistId = route.query.artist_id;
+  if (from === "favorites") return `${base}?from=favorites${artistId ? `&artist_id=${artistId}` : ""}`;
   if (from === "playlist" && playlistId)
-    return `${base}?from=playlist&playlist_id=${playlistId}`;
+    return `${base}?from=playlist&playlist_id=${playlistId}${artistId ? `&artist_id=${artistId}` : ""}`;
+  if (artistId) return `${base}?artist_id=${artistId}`;
   return base;
 };
 
