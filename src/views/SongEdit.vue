@@ -37,7 +37,18 @@
           />
         </div>
         <div class="flex gap-2">
-          <el-input v-model="tag" class="w-full" placeholder="輸入標籤" />
+          <el-input
+            v-model="tag"
+            class="w-full"
+            placeholder="輸入標籤(用,分隔)"
+          />
+        </div>
+        <div class="flex gap-2">
+          <el-input
+            v-model="formData.remark"
+            class="w-full"
+            placeholder="輸入備註"
+          />
         </div>
 
         <!-- 歌詞操作區 -->
@@ -204,11 +215,19 @@
             <div class="flex w-full flex-wrap items-center gap-2">
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
                 <div
-                  class="flex w-28 flex-col"
+                  class="flex w-40 flex-col"
                   :id="`lyric-cvt-${index}-${lyIndex}`"
                 >
                   <!-- 字元操作按鈕 -->
                   <span class="flex">
+                    <el-button
+                      class="text-sm text-purple-500"
+                      @click="handleAddBracketBefore(index, lyIndex)"
+                      type="text"
+                      title="在前方插入括號組"
+                      >+</el-button
+                    >
+
                     <el-button
                       class="text-sm text-yellow-500"
                       @click="handleDoubleClick(index, lyIndex, ly.ori)"
@@ -236,6 +255,13 @@
                     >
                       加
                     </el-button>
+                    <el-button
+                      class="text-sm text-purple-500"
+                      @click="handleAddBracketAfter(index, lyIndex)"
+                      type="text"
+                      title="在後方插入括號組"
+                      >+</el-button
+                    >
                   </span>
 
                   <!-- 轉換/原文/顏色輸入 -->
@@ -467,6 +493,7 @@ const formData = ref({
   is_public: true,
   original: "",
   converted: "",
+  remark: "",
 });
 
 // ============================================================
@@ -782,6 +809,28 @@ const handleAddLyric = (lyricIndex, lyricLineIndex) => {
   });
 };
 
+const BRACKET_CELLS = () => [
+  { cvt: "", ori: "(", color: "#9B59B6" },
+  { cvt: "", ori: "", color: "#9B59B6" },
+  { cvt: "", ori: ")", color: "#9B59B6" },
+];
+
+const handleAddBracketBefore = (lyricIndex, lyricLineIndex) => {
+  allLyrics.value[lyricIndex].lyrics.splice(
+    lyricLineIndex,
+    0,
+    ...BRACKET_CELLS(),
+  );
+};
+
+const handleAddBracketAfter = (lyricIndex, lyricLineIndex) => {
+  allLyrics.value[lyricIndex].lyrics.splice(
+    lyricLineIndex + 1,
+    0,
+    ...BRACKET_CELLS(),
+  );
+};
+
 const handleWidthenLyric = (lyricIndex, lyricLineIndex) => {
   const el = document.querySelector(
     `#lyric-cvt-${lyricIndex}-${lyricLineIndex}`,
@@ -795,7 +844,7 @@ const handleWidthenLyric = (lyricIndex, lyricLineIndex) => {
 // ============================================================
 // 時間戳操作
 // ============================================================
-const timeDiff = ref("00:00.10");
+const timeDiff = ref("00:00.50");
 
 const msToTimestamp = (totalMs) => {
   const newMinutes = Math.floor(totalMs / (60 * 100));
@@ -1041,8 +1090,9 @@ const loadVideoFromApi = async (videoIdParam) => {
       const data = response.data;
       videoId.value = data.source_id || "";
       videoTitle.value = data.name || "";
-      videoChannel.value = data.artist || "";
+      videoChannel.value = data.artists || "";
       tag.value = data.tags || "";
+      formData.value.remark = data.remark || "";
       originalLyrics.value = data.original || "";
       if (data.converted?.trim()) {
         try {
