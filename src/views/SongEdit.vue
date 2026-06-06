@@ -170,6 +170,9 @@
                 <el-button link plain @click="startVideoOn(line.timestamp)">
                   <el-icon :size="25"><Switch /></el-icon>
                 </el-button>
+                <el-button link plain @click="handleCopyLine(line)">
+                  <el-icon :size="25"><CopyDocument /></el-icon>
+                </el-button>
                 <el-button link plain @click="handleDelete(index)">
                   <el-icon :size="25" color="red"><Delete /></el-icon>
                 </el-button>
@@ -1026,6 +1029,12 @@ const combinedLyric = () =>
 
 const handleCopy = () => {
   navigator.clipboard.writeText(combinedLyric());
+  ElMessage.success("複製成功");
+};
+
+const handleCopyLine = (line) => {
+  const text = `${line.lyrics.map((ly) => ly.ori).join("")}`;
+  navigator.clipboard.writeText(text);
   ElMessage.success("複製成功");
 };
 
