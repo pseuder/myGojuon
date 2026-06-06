@@ -52,7 +52,7 @@
           <div class="flex h-full w-full flex-col items-center gap-2">
             <div class="flex w-full flex-row items-center gap-2">
               <!-- 速度調整 -->
-              <div class="flex flex-1 gap-1">
+              <div class="flex flex-1 items-center gap-1">
                 <el-input-number
                   v-model="songStore.playbackRate"
                   :precision="1"
@@ -61,6 +61,25 @@
                   :min="0.3"
                   @change="changePlaybackRate"
                 />
+
+                <el-tooltip content="上一句" placement="top">
+                  <el-tag type="primary" round> A </el-tag>
+                </el-tooltip>
+                <el-tooltip content="循環本句" placement="top">
+                  <el-tag type="primary" round> S </el-tag>
+                </el-tooltip>
+                <el-tooltip content="下一句" placement="top">
+                  <el-tag type="primary" round> D </el-tag>
+                </el-tooltip>
+                <el-tooltip content="往前3秒" placement="top">
+                  <el-tag type="primary" round> Z </el-tag>
+                </el-tooltip>
+                <el-tooltip content="暫停" placement="top">
+                  <el-tag type="primary" round> X </el-tag>
+                </el-tooltip>
+                <el-tooltip content="往後3秒" placement="top">
+                  <el-tag type="primary" round> C </el-tag>
+                </el-tooltip>
               </div>
 
               <!-- 我的最愛 -->
@@ -947,6 +966,7 @@ const toggleLoopCurrentLyric = () => {
 /*-- 播放器操作（播放、暫停、跳轉、速率） --*/
 const playerRef = ref(null);
 let player = null;
+let lyricIntervalId = null;
 
 const startVideo = (time) => {
   if (player && player.seekTo) {
@@ -1008,6 +1028,10 @@ const initializePlayer = () => {
   }
   if (!playerRef.value) return;
 
+  if (lyricIntervalId) {
+    clearInterval(lyricIntervalId);
+    lyricIntervalId = null;
+  }
   if (player) {
     player.destroy();
     player = null;
@@ -1020,7 +1044,8 @@ const initializePlayer = () => {
     playerVars: { autoplay: 1, playsinline: 1 },
     events: {
       onReady: (event) => {
-        setInterval(updateCurrentLyric, 100);
+        if (lyricIntervalId) clearInterval(lyricIntervalId);
+        lyricIntervalId = setInterval(updateCurrentLyric, 100);
         event.target.setPlaybackRate(songStore.playbackRate);
       },
       onStateChange: (event) => {
@@ -1173,6 +1198,10 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  if (lyricIntervalId) {
+    clearInterval(lyricIntervalId);
+    lyricIntervalId = null;
+  }
   if (player) {
     player.destroy();
     player = null;
