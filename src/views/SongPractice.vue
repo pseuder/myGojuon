@@ -44,7 +44,7 @@
         <!-- 功能列 -->
         <div class="mt-2 flex shrink-0 flex-col gap-2">
           <el-alert v-if="currentVideo.remark" type="success">
-            <p class="w-[88%] wrap-break-word">
+            <p class="wrap-break-word">
               {{ currentVideo.remark }}
             </p>
           </el-alert>
