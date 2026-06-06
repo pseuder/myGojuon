@@ -215,7 +215,7 @@
             <div class="flex w-full flex-wrap items-center gap-2">
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
                 <div
-                  class="flex w-40 flex-col"
+                  class="flex w-56 flex-col"
                   :id="`lyric-cvt-${index}-${lyIndex}`"
                 >
                   <!-- 字元操作按鈕 -->
