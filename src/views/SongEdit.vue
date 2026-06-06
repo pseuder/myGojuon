@@ -264,13 +264,14 @@
                     >
                   </span>
 
-                  <!-- 轉換/原文/顏色輸入 -->
+                  <!-- 平假名 -->
                   <input
                     v-model="ly.cvt"
                     class="lyric-cvt h-6 w-full rounded border border-gray-300 px-1"
                     placeholder=""
                   />
 
+                  <!-- 原始歌詞 -->
                   <el-popover
                     placement="bottom"
                     title="推薦假名"
@@ -304,9 +305,17 @@
                     </div>
                   </el-popover>
 
+                  <!-- 顏色 -->
                   <input
                     v-model="ly.color"
                     class="lyric-cvt h-6 w-full rounded border border-gray-300 px-1"
+                    placeholder=""
+                  />
+
+                  <!-- 意思 -->
+                  <input
+                    v-model="ly.meaning"
+                    class="lyric-meaning h-6 w-full rounded border border-gray-300 px-1"
                     placeholder=""
                   />
 
@@ -782,7 +791,7 @@ const handleDelete = (index) => {
 const handleAddNewLyricLine = (index) => {
   allLyrics.value.splice(index + 1, 0, {
     timestamp: "",
-    lyrics: [{ cvt: "", ori: "", color: "" }],
+    lyrics: [{ cvt: "", ori: "", color: "", meaning: "" }],
   });
 };
 
@@ -806,13 +815,14 @@ const handleAddLyric = (lyricIndex, lyricLineIndex) => {
     cvt: "",
     ori: "",
     color: "",
+    meaning: "",
   });
 };
 
 const BRACKET_CELLS = () => [
-  { cvt: "", ori: "(", color: "#9B59B6" },
-  { cvt: "", ori: "", color: "#9B59B6" },
-  { cvt: "", ori: ")", color: "#9B59B6" },
+  { cvt: "", ori: "(", color: "#9B59B6", meaning: "" },
+  { cvt: "", ori: "", color: "#9B59B6", meaning: "" },
+  { cvt: "", ori: ")", color: "#9B59B6", meaning: "" },
 ];
 
 const handleAddBracketBefore = (lyricIndex, lyricLineIndex) => {
@@ -989,6 +999,14 @@ const applyColor = () => {
 const customStringify = (obj) =>
   JSON.stringify(obj, null, 2)
     .replace(
+      /{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)",\s*"color":\s*"([^"]*)",\s*"meaning":\s*"([^"]*)"\s*}/g,
+      '{"cvt": "$1","ori": "$2","color": "$3","meaning": "$4"}',
+    )
+    .replace(
+      /{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)",\s*"meaning":\s*"([^"]*)"\s*}/g,
+      '{"cvt": "$1","ori": "$2","meaning": "$3"}',
+    )
+    .replace(
       /{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)",\s*"color":\s*"([^"]*)"\s*}/g,
       '{"cvt": "$1","ori": "$2","color": "$3"}',
     )
@@ -1016,11 +1034,12 @@ const handleCopyHiragana = () => {
     .filter((line) => line.lyrics.length > 0)
     .map((line) => ({
       timestamp: line.timestamp,
-      lyrics: line.lyrics.map((ly) =>
-        ly.color
-          ? { cvt: ly.cvt, ori: ly.ori, color: ly.color }
-          : { cvt: ly.cvt, ori: ly.ori },
-      ),
+      lyrics: line.lyrics.map((ly) => {
+        const item = { cvt: ly.cvt, ori: ly.ori };
+        if (ly.color) item.color = ly.color;
+        if (ly.meaning) item.meaning = ly.meaning;
+        return item;
+      }),
     }));
   navigator.clipboard.writeText(customStringify(result));
   ElMessage.success("複製成功");
@@ -1213,6 +1232,9 @@ onUnmounted(() => {
 }
 .lyric-ori {
   background-color: cadetblue;
+}
+.lyric-meaning {
+  background-color: whitesmoke;
 }
 
 input {
