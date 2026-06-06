@@ -187,20 +187,26 @@
             </div>
             <div class="flex flex-wrap gap-2">
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
-                <div class="flex flex-col items-center justify-center">
-                  <div
-                    class="h-3 text-sm"
-                    :style="ly.color ? { color: ly.color } : {}"
-                  >
-                    {{ songStore.display_mode === "both" ? ly.cvt : "" }}
+                <el-tooltip
+                  :content="ly.meaning"
+                  :disabled="!ly.meaning"
+                  placement="bottom"
+                >
+                  <div class="flex flex-col items-center justify-center">
+                    <div
+                      class="h-3 text-sm"
+                      :style="ly.color ? { color: ly.color } : {}"
+                    >
+                      {{ songStore.display_mode === "both" ? ly.cvt : "" }}
+                    </div>
+                    <div
+                      class="text-xl"
+                      :style="ly.color ? { color: ly.color } : {}"
+                    >
+                      {{ ly.ori }}
+                    </div>
                   </div>
-                  <div
-                    class="text-xl"
-                    :style="ly.color ? { color: ly.color } : {}"
-                  >
-                    {{ ly.ori }}
-                  </div>
-                </div>
+                </el-tooltip>
               </template>
             </div>
           </div>
