@@ -152,7 +152,7 @@
       <!-- 可拖動分隔線 (只在寬螢幕顯示) -->
       <div
         v-if="!isMobile"
-        class="mr-1 ml-1 hidden w-1 shrink-0 cursor-col-resize items-center justify-center bg-gray-200 transition-colors lg:flex"
+        class="mr-1 ml-1 hidden w-1 shrink-0 cursor-col-resize items-center justify-center bg-gray-200 transition-colors hover:bg-blue-500 lg:flex"
         @mousedown="startResize"
       ></div>
 
@@ -189,11 +189,11 @@
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
                 <el-tooltip
                   :content="ly.meaning"
-                  :disabled="!ly.meaning"
+                  :disabled="true"
                   placement="bottom"
                 >
                   <div
-                    class="flex flex-col items-center justify-center rounded hover:text-blue-400"
+                    class="flex flex-col items-center justify-center rounded"
                   >
                     <div
                       class="h-3 text-sm"
