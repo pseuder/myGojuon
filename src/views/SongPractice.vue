@@ -192,7 +192,9 @@
                   :disabled="!ly.meaning"
                   placement="bottom"
                 >
-                  <div class="flex flex-col items-center justify-center">
+                  <div
+                    class="flex flex-col items-center justify-center rounded hover:text-blue-400"
+                  >
                     <div
                       class="h-3 text-sm"
                       :style="ly.color ? { color: ly.color } : {}"
@@ -554,7 +556,9 @@ const fetchplaylist = async () => {
   }
 
   try {
-    const params = { artist_id: route.query.artist_id || currentVideo.value?.artist_id || "" };
+    const params = {
+      artist_id: route.query.artist_id || currentVideo.value?.artist_id || "",
+    };
     const res = await MYAPI.get("/get_artist_songs", params);
     playlist.value = res.data;
   } catch (error) {
@@ -575,7 +579,8 @@ const buildSongPath = (sourceId) => {
   const from = route.query.from;
   const playlistId = route.query.playlist_id;
   const artistId = route.query.artist_id;
-  if (from === "favorites") return `${base}?from=favorites${artistId ? `&artist_id=${artistId}` : ""}`;
+  if (from === "favorites")
+    return `${base}?from=favorites${artistId ? `&artist_id=${artistId}` : ""}`;
   if (from === "playlist" && playlistId)
     return `${base}?from=playlist&playlist_id=${playlistId}${artistId ? `&artist_id=${artistId}` : ""}`;
   if (artistId) return `${base}?artist_id=${artistId}`;
