@@ -17,10 +17,10 @@ export default async function handler(req, res) {
     const { source_id } = req.query;
 
     try {
-        const json = await fetch(
-            `https://pseuder.com/srv_mygojuon3/get_song/${source_id}`
-        ).then(r => r.json());
-
+        const r = await fetch(`https://pseuder.com/srv_mygojuon3/get_song/${source_id}`);
+        console.log('fetch ok, http status:', r.status);
+        const json = await r.json();
+        console.log('api status field:', json.status);
         // 後端找不到歌或回非 success → 退回空殼
         if (json.status !== 'success' || !json.data) {
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -56,6 +56,7 @@ export default async function handler(req, res) {
         res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=3600');
         res.send(html);
     } catch (e) {
+        console.log('CATCH ERROR:', e.message, e.cause);
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(baseHtml);
     }
