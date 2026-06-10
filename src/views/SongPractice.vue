@@ -71,7 +71,7 @@
                 <el-tooltip content="下一句" placement="top">
                   <el-tag type="primary" round> D </el-tag>
                 </el-tooltip>
-                <el-tooltip content="往前3秒" placement="top">
+                <!-- <el-tooltip content="往前3秒" placement="top">
                   <el-tag type="primary" round> Z </el-tag>
                 </el-tooltip>
                 <el-tooltip content="暫停" placement="top">
@@ -79,7 +79,7 @@
                 </el-tooltip>
                 <el-tooltip content="往後3秒" placement="top">
                   <el-tag type="primary" round> C </el-tag>
-                </el-tooltip>
+                </el-tooltip> -->
               </div>
 
               <!-- 我的最愛 -->
