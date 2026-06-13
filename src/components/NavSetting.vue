@@ -62,7 +62,7 @@
                   : 'border-gray-200'
               "
               :title="theme.label"
-              @click="settingsStore.cursorTheme = theme.value"
+              @click="handleCursorThemeChange(theme.value)"
             >
               <img
                 :src="`/cursors/${theme.value}/default.png`"
@@ -135,6 +135,9 @@ import myGoogleLogin from "@/components/myGoogleLogin.vue";
 import { useSettingsStore } from "@/stores/index.js";
 const settingsStore = useSettingsStore();
 
+import { useApi } from "@/composables/useApi.js";
+const MYAPI = useApi();
+
 import { ElMessageBox } from "element-plus";
 
 import { useI18n } from "vue-i18n";
@@ -153,6 +156,11 @@ const cursorThemes = [
 
 watch(locale, (newValue) => {
   settingsStore.language = newValue;
+  MYAPI.post("/activity_log", {
+    c1: "setting",
+    c2: "language_change",
+    c3: newValue,
+  });
   // handleLocaleChange();
 });
 
@@ -171,12 +179,32 @@ const handleLocaleChange = () => {
 const handleTextfallChange = (newValue) => {
   settingsStore.textfall = newValue;
 };
+
+// Event: 切換鼠標樣式
+const handleCursorThemeChange = (themeValue) => {
+  settingsStore.cursorTheme = themeValue;
+  MYAPI.post("/activity_log", {
+    c1: "setting",
+    c2: "cursor_change",
+    c3: themeValue,
+  });
+};
+
 const handleResetWebsite = () => {
   ElMessageBox.confirm(t("reset_preference_confirm"), t("reset_preference"), {
     confirmButtonText: t("confirm"),
     cancelButtonText: t("cancel"),
     type: "warning",
-  }).then(() => {
+  }).then(async () => {
+    try {
+      await MYAPI.post("/activity_log", {
+        c1: "setting",
+        c2: "reset_preference",
+        c3: "",
+      });
+    } catch (error) {
+      console.error(error);
+    }
     localStorage.clear();
     location.reload(true);
   });
