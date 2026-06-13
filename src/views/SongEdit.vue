@@ -316,11 +316,11 @@
                   />
 
                   <!-- 意思 -->
-                  <input
+                  <!-- <input
                     v-model="ly.meaning"
                     class="lyric-meaning h-6 w-full rounded border border-gray-300 px-1"
                     placeholder=""
-                  />
+                  /> -->
 
                   <!-- 顏色控制 -->
                   <div class="mt-1 flex items-center gap-1">
