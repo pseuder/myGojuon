@@ -1,0 +1,28 @@
+/* LINE Seed 字體
+ * 依字元的 Unicode 範圍自動切換對應語系字型檔，
+ * 讓中、日、英文字元都能套用最適合的 LINE Seed 樣式。
+ * 目前僅保留 Rgin 100 字重。
+ */
+
+/* Rgin 100 */
+@font-face {
+  font-family: "LINE Seed";
+  src: url("/fonts/LINESeedSans_W_Rg.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "LINE Seed";
+  src: url("/fonts/LINESeedJP_OTF_Rg.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "LINE Seed";
+  src: url("/fonts/LINESeedTW_OTF_Rg.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}

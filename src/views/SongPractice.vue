@@ -211,7 +211,7 @@
                   placement="bottom"
                 >
                   <div
-                    class="flex flex-col items-center justify-center rounded"
+                    class="flex flex-col items-center justify-center gap-1 rounded"
                   >
                     <div
                       class="h-3 text-sm"

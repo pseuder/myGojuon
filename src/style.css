@@ -1,4 +1,5 @@
 @import "element-plus/dist/index.css";
+@import "./fonts.css";
 
 @import "tailwindcss/preflight";
 @tailwind utilities;
@@ -14,7 +15,8 @@ html,
   touch-action: manipulation;
   -webkit-touch-callout: none;
   overflow: hidden;
-  cursor: url("/cursors/default.png"), auto;
+  cursor: url("/cursors/reze/default.png"), auto;
+  font-family: "LINE Seed", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 a,
@@ -29,24 +31,24 @@ button,
 .el-checkbox__input,
 .el-select__wrapper,
 .el-switch__core {
-  cursor: url("/cursors/cross.png"), pointer !important;
+  cursor: url("/cursors/reze/cross.png"), pointer !important;
 }
 
 .cursor-pointer,
 .hover\:cursor-pointer:hover {
-  cursor: url("/cursors/cross.png"), pointer !important;
+  cursor: url("/cursors/reze/cross.png"), pointer !important;
 }
 
 .el-button.is-disabled {
-  cursor: url("/cursors/not-allowed.png"), not-allowed !important;
+  cursor: url("/cursors/reze/not-allowed.png"), not-allowed !important;
 }
 
 canvas {
-  cursor: url("/cursors/crosshair.png"), crosshair !important;
+  cursor: url("/cursors/reze/crosshair.png"), crosshair !important;
 }
 
 #pen-info {
-  cursor: url("/cursors/help.png"), help !important;
+  cursor: url("/cursors/reze/help.png"), help !important;
   color: blueviolet;
   font-weight: bold;
   font-size: 22px;
@@ -54,7 +56,7 @@ canvas {
 }
 
 #ai-recognition-button {
-  cursor: url("/cursors/pointer.png"), pointer !important;
+  cursor: url("/cursors/reze/pointer.png"), pointer !important;
 }
 
 .el-menu {
