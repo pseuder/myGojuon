@@ -62,24 +62,23 @@
                   @change="changePlaybackRate"
                 />
 
-                <el-tooltip content="上一句" placement="top">
-                  <el-tag type="primary" round> A </el-tag>
+                <el-tooltip placement="top">
+                  <template #content>
+                    <div style="white-space: pre-wrap">
+                      {{ t("keyboard_shortcuts_hint") }}
+                    </div>
+                  </template>
+                  <el-tag type="primary" round>{{
+                    t("keyboard_shortcuts")
+                  }}</el-tag>
                 </el-tooltip>
-                <el-tooltip content="循環本句" placement="top">
-                  <el-tag type="primary" round> S </el-tag>
+
+                <el-tooltip
+                  :content="t('click_kana_to_play_sound')"
+                  placement="top"
+                >
+                  <el-tag type="warning" round> Beta </el-tag>
                 </el-tooltip>
-                <el-tooltip content="下一句" placement="top">
-                  <el-tag type="primary" round> D </el-tag>
-                </el-tooltip>
-                <!-- <el-tooltip content="往前3秒" placement="top">
-                  <el-tag type="primary" round> Z </el-tag>
-                </el-tooltip>
-                <el-tooltip content="暫停" placement="top">
-                  <el-tag type="primary" round> X </el-tag>
-                </el-tooltip>
-                <el-tooltip content="往後3秒" placement="top">
-                  <el-tag type="primary" round> C </el-tag>
-                </el-tooltip> -->
               </div>
 
               <!-- 我的最愛 -->
