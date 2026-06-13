@@ -40,7 +40,14 @@
   --cursor-not-allowed: url("/cursors/lucy/not-allowed.png");
   --cursor-pointer: url("/cursors/lucy/pointer.png");
 }
-
+:root[data-cursor-theme="zutomayo"] {
+  --cursor-default: url("/cursors/zutomayo/default.png");
+  --cursor-cross: url("/cursors/zutomayo/cross.png");
+  --cursor-crosshair: url("/cursors/zutomayo/crosshair.png");
+  --cursor-help: url("/cursors/zutomayo/help.png");
+  --cursor-not-allowed: url("/cursors/zutomayo/not-allowed.png");
+  --cursor-pointer: url("/cursors/zutomayo/pointer.png");
+}
 body,
 html,
 #app {

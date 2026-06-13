@@ -148,6 +148,7 @@ const cursorThemes = [
   { value: "doro", label: "Doro" },
   { value: "rana", label: "Rana" },
   { value: "lucy", label: "Lucy" },
+  { value: "zutomayo", label: "Zutomayo" },
 ];
 
 watch(locale, (newValue) => {
