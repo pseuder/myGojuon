@@ -187,7 +187,7 @@
       >
         <div class="">
           <div
-            v-for="(line, index) in lyrics"
+            v-for="(line, index) in processedLyrics"
             :key="index"
             :id="`lyric-${index}`"
             :class="{ 'bg-yellow-200': currentLyricIndex === index }"
@@ -204,7 +204,7 @@
                 <Right />
               </el-icon>
             </div>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-1">
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
                 <el-tooltip
                   :content="ly.meaning"
@@ -218,13 +218,33 @@
                       class="h-3 text-sm"
                       :style="ly.color ? { color: ly.color } : {}"
                     >
-                      {{ songStore.display_mode === "both" ? ly.cvt : "" }}
+                      <template v-if="songStore.display_mode === 'both'">
+                        <template v-if="ly.cvtUnits">
+                          <span
+                            v-for="(unit, uIndex) in ly.cvtUnits"
+                            :key="uIndex"
+                            :class="{ 'kana-clickable': unit.file }"
+                            @click="unit.file && playKana(unit.text)"
+                            >{{ unit.text }}</span
+                          >
+                        </template>
+                        <template v-else>{{ ly.cvt }}</template>
+                      </template>
                     </div>
                     <div
                       class="text-xl"
                       :style="ly.color ? { color: ly.color } : {}"
                     >
-                      {{ ly.ori }}
+                      <template v-if="ly.oriUnits">
+                        <span
+                          v-for="(unit, uIndex) in ly.oriUnits"
+                          :key="uIndex"
+                          :class="{ 'kana-clickable': unit.file }"
+                          @click="unit.file && playKana(unit.text)"
+                          >{{ unit.text }}</span
+                        >
+                      </template>
+                      <template v-else>{{ ly.ori }}</template>
                     </div>
                   </div>
                 </el-tooltip>
@@ -479,6 +499,7 @@ import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
 import { useApi } from "@/composables/useApi.js";
+import { useKanaAudio, splitKanaUnits } from "@/composables/useKanaAudio.js";
 
 /*-- store --*/
 import {
@@ -524,6 +545,27 @@ const lyrics = computed(() => {
   }
   return [];
 });
+
+/*-- 點擊假名發音（逐字播放） --*/
+const { playKana } = useKanaAudio();
+
+// 將歌詞拆解為逐字可點擊發音單元：優先使用注音(cvt)，若無對應發音則嘗試原文(ori)
+const processedLyrics = computed(() =>
+  lyrics.value.map((line) => ({
+    ...line,
+    lyrics: line.lyrics.map((ly) => {
+      const cvtUnits = splitKanaUnits(ly.cvt);
+      const hasCvtAudio = cvtUnits.some((unit) => unit.file);
+      const oriUnits = hasCvtAudio ? null : splitKanaUnits(ly.ori);
+      const hasOriAudio = oriUnits?.some((unit) => unit.file);
+      return {
+        ...ly,
+        cvtUnits: hasCvtAudio ? cvtUnits : null,
+        oriUnits: hasOriAudio ? oriUnits : null,
+      };
+    }),
+  })),
+);
 
 const fetchVideoData = async (id) => {
   if (!id) return;
@@ -1241,6 +1283,17 @@ onUnmounted(() => {
   100% {
     background-position: 0% 50%;
   }
+}
+
+/* 點擊發音的假名單元 */
+.kana-clickable {
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background-color 0.15s ease;
+}
+
+.kana-clickable:hover {
+  background-color: rgba(64, 158, 255, 0.2);
 }
 
 /* 防止拖動時選取文字 */

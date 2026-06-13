@@ -54,7 +54,7 @@ canvas {
 }
 
 #ai-recognition-button {
-  cursor: url("/cursors/boom.png"), pointer !important;
+  cursor: url("/cursors/pointer.png"), pointer !important;
 }
 
 .el-menu {
