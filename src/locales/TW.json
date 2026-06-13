@@ -111,6 +111,7 @@
   "error_loading_data": "載入資料時發生錯誤",
   "text_waterfall": "文字瀑布",
   "language": "語言",
+  "cursor_style": "鼠標樣式",
   "reset_website": "重置網站",
   "reset_preference": "重置偏好紀錄",
   "reset_preference_confirm": "重置偏好紀錄只會將網站初始化，不會刪除既有的點數與歌單。",

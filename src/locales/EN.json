@@ -111,6 +111,7 @@
   "error_loading_data": "Error loading data",
   "text_waterfall": "Textfall",
   "language": "Language",
+  "cursor_style": "Cursor Style",
   "reset_website": "Reset Website",
   "reset_preference": "Reset Preference",
   "reset_preference_confirm": "Resetting preference history will only initialize the website; it will not delete existing points or playlists.",

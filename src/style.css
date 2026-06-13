@@ -6,6 +6,41 @@
 
 @reference "tailwindcss";
 
+:root {
+  --cursor-default: url("/cursors/doro/default.png");
+  --cursor-cross: url("/cursors/doro/cross.png");
+  --cursor-crosshair: url("/cursors/doro/crosshair.png");
+  --cursor-help: url("/cursors/doro/help.png");
+  --cursor-not-allowed: url("/cursors/doro/not-allowed.png");
+  --cursor-pointer: url("/cursors/doro/pointer.png");
+}
+
+:root[data-cursor-theme="reze"] {
+  --cursor-default: url("/cursors/reze/default.png");
+  --cursor-cross: url("/cursors/reze/cross.png");
+  --cursor-crosshair: url("/cursors/reze/crosshair.png");
+  --cursor-help: url("/cursors/reze/help.png");
+  --cursor-not-allowed: url("/cursors/reze/not-allowed.png");
+  --cursor-pointer: url("/cursors/reze/pointer.png");
+}
+
+:root[data-cursor-theme="rana"] {
+  --cursor-default: url("/cursors/rana/default.png");
+  --cursor-cross: url("/cursors/rana/cross.png");
+  --cursor-crosshair: url("/cursors/rana/crosshair.png");
+  --cursor-help: url("/cursors/rana/help.png");
+  --cursor-not-allowed: url("/cursors/rana/not-allowed.png");
+  --cursor-pointer: url("/cursors/rana/pointer.png");
+}
+:root[data-cursor-theme="lucy"] {
+  --cursor-default: url("/cursors/lucy/default.png");
+  --cursor-cross: url("/cursors/lucy/cross.png");
+  --cursor-crosshair: url("/cursors/lucy/crosshair.png");
+  --cursor-help: url("/cursors/lucy/help.png");
+  --cursor-not-allowed: url("/cursors/lucy/not-allowed.png");
+  --cursor-pointer: url("/cursors/lucy/pointer.png");
+}
+
 body,
 html,
 #app {
@@ -15,7 +50,7 @@ html,
   touch-action: manipulation;
   -webkit-touch-callout: none;
   overflow: hidden;
-  cursor: url("/cursors/reze/default.png"), auto;
+  cursor: var(--cursor-default), auto;
   font-family: "LINE Seed", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -31,24 +66,25 @@ button,
 .el-checkbox__input,
 .el-select__wrapper,
 .el-switch__core {
-  cursor: url("/cursors/reze/cross.png"), pointer !important;
+  cursor: var(--cursor-cross), pointer !important;
 }
 
 .cursor-pointer,
-.hover\:cursor-pointer:hover {
-  cursor: url("/cursors/reze/cross.png"), pointer !important;
+.hover\:cursor-pointer:hover,
+.kana-clickable:hover {
+  cursor: var(--cursor-cross), pointer !important;
 }
 
 .el-button.is-disabled {
-  cursor: url("/cursors/reze/not-allowed.png"), not-allowed !important;
+  cursor: var(--cursor-not-allowed), not-allowed !important;
 }
 
 canvas {
-  cursor: url("/cursors/reze/crosshair.png"), crosshair !important;
+  cursor: var(--cursor-crosshair), crosshair !important;
 }
 
 #pen-info {
-  cursor: url("/cursors/reze/help.png"), help !important;
+  cursor: var(--cursor-help), help !important;
   color: blueviolet;
   font-weight: bold;
   font-size: 22px;
@@ -56,7 +92,7 @@ canvas {
 }
 
 #ai-recognition-button {
-  cursor: url("/cursors/reze/pointer.png"), pointer !important;
+  cursor: var(--cursor-pointer), pointer !important;
 }
 
 .el-menu {

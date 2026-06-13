@@ -2,7 +2,7 @@
   <ContactForm :visible="showContactForm" @close="showContactForm = false" />
 
   <el-popover placement="bottom" :width="233" trigger="hover">
-    <div class="flex flex-col gap-2 h-fit">
+    <div class="flex h-fit flex-col gap-2">
       <myGoogleLogin />
     </div>
     <template #reference>
@@ -21,7 +21,7 @@
     <div class="flex flex-col gap-2">
       <!-- 切換語言 -->
       <div class="flex items-center gap-2">
-        <span class="text-sm shrink-0 w-[88px]">{{ t("language") }}</span>
+        <span class="w-[88px] shrink-0 text-sm">{{ t("language") }}</span>
         <el-switch
           v-model="locale"
           style="
@@ -44,6 +44,33 @@
             <span class="custom-inactive-action"></span>
           </template>
         </el-switch>
+      </div>
+
+      <!-- 鼠標樣式 -->
+      <div class="items-center gap-2">
+        <span class="w-[88px] shrink-0 text-sm">{{ t("cursor_style") }}</span>
+        <div class="gap-2">
+          <el-space wrap>
+            <button
+              v-for="theme in cursorThemes"
+              :key="theme.value"
+              type="button"
+              class="flex flex-1 items-center justify-center rounded border p-1 transition-colors"
+              :class="
+                settingsStore.cursorTheme === theme.value
+                  ? 'border-[#13ce66]'
+                  : 'border-gray-200'
+              "
+              :title="theme.label"
+              @click="settingsStore.cursorTheme = theme.value"
+            >
+              <img
+                :src="`/cursors/${theme.value}/default.png`"
+                class="h-6 w-6 object-contain"
+              />
+            </button>
+          </el-space>
+        </div>
       </div>
 
       <!-- 文字瀑布 -->
@@ -115,6 +142,13 @@ const { t, locale } = useI18n();
 
 const showContactForm = ref(false);
 const showFloatingButton = ref(true);
+
+const cursorThemes = [
+  { value: "reze", label: "Reze" },
+  { value: "doro", label: "Doro" },
+  { value: "rana", label: "Rana" },
+  { value: "lucy", label: "Lucy" },
+];
 
 watch(locale, (newValue) => {
   settingsStore.language = newValue;

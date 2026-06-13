@@ -23,7 +23,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, toRef } from "vue";
+import { ref, computed, onMounted, watch, toRef } from "vue";
 import { useRoute } from "vue-router";
 import NavBar from "@/components/NavBar.vue";
 
@@ -49,6 +49,15 @@ const isWideLayout = computed(
 );
 
 const isSongLayout = computed(() => route.path.includes("/SongPractice"));
+
+/*-- 鼠標樣式 --*/
+watch(
+  () => settingsStore.cursorTheme,
+  (theme) => {
+    document.documentElement.dataset.cursorTheme = theme;
+  },
+  { immediate: true },
+);
 
 onMounted(() => {
   authStore.fetchFreePredictTimes();

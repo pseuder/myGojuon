@@ -8,10 +8,12 @@ export const useSettingsStore = defineStore(
     // --- State ---
     const language = ref("zh-TW");
     const textfall = ref(false);
+    const cursorTheme = ref("reze");
 
     return {
       language,
       textfall,
+      cursorTheme,
     };
   },
   {
