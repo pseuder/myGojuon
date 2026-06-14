@@ -598,6 +598,64 @@ const processedLyrics = computed(() =>
   })),
 );
 
+/*-- 結構化資料 (JSON-LD)：注入 MusicRecording / VideoObject 資訊，協助搜尋引擎理解內容 --*/
+const STRUCTURED_DATA_ID = "song-structured-data";
+
+const plainLyricsText = computed(() =>
+  lyrics.value
+    .map((line) => line.lyrics.map((ly) => ly.ori).join(""))
+    .join("\n"),
+);
+
+watch(
+  currentVideo,
+  (video) => {
+    if (!video) return;
+
+    let script = document.getElementById(STRUCTURED_DATA_ID);
+    if (!script) {
+      script = document.createElement("script");
+      script.id = STRUCTURED_DATA_ID;
+      script.type = "application/ld+json";
+      document.head.appendChild(script);
+    }
+
+    const artists =
+      video.artists
+        ?.split(",")
+        .map((a) => a.trim())
+        .filter(Boolean) ?? [];
+
+    script.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "MusicRecording",
+      name: video.name,
+      url: window.location.href,
+      image: `https://i.ytimg.com/vi/${video.source_id}/hqdefault.jpg`,
+      byArtist: artists.length
+        ? artists.map((name) => ({ "@type": "MusicGroup", name }))
+        : undefined,
+      genre: ["J-Pop"],
+      lyrics: plainLyricsText.value
+        ? {
+            "@type": "CreativeWork",
+            text: plainLyricsText.value,
+            inLanguage: "ja",
+          }
+        : undefined,
+      video: {
+        "@type": "VideoObject",
+        name: `${video.name} - ${video.artists}`,
+        description: video.remark || `${video.name} - ${video.artists}`,
+        embedUrl: `https://www.youtube.com/embed/${video.source_id}`,
+        thumbnailUrl: `https://i.ytimg.com/vi/${video.source_id}/hqdefault.jpg`,
+        uploadDate: `${video.update_time}`.slice(0, 10),
+      },
+    });
+  },
+  { immediate: true },
+);
+
 const fetchVideoData = async (id) => {
   if (!id) return;
   try {
@@ -1286,6 +1344,7 @@ onUnmounted(() => {
   document.removeEventListener("mousemove", onResize);
   document.removeEventListener("mouseup", stopResize);
   window.onYouTubeIframeAPIReady = null;
+  document.getElementById(STRUCTURED_DATA_ID)?.remove();
 });
 </script>
 
