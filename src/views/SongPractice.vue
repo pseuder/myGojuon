@@ -223,7 +223,7 @@
                             v-for="(unit, uIndex) in ly.cvtUnits"
                             :key="uIndex"
                             :class="{ 'kana-clickable': unit.file }"
-                            @click="unit.file && playKana(unit.text)"
+                            @click="handleKanaClick(unit)"
                             >{{ unit.text }}</span
                           >
                         </template>
@@ -239,7 +239,7 @@
                           v-for="(unit, uIndex) in ly.oriUnits"
                           :key="uIndex"
                           :class="{ 'kana-clickable': unit.file }"
-                          @click="unit.file && playKana(unit.text)"
+                          @click="handleKanaClick(unit)"
                           >{{ unit.text }}</span
                         >
                       </template>
@@ -547,6 +547,17 @@ const lyrics = computed(() => {
 
 /*-- 點擊假名發音（逐字播放） --*/
 const { playKana } = useKanaAudio();
+
+// 點擊假名單元播放發音並記錄活動
+const handleKanaClick = (unit) => {
+  if (!unit.file) return;
+  playKana(unit.text);
+  MYAPI.post("/activity_log", {
+    c1: "song",
+    c2: "play_kana",
+    c3: unit.text,
+  });
+};
 
 // 將歌詞拆解為逐字可點擊發音單元：優先使用注音(cvt)，若無對應發音則嘗試原文(ori)
 const processedLyrics = computed(() =>
