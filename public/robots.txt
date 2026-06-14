@@ -1,2 +1,4 @@
 User-Agent: *
 Disallow:
+
+Sitemap: https://mygojuon.vercel.app/sitemap.xml
