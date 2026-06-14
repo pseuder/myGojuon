@@ -649,7 +649,7 @@ watch(
         description: video.remark || `${video.name} - ${video.artists}`,
         embedUrl: `https://www.youtube.com/embed/${video.source_id}`,
         thumbnailUrl: `https://i.ytimg.com/vi/${video.source_id}/hqdefault.jpg`,
-        uploadDate: `${video.update_time}`.slice(0, 10),
+        uploadDate: `${video.update_time}`.replace(" ", "T") + "+08:00",
       },
     });
   },
