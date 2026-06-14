@@ -127,6 +127,7 @@
             @change="changePlaybackRate(playbackRate)"
           />
           <el-checkbox v-model="formData.is_public">publish</el-checkbox>
+          <el-button @click="handleGoToPractice">GO</el-button>
         </div>
 
         <!-- 影片播放器 -->
@@ -575,6 +576,11 @@ const handleReloadYT = () => {
   }
 };
 
+const handleGoToPractice = () => {
+  if (!videoId.value) return ElMessage.error("請先載入影片");
+  window.open(`/SongPractice/${videoId.value}`, "_blank");
+};
+
 const handleYTBack = (seconds) => {
   if (player) player.seekTo(player.getCurrentTime() - seconds, true);
 };
@@ -754,20 +760,6 @@ const convertedLyricsDialogSubmit = () => {
 // ============================================================
 const handleRefineLyrics = async () => {
   if (allLyrics.value.length === 0) return ElMessage.error("請先添加歌詞");
-
-  try {
-    await ElMessageBox.confirm(
-      "確定要使用 AI 校正目前的轉換歌詞嗎？校正結果將會覆蓋現有的轉換歌詞。",
-      "提示",
-      {
-        confirmButtonText: "確定",
-        cancelButtonText: "取消",
-        type: "warning",
-      },
-    );
-  } catch {
-    return;
-  }
 
   lyricsLoading.value = true;
   try {
