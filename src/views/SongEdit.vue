@@ -13,14 +13,13 @@
         <div class="flex">
           <el-input v-model="videoId" class="w-full" placeholder="輸入YT ID" />
           <el-button type="primary" plain @click="handleReloadYT"
-            >載入影片</el-button
+            >載入</el-button
           >
-          <el-button type="primary" @click="openSearchDialog"
-            >搜尋影片</el-button
-          >
+          <el-button type="primary" @click="openSearchDialog">搜尋</el-button>
           <el-button class="grow" type="success" @click="handlePublishSong"
-            >發布歌曲</el-button
+            >發布</el-button
           >
+          <el-button type="info" @click="handleGoToPractice">GO</el-button>
         </div>
         <div class="flex gap-2">
           <el-input
@@ -127,7 +126,6 @@
             @change="changePlaybackRate(playbackRate)"
           />
           <el-checkbox v-model="formData.is_public">publish</el-checkbox>
-          <el-button @click="handleGoToPractice">GO</el-button>
         </div>
 
         <!-- 影片播放器 -->
