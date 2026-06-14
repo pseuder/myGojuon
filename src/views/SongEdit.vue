@@ -90,6 +90,15 @@
             >複製轉換歌詞</el-button
           >
         </div>
+        <div class="flex gap-2">
+          <el-button
+            class="flex-1"
+            type="success"
+            plain
+            @click="handleRefineLyrics"
+            >AI 校正轉換歌詞</el-button
+          >
+        </div>
 
         <!-- 時間控制區 -->
         <div class="flex gap-2">
@@ -738,6 +747,49 @@ const convertedLyrics = ref("");
 const convertedLyricsDialogSubmit = () => {
   allLyrics.value = JSON.parse(convertedLyrics.value);
   convertedLyricsDialogVisible.value = false;
+};
+
+// ============================================================
+// AI 校正轉換歌詞
+// ============================================================
+const handleRefineLyrics = async () => {
+  if (allLyrics.value.length === 0) return ElMessage.error("請先添加歌詞");
+
+  try {
+    await ElMessageBox.confirm(
+      "確定要使用 AI 校正目前的轉換歌詞嗎？校正結果將會覆蓋現有的轉換歌詞。",
+      "提示",
+      {
+        confirmButtonText: "確定",
+        cancelButtonText: "取消",
+        type: "warning",
+      },
+    );
+  } catch {
+    return;
+  }
+
+  lyricsLoading.value = true;
+  try {
+    const lyrics = customStringify(
+      allLyrics.value
+        .filter((line) => line.lyrics.length > 0)
+        .map((line) => ({ timestamp: line.timestamp, lyrics: line.lyrics })),
+    );
+
+    const response = await MYAPI.post("/refine_lyrics", { lyrics });
+
+    if (response.status === "success") {
+      allLyrics.value = response.data;
+      ElMessage.success("歌詞校正成功");
+    } else {
+      ElMessage.error(response.message || "歌詞校正失敗");
+    }
+  } catch {
+    ElMessage.error("歌詞校正時發生錯誤");
+  } finally {
+    lyricsLoading.value = false;
+  }
 };
 
 // ============================================================
