@@ -100,6 +100,7 @@
   "supports_stylus": "按下左右鍵可以切換單字\n可以直接使用觸控筆書寫\niPhone需開啟實體聲音鍵",
   "keyboard_shortcuts": "操作",
   "keyboard_shortcuts_hint": "A：上一句   S：循環此句   D：下一句\nZ：往前5秒  X：暫停/播放  C：往後5秒",
+  "click_kana": "歌詞發音",
   "click_kana_to_play_sound": "點擊平假名可以播放聲音、此為輔助功能請以實際發音為主(測試中)",
   "left_points": "剩餘點數",
   "play_next_song": "即將播放下一首",

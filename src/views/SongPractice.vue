@@ -61,6 +61,14 @@
                   :min="0.3"
                   @change="changePlaybackRate"
                 />
+                <el-tooltip
+                  :content="t('click_kana_to_play_sound')"
+                  placement="top"
+                >
+                  <el-tag type="warning" round class="hidden sm:flex">{{
+                    t("click_kana")
+                  }}</el-tag>
+                </el-tooltip>
 
                 <el-tooltip placement="top">
                   <template #content>
@@ -68,16 +76,9 @@
                       {{ t("keyboard_shortcuts_hint") }}
                     </div>
                   </template>
-                  <el-tag type="primary" round>{{
+                  <el-tag type="primary" round class="hidden sm:flex">{{
                     t("keyboard_shortcuts")
                   }}</el-tag>
-                </el-tooltip>
-
-                <el-tooltip
-                  :content="t('click_kana_to_play_sound')"
-                  placement="top"
-                >
-                  <el-tag type="warning" round> Beta </el-tag>
                 </el-tooltip>
               </div>
 
@@ -162,6 +163,25 @@
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
+            </div>
+            <div class="flex w-full sm:hidden">
+              <el-tooltip
+                :content="t('click_kana_to_play_sound')"
+                placement="top"
+              >
+                <el-tag type="warning" round>{{ t("click_kana") }}</el-tag>
+              </el-tooltip>
+
+              <el-tooltip placement="top">
+                <template #content>
+                  <div style="white-space: pre-wrap">
+                    {{ t("keyboard_shortcuts_hint") }}
+                  </div>
+                </template>
+                <el-tag type="primary" round>{{
+                  t("keyboard_shortcuts")
+                }}</el-tag>
+              </el-tooltip>
             </div>
           </div>
         </div>
