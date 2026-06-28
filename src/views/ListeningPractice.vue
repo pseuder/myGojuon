@@ -596,6 +596,26 @@ const imageRecognition = async (imageBlob) => {
 };
 
 onMounted(() => {
+  document.title = `${t("dictation_practice")} | ${t("meta.title")}`;
+
+  document
+    .querySelector('meta[name="description"]')
+    .setAttribute("content", `${t("meta2.description")}`);
+
+  document
+    .querySelector('meta[name="keywords"]')
+    .setAttribute("content", `${t("meta2.keywords")}`);
+
+  document
+    .querySelector('meta[property="og:title"]')
+    .setAttribute("content", `${t("dictation_practice")} | ${t("meta.title")}`);
+  document
+    .querySelector('meta[property="og:description"]')
+    .setAttribute("content", `${t("meta2.description")}`);
+  document
+    .querySelector('meta[property="og:url"]')
+    .setAttribute("content", window.location.href);
+
   checkCounts();
 
   // 掛載完成後解除掛載標記並播放聲音
