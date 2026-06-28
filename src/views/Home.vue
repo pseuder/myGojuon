@@ -181,6 +181,7 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { ElementPlus, VideoCameraFilled } from "@element-plus/icons-vue";
 import { useI18n } from "vue-i18n";
@@ -203,6 +204,31 @@ const handleContactClick = async (contactType) => {
     console.error(err);
   }
 };
+
+onMounted(() => {
+  document.title = `${t("meta.title")}`;
+
+  document
+    .querySelector('meta[name="description"]')
+    .setAttribute("content", `${t("meta.description")}`);
+
+  document
+    .querySelector('meta[name="keywords"]')
+    .setAttribute("content", `${t("meta.keywords")}`);
+
+  document
+    .querySelector('meta[property="og:title"]')
+    .setAttribute(
+      "content",
+      `${t("handwriting_practice")} | ${t("meta.title")}`,
+    );
+  document
+    .querySelector('meta[property="og:description"]')
+    .setAttribute("content", `${t("meta.description")}`);
+  document
+    .querySelector('meta[property="og:url"]')
+    .setAttribute("content", window.location.href);
+});
 </script>
 
 <style scoped>
