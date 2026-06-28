@@ -4,6 +4,16 @@
     "description": "Interactive Japanese Gojuon(50 Sounds) learning platform. Practice Hiragana, Katakana, Dakuten, Handakuten, and Yoon. Supports mouse, touch, and stylus writing. Features AI recognition. Deepen learning with listening exercises.",
     "keywords": "Japanese Gojuon, Hiragana, Katakana, 50 Sounds, Japanese Learning, Japanese Pronunciation, Handwriting Practice, AI Recognition, Dakuten, Handakuten, Yoon, Japanese Teaching, Online Learning, Stylus"
   },
+  "meta1": {
+    "title": "Handwriting Practice | Japanese Gojuon Learning Website",
+    "description": "Use writing or a stylus, along with Japanese pronunciation, to practice handwriting the hiragana, katakana, voiced sounds (dakuon), semi-voiced sounds (handakuon), and contracted sounds (yōon) of the Japanese 50 sounds (gojūon).",
+    "keywords": "Gojūon, gojūon learning, gojūon practice, hiragana, katakana, dakuon, handakuon, yōon"
+  },
+  "meta2": {
+    "title": "Listening Practice | Japanese Gojuon Learning Website",
+    "description": "Use writing or a stylus, along with Japanese pronunciation, to practice listening the hiragana, katakana, voiced sounds (dakuon), semi-voiced sounds (handakuon), and contracted sounds (yōon) of the Japanese 50 sounds (gojūon).",
+    "keywords": "Gojūon, gojūon learning, gojūon practice, hiragana, katakana, dakuon, handakuon, yōon"
+  },
   "home": "Home",
   "handwriting_practice": "Handwriting Practice",
   "dictation_practice": "Listening Practice",

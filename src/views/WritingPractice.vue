@@ -287,6 +287,29 @@ const handleTabChange = (tabName) => {
 
 onMounted(() => {
   window.addEventListener("keyup", handleKeyEvent);
+
+  document.title = `${t("handwriting_practice")} | ${t("meta.title")}`;
+
+  // document
+  //   .querySelector('meta[name="description"]')
+  //   .setAttribute("content", "");
+
+  // document
+  //   .querySelector('meta[name="keywords"]')
+  //   .setAttribute("content", `${video.artists}, ${video.name}, 歌詞`);
+
+  // document
+  //   .querySelector('meta[property="og:title"]')
+  //   .setAttribute(
+  //     "content",
+  //     `${video.name} - ${video.artists} | ${t("meta.title")}`,
+  //   );
+  // document
+  //   .querySelector('meta[property="og:description"]')
+  //   .setAttribute("content", "");
+  // document
+  //   .querySelector('meta[property="og:url"]')
+  //   .setAttribute("content", window.location.href);
 });
 
 onUnmounted(() => {
