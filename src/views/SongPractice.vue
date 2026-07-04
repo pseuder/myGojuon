@@ -14,9 +14,9 @@
       >
         <div class="shrink-0">
           <!-- 影片標題＋作者 -->
-          <div class="gradient-text-tech-animated text-3xl font-bold">
+          <h1 class="gradient-text-tech-animated text-3xl font-bold">
             {{ currentVideo.name }} - {{ currentVideo.artists }}
-          </div>
+          </h1>
           <!-- 標籤 -->
           <div
             v-if="currentVideo.tags"
@@ -223,49 +223,43 @@
                 <Right />
               </el-icon>
             </div>
-            <div class="flex flex-wrap gap-1">
+            <div class="flex flex-wrap items-end gap-1">
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
                 <el-tooltip
                   :content="ly.meaning"
                   :disabled="true"
                   placement="bottom"
                 >
-                  <div
-                    class="flex flex-col items-center justify-center gap-1 rounded"
+                  <ruby
+                    class="rounded text-xl"
+                    :style="ly.color ? { color: ly.color } : {}"
                   >
-                    <div
-                      class="h-3 text-sm"
-                      :style="ly.color ? { color: ly.color } : {}"
+                    <template v-if="ly.oriUnits">
+                      <span
+                        v-for="(unit, uIndex) in ly.oriUnits"
+                        :key="uIndex"
+                        :class="{ 'kana-clickable': unit.file }"
+                        @click="handleKanaClick(unit)"
+                        >{{ unit.text }}</span
+                      >
+                    </template>
+                    <template v-else>{{ ly.ori }}</template>
+                    <rt
+                      v-if="songStore.display_mode === 'both'"
+                      class="text-sm"
                     >
-                      <template v-if="songStore.display_mode === 'both'">
-                        <template v-if="ly.cvtUnits">
-                          <span
-                            v-for="(unit, uIndex) in ly.cvtUnits"
-                            :key="uIndex"
-                            :class="{ 'kana-clickable': unit.file }"
-                            @click="handleKanaClick(unit)"
-                            >{{ unit.text }}</span
-                          >
-                        </template>
-                        <template v-else>{{ ly.cvt }}</template>
-                      </template>
-                    </div>
-                    <div
-                      class="text-xl"
-                      :style="ly.color ? { color: ly.color } : {}"
-                    >
-                      <template v-if="ly.oriUnits">
+                      <template v-if="ly.cvtUnits">
                         <span
-                          v-for="(unit, uIndex) in ly.oriUnits"
+                          v-for="(unit, uIndex) in ly.cvtUnits"
                           :key="uIndex"
                           :class="{ 'kana-clickable': unit.file }"
                           @click="handleKanaClick(unit)"
                           >{{ unit.text }}</span
                         >
                       </template>
-                      <template v-else>{{ ly.ori }}</template>
-                    </div>
-                  </div>
+                      <template v-else>{{ ly.cvt }}</template>
+                    </rt>
+                  </ruby>
                 </el-tooltip>
               </template>
             </div>
@@ -618,7 +612,7 @@ const processedLyrics = computed(() =>
   })),
 );
 
-/*-- 結構化資料 (JSON-LD)：注入 MusicRecording / VideoObject 資訊，協助搜尋引擎理解內容 --*/
+/*-- 結構化資料 (JSON-LD)--*/
 const STRUCTURED_DATA_ID = "song-structured-data";
 
 const plainLyricsText = computed(() =>
@@ -648,8 +642,10 @@ watch(
 
     script.textContent = JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "MusicRecording",
+      "@type": "LearningResource",
       name: video.name,
+      teaches: "日文歌曲中文歌詞、漢字讀音、假名",
+      educationalLevel: "beginner",
       url: window.location.href,
       image: `https://i.ytimg.com/vi/${video.source_id}/hqdefault.jpg`,
       byArtist: artists.length
