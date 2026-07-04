@@ -603,10 +603,6 @@ onMounted(() => {
     .setAttribute("content", `${t("meta2.description")}`);
 
   document
-    .querySelector('meta[name="keywords"]')
-    .setAttribute("content", `${t("meta2.keywords")}`);
-
-  document
     .querySelector('meta[property="og:title"]')
     .setAttribute("content", `${t("dictation_practice")} | ${t("meta.title")}`);
   document

@@ -204,7 +204,7 @@
             : `calc(${100 - songStore.leftWidth}% - 4px)`,
         }"
       >
-        <div class="">
+        <div lang="ja">
           <div
             v-for="(line, index) in processedLyrics"
             :key="index"
@@ -542,28 +542,35 @@ watch(
   currentVideo,
   (video) => {
     if (video) {
-      document.title = `${video.name} - ${video.artists} | ${t("meta.title")}`;
+      document.title = `${video.name} - ${video.artists} | ${t("lyrics")} | ${t("meta.title")}`;
 
       document
         .querySelector('meta[name="description"]')
-        .setAttribute("content", "");
+        .setAttribute(
+          "content",
+          plainLyricsText.value.replace(/\n/g, " ").slice(0, 90) + "...",
+        );
 
-      document
-        .querySelector('meta[name="keywords"]')
-        .setAttribute("content", `${video.artists}, ${video.name}, 歌詞`);
+      console.log(plainLyricsText.value);
 
       document
         .querySelector('meta[property="og:title"]')
         .setAttribute(
           "content",
-          `${video.name} - ${video.artists} | ${t("meta.title")}`,
+          `${video.name} - ${video.artists} | ${t("lyrics")} | ${t("meta.title")}`,
         );
       document
         .querySelector('meta[property="og:description"]')
-        .setAttribute("content", "");
+        .setAttribute(
+          "content",
+          plainLyricsText.value.replace(/\n/g, " ").slice(0, 90) + "...",
+        );
       document
         .querySelector('meta[property="og:url"]')
-        .setAttribute("content", window.location.href);
+        .setAttribute(
+          "content",
+          window.location.origin + window.location.pathname,
+        );
     }
   },
   { immediate: true },
@@ -640,33 +647,54 @@ watch(
         .map((a) => a.trim())
         .filter(Boolean) ?? [];
 
+    // 抽離共用的 byArtist 結構
+    const byArtistData = artists.length
+      ? artists.map((name) => ({ "@type": "MusicGroup", name }))
+      : undefined;
+
+    // 抽離共用的 VideoObject 結構
+    const videoObject = {
+      "@type": "VideoObject",
+      name: `${video.name} - ${video.artists}`,
+      description: video.remark || `${video.name} - ${video.artists}`,
+      embedUrl: `https://www.youtube.com/embed/${video.source_id}`,
+      thumbnailUrl: `https://i.ytimg.com/vi/${video.source_id}/hqdefault.jpg`,
+      uploadDate: `${video.update_time}`.replace(" ", "T") + "+08:00",
+    };
+
+    // 使用 @graph 同時宣告 LearningResource 與 MusicRecording
     script.textContent = JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "LearningResource",
-      name: video.name,
-      teaches: "日文歌曲中文歌詞、漢字讀音、假名",
-      educationalLevel: "beginner",
-      url: window.location.href,
-      image: `https://i.ytimg.com/vi/${video.source_id}/hqdefault.jpg`,
-      byArtist: artists.length
-        ? artists.map((name) => ({ "@type": "MusicGroup", name }))
-        : undefined,
-      genre: ["J-Pop"],
-      lyrics: plainLyricsText.value
-        ? {
-            "@type": "CreativeWork",
-            text: plainLyricsText.value,
-            inLanguage: "ja",
-          }
-        : undefined,
-      video: {
-        "@type": "VideoObject",
-        name: `${video.name} - ${video.artists}`,
-        description: video.remark || `${video.name} - ${video.artists}`,
-        embedUrl: `https://www.youtube.com/embed/${video.source_id}`,
-        thumbnailUrl: `https://i.ytimg.com/vi/${video.source_id}/hqdefault.jpg`,
-        uploadDate: `${video.update_time}`.replace(" ", "T") + "+08:00",
-      },
+      "@graph": [
+        {
+          "@type": "LearningResource",
+          name: video.name,
+          teaches: "日文歌曲中文歌詞、漢字讀音、假名",
+          educationalLevel: "beginner",
+          url: window.location.origin + window.location.pathname,
+          image: `https://i.ytimg.com/vi/${video.source_id}/hqdefault.jpg`,
+          byArtist: byArtistData,
+          genre: ["J-Pop"],
+          lyrics:
+            plainLyricsText.value.replace(/\n/g, " ").slice(0, 90) + "...",
+          video: videoObject,
+        },
+        {
+          "@type": "MusicRecording",
+          name: video.name,
+          byArtist: byArtistData,
+          url: window.location.origin + window.location.pathname,
+          image: `https://i.ytimg.com/vi/${video.source_id}/hqdefault.jpg`,
+          video: videoObject,
+          // MusicRecording 建議透過 recordingOf (MusicComposition) 來關聯歌詞
+          recordingOf: {
+            "@type": "MusicComposition",
+            name: video.name,
+            lyrics:
+              plainLyricsText.value.replace(/\n/g, " ").slice(0, 90) + "...",
+          },
+        },
+      ],
     });
   },
   { immediate: true },

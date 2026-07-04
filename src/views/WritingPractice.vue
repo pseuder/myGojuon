@@ -295,10 +295,6 @@ onMounted(() => {
     .setAttribute("content", `${t("meta1.description")}`);
 
   document
-    .querySelector('meta[name="keywords"]')
-    .setAttribute("content", `${t("meta1.keywords")}`);
-
-  document
     .querySelector('meta[property="og:title"]')
     .setAttribute(
       "content",

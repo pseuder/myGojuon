@@ -391,7 +391,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onActivated, onUnmounted, nextTick, computed } from "vue";
+import {
+  ref,
+  onMounted,
+  onActivated,
+  onUnmounted,
+  nextTick,
+  computed,
+} from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
@@ -782,10 +789,6 @@ const updateMeta = () => {
   document
     .querySelector('meta[name="description"]')
     .setAttribute("content", `${t("meta.description")}`);
-
-  document
-    .querySelector('meta[name="keywords"]')
-    .setAttribute("content", `${t("meta.keywords")}`);
 
   document
     .querySelector('meta[property="og:title"]')

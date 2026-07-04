@@ -157,5 +157,6 @@
   "login_required": "Login required",
   "all": "All",
   "playlist_already_exists": "Playlist already exists",
-  "google_login": "Google Login"
+  "google_login": "Google Login",
+  "lyrics": "Lyrics"
 }
