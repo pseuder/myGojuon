@@ -1477,4 +1477,8 @@ onUnmounted(() => {
   border-color: var(--el-button-border-color) !important;
   color: var(--el-button-text-color) !important;
 }
+
+ruby {
+  ruby-align: center;
+}
 </style>
