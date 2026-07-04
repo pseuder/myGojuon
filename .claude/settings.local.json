@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -l \"el-drawer\" \"f:\\\\WorkSpace\\\\myGojuon\\\\myGojuon/src/components\"/*.vue \"f:\\\\WorkSpace\\\\myGojuon\\\\myGojuon/src/views\"/*.vue)"
+      "Bash(grep -l \"el-drawer\" \"f:\\\\WorkSpace\\\\my-gojuon\\\\my-gojuon/src/components\"/*.vue \"f:\\\\WorkSpace\\\\my-gojuon\\\\my-gojuon/src/views\"/*.vue)"
     ]
   }
 }

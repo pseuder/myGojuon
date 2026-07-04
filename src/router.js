@@ -56,7 +56,7 @@ const router = createRouter({
 router.afterEach((to) => {
   const canonical = document.querySelector('link[rel="canonical"]');
   if (canonical) {
-    canonical.setAttribute('href', `https://mygojuon.vercel.app${to.path}`);
+    canonical.setAttribute('href', `https://my-gojuon.vercel.app${to.path}`);
   }
 });
 

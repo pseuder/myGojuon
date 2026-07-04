@@ -3,7 +3,7 @@ import { writeFile } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const SITE_BASE = (process.env.SITE_BASE || "https://mygojuon.vercel.app").replace(/\/$/, "");
+const SITE_BASE = (process.env.SITE_BASE || "https://my-gojuon.vercel.app").replace(/\/$/, "");
 const API_BASE = (process.env.API_BASE || "https://pseuder.com/srv_mygojuon3").replace(/\/$/, "");
 
 const STATIC_PAGES = [
