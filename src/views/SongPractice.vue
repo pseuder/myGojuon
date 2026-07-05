@@ -230,21 +230,11 @@
                   :disabled="true"
                   placement="bottom"
                 >
-                  <ruby
-                    class="rounded text-xl"
+                  <div
+                    class="rounded text-center text-xl"
                     :style="ly.color ? { color: ly.color } : {}"
                   >
-                    <template v-if="ly.oriUnits">
-                      <span
-                        v-for="(unit, uIndex) in ly.oriUnits"
-                        :key="uIndex"
-                        :class="{ 'kana-clickable': unit.file }"
-                        @click="handleKanaClick(unit)"
-                        >{{ unit.text }}</span
-                      >
-                    </template>
-                    <template v-else>{{ ly.ori }}</template>
-                    <rt
+                    <div
                       v-if="songStore.display_mode === 'both'"
                       class="text-sm"
                     >
@@ -258,8 +248,18 @@
                         >
                       </template>
                       <template v-else>{{ ly.cvt }}</template>
-                    </rt>
-                  </ruby>
+                    </div>
+                    <template v-if="ly.oriUnits">
+                      <span
+                        v-for="(unit, uIndex) in ly.oriUnits"
+                        :key="uIndex"
+                        :class="{ 'kana-clickable': unit.file }"
+                        @click="handleKanaClick(unit)"
+                        >{{ unit.text }}</span
+                      >
+                    </template>
+                    <template v-else>{{ ly.ori }}</template>
+                  </div>
                 </el-tooltip>
               </template>
             </div>
