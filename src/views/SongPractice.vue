@@ -234,10 +234,7 @@
                     class="rounded text-center text-xl"
                     :style="ly.color ? { color: ly.color } : {}"
                   >
-                    <div
-                      v-if="songStore.display_mode === 'both'"
-                      class="text-sm"
-                    >
+                    <div class="mb-[-3px] text-sm">
                       <template v-if="ly.cvtUnits">
                         <span
                           v-for="(unit, uIndex) in ly.cvtUnits"
@@ -258,7 +255,9 @@
                         >{{ unit.text }}</span
                       >
                     </template>
-                    <template v-else>{{ ly.ori }}</template>
+                    <template v-else
+                      ><div>{{ ly.ori }}</div></template
+                    >
                   </div>
                 </el-tooltip>
               </template>
