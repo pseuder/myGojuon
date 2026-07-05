@@ -99,75 +99,110 @@
 
       <section class="my-10">
         <div class="flex flex-col gap-4">
-          <h2 class="mb-4 text-2xl font-bold text-indigo-700">Powered by</h2>
-          <div class="flex items-center gap-2">
-            <a
-              href="https://vuejs.org/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src="/images/vuejs.svg"
-                alt="Vue.js"
-                class="h-10 w-10 transition-opacity hover:opacity-80"
-              />
-            </a>
-            <a
-              href="https://element-plus.org/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <el-icon
-                size="40"
-                color="#409EFF"
-                class="transition-opacity hover:opacity-80"
-                ><ElementPlus
-              /></el-icon>
-            </a>
-            <a
-              href="https://tailwindcss.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src="/images/tailwindcss.svg"
-                alt="Tailwind CSS"
-                class="h-10 w-10 transition-opacity hover:opacity-80"
-              />
-            </a>
-            <a
-              href="https://www.google.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src="/images/Google.svg"
-                alt="Google"
-                class="h-10 w-10 transition-opacity hover:opacity-80"
-              />
-            </a>
-            <a
-              href="https://www.youtube.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src="/images/YouTube.svg"
-                alt="YouTube"
-                class="h-10 w-10 transition-opacity hover:opacity-80"
-              />
-            </a>
-            <a
-              href="https://vercel.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src="/images/vercel.svg"
-                alt="vercel"
-                class="h-10 w-10 transition-opacity hover:opacity-80"
-              />
-            </a>
+          <h2 class="mb-4 text-2xl font-bold text-indigo-700">此網站謹獻給</h2>
+          <div class="flex flex-col gap-2">
+            <!-- LiSA -->
+            <div class="my-4 flex flex-col gap-4">
+              <div class="flex items-center gap-4">
+                <img
+                  src="/images/LiSA.png"
+                  :alt="t('contact_me') + ' - Gmail'"
+                  class="h-18 w-18 rounded-full object-cover"
+                />
+                <div class="flex flex-col">
+                  <h3
+                    class="gradient-text-tech-animated cursor-pointer text-2xl"
+                    @click="router.push('/SongOverview?artist=25')"
+                  >
+                    LiSA
+                  </h3>
+                  <div>
+                    2024/11/30 & 2024/12/01 - LiSA LiVE is Smile Always~COCKTAiL
+                    PARTY [SWEET & SOUR] 国立代々木競技場
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 孤獨搖滾 -->
+            <div class="my-4 flex flex-col gap-4">
+              <div class="flex items-center gap-4">
+                <img
+                  src="/images/bochi.png"
+                  :alt="t('contact_me') + ' - Gmail'"
+                  class="h-18 w-18 rounded-full object-cover"
+                />
+                <div class="flex flex-col">
+                  <h3
+                    class="gradient-text-tech-animated cursor-pointer text-2xl"
+                    @click="router.push('/SongOverview?artist=1')"
+                  >
+                    孤獨搖滾
+                  </h3>
+                  <div
+                    @click="router.push('/SongPractice/B7BxrAAXl94')"
+                    class="text-blue-700 underline"
+                  >
+                    ギターと孤独と蒼い惑星 - 結束バンド
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- あたらよ -->
+            <div class="my-4 flex flex-col gap-4">
+              <div class="flex items-center gap-4">
+                <img
+                  src="/images/あたらよ.png"
+                  :alt="t('contact_me') + ' - Gmail'"
+                  class="h-18 w-18 rounded-full object-cover"
+                />
+                <div class="flex flex-col">
+                  <h3
+                    class="gradient-text-tech-animated cursor-pointer text-2xl"
+                    @click="router.push('/SongOverview?artist=2')"
+                  >
+                    あたらよ
+                  </h3>
+                  <div
+                    @click="router.push('/SongPractice/Y2wZKacNue8')"
+                    class="text-blue-700 underline"
+                  >
+                    outcry - あたらよ
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- あたらよ -->
+            <div class="my-4 flex flex-col gap-4">
+              <div class="flex items-center gap-4">
+                <img
+                  src="/images/ヨルシカ.png"
+                  :alt="t('contact_me') + ' - Gmail'"
+                  class="h-18 w-18 rounded-full object-cover"
+                />
+                <div class="flex flex-col">
+                  <h3
+                    class="gradient-text-tech-animated cursor-pointer text-2xl"
+                    @click="router.push('/SongOverview?artist=45')"
+                  >
+                    ヨルシカ
+                  </h3>
+                  <div
+                    @click="router.push('/SongPractice/-VKIqrvVOpo')"
+                    class="text-blue-700 underline"
+                  >
+                    ただ君に晴れ - ヨルシカ
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 text-gray-700 italic">
+            ©{{ t("site_title") }}
+            2024 - 2026
             <el-button
               :icon="VideoCameraFilled"
               circle
@@ -245,5 +280,29 @@ pre {
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+.gradient-text-tech-animated {
+  background: linear-gradient(120deg, #4caf50, #2196f3, #673ab7, #4caf50);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.5px;
+  animation: gradient-animation 8s ease infinite;
+}
+
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 </style>
