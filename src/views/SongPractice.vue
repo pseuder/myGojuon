@@ -234,8 +234,8 @@
                     class="rounded text-center text-xl"
                     :style="ly.color ? { color: ly.color } : {}"
                   >
-                    <div class="mb-[-3px] text-sm">
-                      <template v-if="ly.cvtUnits">
+                    <template v-if="ly.cvtUnits">
+                      <div class="mb-[-3px] text-sm">
                         <span
                           v-for="(unit, uIndex) in ly.cvtUnits"
                           :key="uIndex"
@@ -243,9 +243,14 @@
                           @click="handleKanaClick(unit)"
                           >{{ unit.text }}</span
                         >
-                      </template>
-                      <template v-else>{{ ly.cvt }}</template>
-                    </div>
+                      </div>
+                    </template>
+                    <template v-else
+                      ><div class="mb-[-13px] text-sm">
+                        <span>{{ " " }}</span>
+                      </div></template
+                    >
+
                     <template v-if="ly.oriUnits">
                       <span
                         v-for="(unit, uIndex) in ly.oriUnits"

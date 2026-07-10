@@ -105,3 +105,11 @@ canvas {
 .el-menu {
   user-select: none;
 }
+
+/* 避免手機瀏覽器 (如 iOS Safari) 因 input font-size < 16px 而在點擊 el-select 時自動放大畫面 */
+@media (max-width: 768px) {
+  .el-select__wrapper,
+  .el-select__input {
+    font-size: 16px;
+  }
+}
