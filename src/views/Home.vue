@@ -71,7 +71,7 @@
                 :alt="t('contact_me') + ' - Gmail'"
                 class="h-8 w-8 text-red-400 transition-opacity hover:opacity-80"
               />
-              <span>iop890520@gmail.com</span>
+              <span>mygojuon@gmail.com</span>
             </div>
           </div>
           <div class="my-4 flex flex-col gap-4">
