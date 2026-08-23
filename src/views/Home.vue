@@ -94,6 +94,26 @@
               </a>
             </div>
           </div>
+          <div class="my-4 flex flex-col gap-4">
+            <div
+              class="flex items-center gap-4"
+              @click="handleContactClick('facebook')"
+            >
+              <img
+                src="/images/IG.png"
+                :alt="t('contact_me') + ' - Facebook'"
+                class="h-8 w-8 text-red-400 transition-opacity hover:opacity-80"
+              />
+              <a
+                href="https://www.instagram.com/uio890520/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-blue-700 underline"
+              >
+                https://www.instagram.com/uio890520/
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
