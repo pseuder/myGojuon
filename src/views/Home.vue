@@ -97,11 +97,11 @@
           <div class="my-4 flex flex-col gap-4">
             <div
               class="flex items-center gap-4"
-              @click="handleContactClick('facebook')"
+              @click="handleContactClick('instagram')"
             >
               <img
                 src="/images/IG.png"
-                :alt="t('contact_me') + ' - Facebook'"
+                :alt="t('contact_me') + ' - Instagram'"
                 class="h-8 w-8 text-red-400 transition-opacity hover:opacity-80"
               />
               <a
