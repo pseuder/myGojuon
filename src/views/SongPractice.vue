@@ -1366,7 +1366,7 @@ const floatingPlayerStyle = computed(() => {
   return {
     position: "fixed",
     top: `${playerFloatTop.value}px`,
-    left: `${playerFloatX.value - 8}px`,
+    left: `${playerFloatX.value}px`,
     width: `${width}px`,
     height: `${Math.round((width * 8) / 16) + PLAYER_HANDLE_HEIGHT}px`,
     zIndex: 40,
