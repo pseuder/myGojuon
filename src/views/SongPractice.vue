@@ -33,12 +33,49 @@
           id="player-container"
           ref="playerContainerRef"
           class="flex-1 overflow-auto"
+          :style="
+            isPlayerFloating ? { minHeight: `${playerNaturalHeight}px` } : {}
+          "
         >
           <div
-            id="player"
-            ref="playerRef"
-            class="aspect-video w-full lg:h-full"
-          ></div>
+            class="h-full w-full"
+            :class="{
+              'floating-player': isPlayerFloating,
+              'is-dragging': isPlayerDragging,
+            }"
+            :style="floatingPlayerStyle"
+          >
+            <!-- 拖曳把手：向左/向右拖可將懸浮播放器收起 -->
+            <div
+              v-show="isPlayerFloating"
+              class="player-drag-handle"
+              @pointerdown="onPlayerDragStart"
+              @pointermove="onPlayerDragMove"
+              @pointerup="onPlayerDragEnd"
+              @pointercancel="onPlayerDragEnd"
+            >
+              <span class="player-drag-grip"></span>
+            </div>
+
+            <!-- 收起後露出的小標籤：點一下或往回拖就能拉出來 -->
+            <div
+              v-show="isPlayerFloating && playerHiddenSide"
+              class="player-peek-tab"
+              :class="playerHiddenSide === 'left' ? 'is-left' : 'is-right'"
+              @pointerdown="onPlayerDragStart"
+              @pointermove="onPlayerDragMove"
+              @pointerup="onPlayerDragEnd"
+              @pointercancel="onPlayerDragEnd"
+            >
+              {{ playerHiddenSide === "left" ? "›" : "‹" }}
+            </div>
+
+            <div
+              id="player"
+              ref="playerRef"
+              class="aspect-video w-full lg:h-full"
+            ></div>
+          </div>
         </div>
 
         <!-- 功能列 -->
@@ -1279,6 +1316,139 @@ const isMobile = computed(() => windowWidth.value < 1024);
 const updateWindowWidth = () => {
   windowWidth.value = window.innerWidth;
   checkMarquee();
+  updatePlayerFloating();
+};
+
+/*-- 手機版：往下捲動時讓播放器懸浮在畫面中上方 --*/
+const playerContainerRef = ref(null);
+const isPlayerFloating = ref(false);
+const playerNaturalHeight = ref(0); // 懸浮時保留的佔位高度
+const playerFloatTop = ref(0);
+let scrollContainerEl = null;
+let floatingRafId = null;
+
+// 懸浮時的迷你播放器寬度：裝置寬度 90%（高度依 16:9 推算）
+const floatingPlayerWidth = computed(() => Math.round(windowWidth.value * 0.9));
+
+const PLAYER_HANDLE_HEIGHT = 22; // 拖曳把手高度（需與 CSS 一致）
+const PLAYER_TAB_WIDTH = 28; // 收起後露出的標籤寬度
+const PLAYER_HIDE_THRESHOLD = 60; // 拖曳多少距離才視為收起/展開
+
+const playerHiddenSide = ref(null); // null | "left" | "right"
+const isPlayerDragging = ref(false);
+const playerDragDx = ref(0);
+let playerDragStartX = 0;
+let playerDragPointerId = null;
+let playerDragMoved = false;
+
+// 收起/展開時的水平定點
+const playerBaseX = computed(() => {
+  const width = floatingPlayerWidth.value;
+  if (playerHiddenSide.value === "left") return PLAYER_TAB_WIDTH - width;
+  if (playerHiddenSide.value === "right")
+    return windowWidth.value - PLAYER_TAB_WIDTH;
+  return Math.round((windowWidth.value - width) / 2);
+});
+
+// 實際位置 = 定點 + 拖曳位移（兩側至少留一個標籤寬）
+const playerFloatX = computed(() => {
+  const width = floatingPlayerWidth.value;
+  const min = PLAYER_TAB_WIDTH - width;
+  const max = windowWidth.value - PLAYER_TAB_WIDTH;
+  return Math.min(Math.max(playerBaseX.value + playerDragDx.value, min), max);
+});
+
+const floatingPlayerStyle = computed(() => {
+  if (!isPlayerFloating.value) return {};
+  const width = floatingPlayerWidth.value;
+  return {
+    position: "fixed",
+    top: `${playerFloatTop.value}px`,
+    left: `${playerFloatX.value}px`,
+    width: `${width}px`,
+    height: `${Math.round((width * 9) / 16) + PLAYER_HANDLE_HEIGHT}px`,
+    zIndex: 40,
+  };
+});
+
+const onPlayerDragStart = (event) => {
+  if (!isPlayerFloating.value) return;
+  playerDragPointerId = event.pointerId;
+  playerDragStartX = event.clientX;
+  playerDragMoved = false;
+  playerDragDx.value = 0;
+  isPlayerDragging.value = true;
+  try {
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  } catch {
+    /* 指標已釋放時會丟錯，忽略即可 */
+  }
+};
+
+const onPlayerDragMove = (event) => {
+  if (!isPlayerDragging.value || event.pointerId !== playerDragPointerId)
+    return;
+  playerDragDx.value = event.clientX - playerDragStartX;
+  if (Math.abs(playerDragDx.value) > 4) playerDragMoved = true;
+};
+
+const onPlayerDragEnd = (event) => {
+  if (!isPlayerDragging.value) return;
+  try {
+    event.currentTarget.releasePointerCapture?.(playerDragPointerId);
+  } catch {
+    /* 同上 */
+  }
+  const dx = playerDragDx.value;
+  isPlayerDragging.value = false;
+  playerDragDx.value = 0;
+  playerDragPointerId = null;
+
+  if (playerHiddenSide.value) {
+    // 已收起：點一下或往畫面內拖就展開
+    const pulledBack =
+      playerHiddenSide.value === "right"
+        ? dx <= -PLAYER_HIDE_THRESHOLD / 2
+        : dx >= PLAYER_HIDE_THRESHOLD / 2;
+    if (!playerDragMoved || pulledBack) playerHiddenSide.value = null;
+  } else if (dx <= -PLAYER_HIDE_THRESHOLD) {
+    playerHiddenSide.value = "left";
+  } else if (dx >= PLAYER_HIDE_THRESHOLD) {
+    playerHiddenSide.value = "right";
+  }
+};
+
+const updatePlayerFloating = () => {
+  const el = playerContainerRef.value;
+  if (!el) return;
+  if (!isMobile.value) {
+    isPlayerFloating.value = false;
+    return;
+  }
+
+  // 捲動容器頂端（NavBar 下方）就是懸浮時要對齊的位置
+  const containerTop = scrollContainerEl
+    ? scrollContainerEl.getBoundingClientRect().top
+    : 0;
+  const threshold = containerTop + 8;
+  playerFloatTop.value = threshold;
+
+  const rectTop = el.getBoundingClientRect().top;
+  if (isPlayerFloating.value) {
+    // 佔位高度仍在，捲回原位就還原
+    if (rectTop >= threshold) isPlayerFloating.value = false;
+  } else {
+    playerNaturalHeight.value = el.offsetHeight;
+    if (rectTop < threshold) isPlayerFloating.value = true;
+  }
+};
+
+const handleContentScroll = () => {
+  if (floatingRafId !== null) return;
+  floatingRafId = requestAnimationFrame(() => {
+    floatingRafId = null;
+    updatePlayerFloating();
+  });
 };
 
 const startResize = (event) => {
@@ -1332,12 +1502,22 @@ watch(videoId, async (newId, oldId) => {
 let touchStartX = 0;
 let touchStartY = 0;
 
+let skipEdgeSwipe = false;
+
 const handleTouchStart = (e) => {
+  // 從懸浮播放器把手/標籤開始的手勢不算邊緣滑動
+  skipEdgeSwipe = !!e.target?.closest?.(
+    ".player-drag-handle, .player-peek-tab",
+  );
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
 };
 
 const handleTouchEnd = (e) => {
+  if (skipEdgeSwipe) {
+    skipEdgeSwipe = false;
+    return;
+  }
   const dx = e.changedTouches[0].clientX - touchStartX;
   const dy = e.changedTouches[0].clientY - touchStartY;
   const screenWidth = window.innerWidth;
@@ -1365,6 +1545,20 @@ onMounted(async () => {
 
   fetchplaylist();
 
+  // 監聽外層捲動容器，控制手機版懸浮播放器
+  await nextTick();
+  scrollContainerEl =
+    playerContainerRef.value?.closest(".content") ??
+    document.querySelector("main.content");
+  (scrollContainerEl ?? window).addEventListener(
+    "scroll",
+    handleContentScroll,
+    {
+      passive: true,
+    },
+  );
+  updatePlayerFloating();
+
   // 初始化 YouTube Player
   window.onYouTubeIframeAPIReady = () => {
     initializePlayer();
@@ -1384,6 +1578,14 @@ onUnmounted(() => {
   if (player) {
     player.destroy();
     player = null;
+  }
+  (scrollContainerEl ?? window).removeEventListener(
+    "scroll",
+    handleContentScroll,
+  );
+  if (floatingRafId !== null) {
+    cancelAnimationFrame(floatingRafId);
+    floatingRafId = null;
   }
   window.removeEventListener("keypress", handleKeyPress);
   window.removeEventListener("resize", updateWindowWidth);
@@ -1432,6 +1634,74 @@ onUnmounted(() => {
 
 .kana-clickable:hover {
   background-color: rgba(64, 158, 255, 0.2);
+}
+
+/* 手機版懸浮播放器 */
+.floating-player {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  animation: floating-player-in 0.18s ease-out;
+  transition: left 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* 拖曳中不做過渡，讓它跟著手指走 */
+.floating-player.is-dragging {
+  transition: none;
+}
+
+@keyframes floating-player-in {
+  from {
+    opacity: 0.4;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 懸浮播放器的拖曳把手（高度需與 PLAYER_HANDLE_HEIGHT 一致） */
+.player-drag-handle {
+  display: flex;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  touch-action: none;
+}
+
+.player-drag-grip {
+  width: 42px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+/* 收起後露出的小標籤 */
+.player-peek-tab {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  width: 28px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.82);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  touch-action: none;
+}
+
+.player-peek-tab.is-left {
+  right: 0;
+}
+
+.player-peek-tab.is-right {
+  left: 0;
 }
 
 /* 防止拖動時選取文字 */
