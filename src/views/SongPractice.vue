@@ -1328,7 +1328,9 @@ let scrollContainerEl = null;
 let floatingRafId = null;
 
 // 懸浮時的迷你播放器寬度：裝置寬度 90%（高度依 16:9 推算）
-const floatingPlayerWidth = computed(() => Math.round(windowWidth.value * 0.9));
+const floatingPlayerWidth = computed(() =>
+  Math.round(windowWidth.value * 0.95),
+);
 
 const PLAYER_HANDLE_HEIGHT = 22; // 拖曳把手高度（需與 CSS 一致）
 const PLAYER_TAB_WIDTH = 28; // 收起後露出的標籤寬度
@@ -1364,9 +1366,9 @@ const floatingPlayerStyle = computed(() => {
   return {
     position: "fixed",
     top: `${playerFloatTop.value}px`,
-    left: `${playerFloatX.value}px`,
+    left: `${playerFloatX.value - 8}px`,
     width: `${width}px`,
-    height: `${Math.round((width * 9) / 16) + PLAYER_HANDLE_HEIGHT}px`,
+    height: `${Math.round((width * 8) / 16) + PLAYER_HANDLE_HEIGHT}px`,
     zIndex: 40,
   };
 });
@@ -1378,11 +1380,7 @@ const onPlayerDragStart = (event) => {
   playerDragMoved = false;
   playerDragDx.value = 0;
   isPlayerDragging.value = true;
-  try {
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  } catch {
-    /* 指標已釋放時會丟錯，忽略即可 */
-  }
+  event.currentTarget.setPointerCapture?.(event.pointerId);
 };
 
 const onPlayerDragMove = (event) => {
@@ -1394,11 +1392,7 @@ const onPlayerDragMove = (event) => {
 
 const onPlayerDragEnd = (event) => {
   if (!isPlayerDragging.value) return;
-  try {
-    event.currentTarget.releasePointerCapture?.(playerDragPointerId);
-  } catch {
-    /* 同上 */
-  }
+  event.currentTarget.releasePointerCapture?.(playerDragPointerId);
   const dx = playerDragDx.value;
   isPlayerDragging.value = false;
   playerDragDx.value = 0;
@@ -1430,7 +1424,7 @@ const updatePlayerFloating = () => {
   const containerTop = scrollContainerEl
     ? scrollContainerEl.getBoundingClientRect().top
     : 0;
-  const threshold = containerTop + 8;
+  const threshold = containerTop;
   playerFloatTop.value = threshold;
 
   const rectTop = el.getBoundingClientRect().top;
