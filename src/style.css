@@ -53,12 +53,20 @@ html,
 #app {
   margin: 0;
   padding: 0;
+  /* 100% 會被 iOS Safari 解析成網址列展開時的高度，網址列收合後畫面下方會空一塊；
+     dvh 會跟著工具列狀態即時更新，100% 保留給不支援 dvh 的舊瀏覽器當 fallback */
   height: 100%;
+  height: 100dvh;
   touch-action: manipulation;
   -webkit-touch-callout: none;
   overflow: hidden;
   cursor: var(--cursor-default), auto;
   font-family: "LINE Seed", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* 供 Teleport 進來的固定元素（如歌曲頁底部控制列）定位用 */
+#app {
+  position: relative;
 }
 
 a,

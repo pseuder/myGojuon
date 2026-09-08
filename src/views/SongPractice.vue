@@ -309,139 +309,141 @@
       </el-scrollbar>
     </div>
 
-    <!-- 下方固定影片控制bar -->
-    <div
-      v-if="currentVideo"
-      class="fixed right-0 bottom-0 left-0 z-50 flex h-16 items-center justify-between gap-2 border-t border-gray-200 bg-white/70 px-2 backdrop-blur-md"
-    >
-      <!-- Left: playback controls -->
-      <div class="flex shrink-0 items-center gap-0">
-        <el-button
-          type="primary"
-          @click="goToPreviousSong"
-          :title="t('previous_song')"
-          circle
-          plain
-        >
-          <el-icon>
-            <ArrowLeft />
-          </el-icon>
-        </el-button>
-        <el-button
-          v-show="isPlaying"
-          type="primary"
-          class="text-2xl"
-          :icon="VideoPause"
-          @click="togglePlayPause"
-          circle
-        />
-        <el-button
-          v-show="!isPlaying"
-          type="primary"
-          class="text-2xl"
-          :icon="VideoPlay"
-          @click="togglePlayPause"
-          circle
-        />
-        <el-button
-          type="primary"
-          @click="playNextSong"
-          :title="t('next_song')"
-          circle
-          plain
-        >
-          <el-icon>
-            <ArrowRight />
-          </el-icon>
-        </el-button>
-      </div>
-
-      <!-- Center: song info -->
+    <!-- 下方固定影片控制bar：掛到 #app 底下，避免 iOS Safari 把 fixed 錨定到過時的 layout viewport -->
+    <Teleport to="#app">
       <div
-        class="flex min-w-0 flex-1 flex-col items-center justify-center px-2"
+        v-if="currentVideo"
+        class="absolute right-0 bottom-0 left-0 z-50 flex h-16 items-center justify-between gap-2 border-t border-gray-200 bg-white/70 px-2 backdrop-blur-md"
       >
+        <!-- Left: playback controls -->
+        <div class="flex shrink-0 items-center gap-0">
+          <el-button
+            type="primary"
+            @click="goToPreviousSong"
+            :title="t('previous_song')"
+            circle
+            plain
+          >
+            <el-icon>
+              <ArrowLeft />
+            </el-icon>
+          </el-button>
+          <el-button
+            v-show="isPlaying"
+            type="primary"
+            class="text-2xl"
+            :icon="VideoPause"
+            @click="togglePlayPause"
+            circle
+          />
+          <el-button
+            v-show="!isPlaying"
+            type="primary"
+            class="text-2xl"
+            :icon="VideoPlay"
+            @click="togglePlayPause"
+            circle
+          />
+          <el-button
+            type="primary"
+            @click="playNextSong"
+            :title="t('next_song')"
+            circle
+            plain
+          >
+            <el-icon>
+              <ArrowRight />
+            </el-icon>
+          </el-button>
+        </div>
+
+        <!-- Center: song info -->
         <div
-          class="marquee-wrapper w-full"
-          ref="marqueeRef"
-          :class="{ 'text-center': !shouldMarquee }"
+          class="flex min-w-0 flex-1 flex-col items-center justify-center px-2"
         >
-          <div :class="{ 'is-marquee': shouldMarquee }">
-            <span
-              class="marquee-item font-bold text-shadow-sm"
-              :class="{ 'pr-10': shouldMarquee }"
-            >
-              {{ currentVideo.name }}
-            </span>
-            <span
-              v-if="shouldMarquee"
-              class="marquee-item pr-10 font-bold text-shadow-sm"
-              aria-hidden="true"
-            >
-              {{ currentVideo.name }}
-            </span>
+          <div
+            class="marquee-wrapper w-full"
+            ref="marqueeRef"
+            :class="{ 'text-center': !shouldMarquee }"
+          >
+            <div :class="{ 'is-marquee': shouldMarquee }">
+              <span
+                class="marquee-item font-bold text-shadow-sm"
+                :class="{ 'pr-10': shouldMarquee }"
+              >
+                {{ currentVideo.name }}
+              </span>
+              <span
+                v-if="shouldMarquee"
+                class="marquee-item pr-10 font-bold text-shadow-sm"
+                aria-hidden="true"
+              >
+                {{ currentVideo.name }}
+              </span>
+            </div>
+          </div>
+          <div class="w-full truncate text-center text-sm opacity-70">
+            {{ currentVideo.artists }}
           </div>
         </div>
-        <div class="w-full truncate text-center text-sm opacity-70">
-          {{ currentVideo.artists }}
+
+        <!-- Right: mode controls -->
+        <div class="flex shrink-0 items-center">
+          <!-- Auto Scroll -->
+          <el-button
+            circle
+            size="medium"
+            :type="songStore.autoScroll ? 'warning ' : 'default'"
+            :title="t('scrolling')"
+            @click="songStore.autoScroll = !songStore.autoScroll"
+          >
+            <img src="/images/auto_scroll.svg" class="h-4 w-4" />
+          </el-button>
+
+          <!-- Play Mode (normal → loop → shuffle, mutually exclusive) -->
+          <el-button
+            type="warning"
+            size="medium"
+            :title="
+              songStore.playMode === 'normal'
+                ? t('auto_play_next_song')
+                : songStore.playMode === 'loop'
+                  ? t('loop_song')
+                  : t('shuffle_playback')
+            "
+            @click="cyclePlayMode"
+            circle
+          >
+            <img
+              v-show="songStore.playMode === 'loop'"
+              src="/images/replay.png"
+              class="h-4 w-4"
+            />
+            <img
+              v-show="songStore.playMode === 'shuffle'"
+              src="/images/random.svg"
+              class="h-4 w-4"
+            />
+            <img
+              v-show="songStore.playMode === 'normal'"
+              src="/images/arrow-right.svg"
+              class="h-4 w-4"
+            />
+          </el-button>
+
+          <!-- Playlist drawer toggle -->
+          <el-button
+            type="warning"
+            size="medium"
+            :title="t('playlist_drawer')"
+            @click="isPlaylistDrawerOpen = true"
+            circle
+          >
+            <img src="/images/song-lyrics.png" class="h-4 w-4" />
+          </el-button>
         </div>
       </div>
-
-      <!-- Right: mode controls -->
-      <div class="flex shrink-0 items-center">
-        <!-- Auto Scroll -->
-        <el-button
-          circle
-          size="medium"
-          :type="songStore.autoScroll ? 'warning ' : 'default'"
-          :title="t('scrolling')"
-          @click="songStore.autoScroll = !songStore.autoScroll"
-        >
-          <img src="/images/auto_scroll.svg" class="h-4 w-4" />
-        </el-button>
-
-        <!-- Play Mode (normal → loop → shuffle, mutually exclusive) -->
-        <el-button
-          type="warning"
-          size="medium"
-          :title="
-            songStore.playMode === 'normal'
-              ? t('auto_play_next_song')
-              : songStore.playMode === 'loop'
-                ? t('loop_song')
-                : t('shuffle_playback')
-          "
-          @click="cyclePlayMode"
-          circle
-        >
-          <img
-            v-show="songStore.playMode === 'loop'"
-            src="/images/replay.png"
-            class="h-4 w-4"
-          />
-          <img
-            v-show="songStore.playMode === 'shuffle'"
-            src="/images/random.svg"
-            class="h-4 w-4"
-          />
-          <img
-            v-show="songStore.playMode === 'normal'"
-            src="/images/arrow-right.svg"
-            class="h-4 w-4"
-          />
-        </el-button>
-
-        <!-- Playlist drawer toggle -->
-        <el-button
-          type="warning"
-          size="medium"
-          :title="t('playlist_drawer')"
-          @click="isPlaylistDrawerOpen = true"
-          circle
-        >
-          <img src="/images/song-lyrics.png" class="h-4 w-4" />
-        </el-button>
-      </div>
-    </div>
+    </Teleport>
 
     <!-- 建立清單 Dialog -->
     <el-dialog
@@ -1311,10 +1313,12 @@ const handleKeyPress = (event) => {
 /*-- 版面拖拉調整（左右寬度） --*/
 const isResizing = ref(false);
 const windowWidth = ref(0);
+const windowHeight = ref(0);
 const isMobile = computed(() => windowWidth.value < 1024);
 
-const updateWindowWidth = () => {
+const updateWindowSize = () => {
   windowWidth.value = window.innerWidth;
+  windowHeight.value = window.innerHeight;
   checkMarquee();
   updatePlayerFloating();
 };
@@ -1327,14 +1331,25 @@ const playerFloatTop = ref(0);
 let scrollContainerEl = null;
 let floatingRafId = null;
 
-// 懸浮時的迷你播放器寬度：裝置寬度 90%（高度依 16:9 推算）
-const floatingPlayerWidth = computed(() =>
-  Math.round(windowWidth.value * 0.95),
-);
-
 const PLAYER_HANDLE_HEIGHT = 22; // 拖曳把手高度（需與 CSS 一致）
 const PLAYER_TAB_WIDTH = 28; // 收起後露出的標籤寬度
 const PLAYER_HIDE_THRESHOLD = 60; // 拖曳多少距離才視為收起/展開
+const PLAYER_MAX_HEIGHT_RATIO = 1 / 3; // 懸浮時最多佔畫面高度的幾分之幾
+
+// 懸浮時的迷你播放器尺寸：寬度取裝置寬度 95%，但整體高度不超過畫面高度的 1/3；
+// 超過就改以高度回推寬度，維持原本的長寬比
+const floatingPlayerSize = computed(() => {
+  const width = Math.round(windowWidth.value * 0.95);
+  const height = Math.round((width * 8) / 16) + PLAYER_HANDLE_HEIGHT;
+  const maxHeight = Math.round(windowHeight.value * PLAYER_MAX_HEIGHT_RATIO);
+  if (height <= maxHeight) return { width, height };
+  return {
+    width: Math.round(((maxHeight - PLAYER_HANDLE_HEIGHT) * 16) / 8),
+    height: maxHeight,
+  };
+});
+
+const floatingPlayerWidth = computed(() => floatingPlayerSize.value.width);
 
 const playerHiddenSide = ref(null); // null | "left" | "right"
 const isPlayerDragging = ref(false);
@@ -1362,13 +1377,13 @@ const playerFloatX = computed(() => {
 
 const floatingPlayerStyle = computed(() => {
   if (!isPlayerFloating.value) return {};
-  const width = floatingPlayerWidth.value;
+  const { width, height } = floatingPlayerSize.value;
   return {
     position: "fixed",
     top: `${playerFloatTop.value}px`,
     left: `${playerFloatX.value}px`,
     width: `${width}px`,
-    height: `${Math.round((width * 8) / 16) + PLAYER_HANDLE_HEIGHT}px`,
+    height: `${height}px`,
     zIndex: 40,
   };
 });
@@ -1531,8 +1546,8 @@ onMounted(async () => {
   await fetchVideoData(uid);
   checkMarquee();
 
-  updateWindowWidth();
-  window.addEventListener("resize", updateWindowWidth);
+  updateWindowSize();
+  window.addEventListener("resize", updateWindowSize);
   window.addEventListener("keypress", handleKeyPress, true);
   window.addEventListener("touchstart", handleTouchStart, { passive: true });
   window.addEventListener("touchend", handleTouchEnd, { passive: true });
@@ -1582,7 +1597,7 @@ onUnmounted(() => {
     floatingRafId = null;
   }
   window.removeEventListener("keypress", handleKeyPress);
-  window.removeEventListener("resize", updateWindowWidth);
+  window.removeEventListener("resize", updateWindowSize);
   window.removeEventListener("touchstart", handleTouchStart);
   window.removeEventListener("touchend", handleTouchEnd);
   document.removeEventListener("mousemove", onResize);
