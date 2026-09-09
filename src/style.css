@@ -53,10 +53,12 @@ html,
 #app {
   margin: 0;
   padding: 0;
-  /* 100% 會被 iOS Safari 解析成網址列展開時的高度，網址列收合後畫面下方會空一塊；
-     dvh 會跟著工具列狀態即時更新，100% 保留給不支援 dvh 的舊瀏覽器當 fallback */
+  /* 高度三段式 fallback：--app-height 由 useAppHeight 依實際可視高度即時寫入，
+     是 iOS Safari 上唯一可靠的來源；dvh 給 JS 執行前的第一幀用；
+     100% 留給不支援 dvh 的舊瀏覽器 */
   height: 100%;
   height: 100dvh;
+  height: var(--app-height, 100dvh);
   touch-action: manipulation;
   -webkit-touch-callout: none;
   overflow: hidden;

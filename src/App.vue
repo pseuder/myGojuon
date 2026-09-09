@@ -37,6 +37,10 @@ import { useTextWaterfall } from "@/composables/useTextWaterfall";
 const textContainer = ref(null);
 useTextWaterfall(textContainer, toRef(settingsStore, "textfall"));
 
+/*-- 可視高度（處理 iOS Safari 網址列收合後高度沒更新的問題）--*/
+import { useAppHeight } from "@/composables/useAppHeight";
+useAppHeight();
+
 const route = useRoute();
 
 const isWideLayout = computed(
