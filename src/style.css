@@ -53,9 +53,9 @@ html,
 #app {
   margin: 0;
   padding: 0;
-  /* 高度三段式 fallback：--app-height 由 useAppHeight 依實際可視高度即時寫入，
-     是 iOS Safari 上唯一可靠的來源；dvh 給 JS 執行前的第一幀用；
-     100% 留給不支援 dvh 的舊瀏覽器 */
+  /* 高度三段式 fallback：100dvh 是主要來源；--app-height 只有在 useAppHeight
+     量到「可信且與 dvh 不符」的值時才會被寫入來覆蓋它，量不準就會被清掉退回
+     100dvh（見 useAppHeight.js）；100% 留給不支援 dvh 的舊瀏覽器 */
   height: 100%;
   height: 100dvh;
   height: var(--app-height, 100dvh);
