@@ -1,47 +1,104 @@
 <template>
-  <div class="flex h-full flex-col gap-4 px-4 py-4">
-    <div class="text-right">
-      <el-button type="primary" @click="openImportDialog">
-        從網址匯入歌曲
-      </el-button>
-    </div>
-    <div class="table-container">
-      <table ref="authorTableRef" class="native-table">
-        <thead>
-          <tr>
-            <th class="drag-handle-header"></th>
-            <th class="sortable">顯示順序</th>
-            <th class="sortable">作者</th>
-            <th class="sortable">歌曲數量</th>
-            <th class="sortable">公開</th>
-            <th class="operations"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="row in songTableData"
-            :key="row.artist_id"
-            :data-id="row.artist_id"
-            class="table-row"
+  <div class="h-full px-4 py-4">
+    <el-tabs v-model="activeTab" class="h-full" @tab-change="handleTabChange">
+      <el-tab-pane label="歌手列表" name="artists">
+        <div class="flex flex-col gap-4">
+          <div class="text-right">
+            <el-button type="primary" @click="openImportDialog">
+              從網址匯入歌曲
+            </el-button>
+          </div>
+          <div class="table-container">
+            <table ref="authorTableRef" class="native-table">
+              <thead>
+                <tr>
+                  <th class="drag-handle-header"></th>
+                  <th class="sortable">顯示順序</th>
+                  <th class="sortable">作者</th>
+                  <th class="sortable">歌曲數量</th>
+                  <th class="sortable">公開</th>
+                  <th class="operations"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in songTableData"
+                  :key="row.artist_id"
+                  :data-id="row.artist_id"
+                  class="table-row"
+                >
+                  <td class="drag-handle"><DragIcon /></td>
+                  <td>{{ row.display_order }}</td>
+                  <td>{{ row.name }}</td>
+                  <td>{{ row.song_count }}</td>
+                  <td>{{ row.artist_is_public ? "是" : "否" }}</td>
+                  <td class="operations">
+                    <el-button
+                      type="primary"
+                      size="small"
+                      @click="authorhandleEdit(row)"
+                    >
+                      顯示歌手所有歌曲
+                    </el-button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </el-tab-pane>
+
+      <el-tab-pane
+        v-for="view in viewTabs"
+        :key="view.name"
+        :label="view.label"
+        :name="view.name"
+        lazy
+      >
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">
+              {{ view.name }}，共 {{ viewStates[view.name].total }} 筆
+            </span>
+            <el-button
+              :loading="viewStates[view.name].loading"
+              @click="fetchViewData(view.name)"
+            >
+              重新整理
+            </el-button>
+          </div>
+          <el-table
+            :data="viewStates[view.name].rows"
+            v-loading="viewStates[view.name].loading"
+            border
+            stripe
+            max-height="70vh"
           >
-            <td class="drag-handle"><DragIcon /></td>
-            <td>{{ row.display_order }}</td>
-            <td>{{ row.name }}</td>
-            <td>{{ row.song_count }}</td>
-            <td>{{ row.artist_is_public ? "是" : "否" }}</td>
-            <td class="operations">
-              <el-button
-                type="primary"
-                size="small"
-                @click="authorhandleEdit(row)"
-              >
-                顯示歌手所有歌曲
-              </el-button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+            <el-table-column
+              v-for="col in viewStates[view.name].columns"
+              :key="col"
+              :prop="col"
+              :label="col"
+              min-width="140"
+              show-overflow-tooltip
+            >
+              <template #default="{ row }">
+                {{ formatCell(row[col]) }}
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-pagination
+            v-model:current-page="viewStates[view.name].page"
+            v-model:page-size="viewStates[view.name].pageSize"
+            :total="viewStates[view.name].total"
+            :page-sizes="[20, 50, 100, 200]"
+            layout="total, sizes, prev, pager, next, jumper"
+            @current-change="fetchViewData(view.name)"
+            @size-change="handleViewSizeChange(view.name)"
+          />
+        </div>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 
   <el-dialog
@@ -220,7 +277,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
+import { ref, reactive, onMounted, nextTick } from "vue";
 import { ElMessageBox, ElMessage } from "element-plus";
 import Sortable from "sortablejs";
 import { useApi } from "@/composables/useApi.js";
@@ -461,6 +518,82 @@ const handleSongDelete = (row) => {
     .catch(() => {
       ElMessage({ type: "info", message: "已取消刪除" });
     });
+};
+
+// ========================================
+// 資料檢視（各 view 分頁）
+// ========================================
+
+const viewTabs = [
+  { name: "v_songs", label: "歌曲統計" },
+  { name: "v_song_logs", label: "歌曲瀏覽紀錄" },
+  { name: "v_song_logs_usa", label: "歌曲瀏覽紀錄(美國)" },
+  { name: "v_artist_logs", label: "歌手瀏覽紀錄" },
+  { name: "v_playlist_songs", label: "播放清單" },
+  { name: "v_rec_logs", label: "辨識紀錄" },
+  { name: "v_writing_logs", label: "書寫紀錄" },
+  { name: "v_ai_logs", label: "AI 紀錄" },
+  { name: "v_feedbacks", label: "意見回饋" },
+  { name: "v_contact_logs", label: "聯絡紀錄" },
+  { name: "v_special_activity_logs", label: "特殊活動紀錄" },
+];
+
+const activeTab = ref("artists");
+const viewStates = reactive(
+  Object.fromEntries(
+    viewTabs.map((view) => [
+      view.name,
+      {
+        columns: [],
+        rows: [],
+        total: 0,
+        page: 1,
+        pageSize: 50,
+        loading: false,
+        loaded: false,
+      },
+    ]),
+  ),
+);
+
+const fetchViewData = async (viewName) => {
+  const state = viewStates[viewName];
+  state.loading = true;
+  try {
+    const res = await MYAPI.get("/get_view_data/" + viewName, {
+      page: state.page,
+      page_size: state.pageSize,
+    });
+    if (res.status === "success") {
+      state.columns = res.data.columns;
+      state.rows = res.data.rows;
+      state.total = res.data.total;
+      state.loaded = true;
+    } else {
+      ElMessage.error(res.message || "無法取得資料");
+    }
+  } catch (error) {
+    console.error("取得 view 資料時發生錯誤:", error);
+    ElMessage.error("取得資料時發生網路錯誤");
+  } finally {
+    state.loading = false;
+  }
+};
+
+// 第一次切換到該分頁時才載入資料
+const handleTabChange = (name) => {
+  if (viewStates[name] && !viewStates[name].loaded) fetchViewData(name);
+};
+
+const handleViewSizeChange = (viewName) => {
+  viewStates[viewName].page = 1;
+  fetchViewData(viewName);
+};
+
+const formatCell = (value) => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "boolean") return value ? "是" : "否";
+  return value;
 };
 
 // ========================================
