@@ -90,24 +90,27 @@
             <div class="flex w-full flex-row items-center gap-2">
               <!-- 速度調整 -->
               <div class="flex flex-1 items-center gap-1">
-                <el-input-number
-                  v-model="songStore.playbackRate"
-                  :precision="1"
-                  :step="0.1"
-                  :max="2"
-                  :min="0.3"
-                  @change="changePlaybackRate"
-                />
-                <!-- 歌詞跟隨偏移 -->
-                <el-tooltip :content="t('lyric_offset_hint')" placement="top">
+                <!-- 手機寬度直向排列，避免把右側按鈕擠出去 -->
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-center">
                   <el-input-number
-                    v-model="songStore.lyricOffset"
-                    :precision="2"
-                    :step="0.05"
-                    :max="5"
-                    :min="-5"
+                    v-model="songStore.playbackRate"
+                    :precision="1"
+                    :step="0.1"
+                    :max="2"
+                    :min="0.3"
+                    @change="changePlaybackRate"
                   />
-                </el-tooltip>
+                  <!-- 歌詞跟隨偏移 -->
+                  <el-tooltip :content="t('lyric_offset_hint')" placement="top">
+                    <el-input-number
+                      v-model="songStore.lyricOffset"
+                      :precision="2"
+                      :step="0.05"
+                      :max="5"
+                      :min="-5"
+                    />
+                  </el-tooltip>
+                </div>
                 <el-tooltip
                   :content="t('click_kana_to_play_sound')"
                   placement="top"
