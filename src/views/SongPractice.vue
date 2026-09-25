@@ -492,6 +492,9 @@
       :title="t('playlist_drawer')"
       direction="rtl"
       size="fit-content"
+      append-to-body
+      :z-index="2147483000"
+      class="playlist-drawer"
     >
       <div class="flex w-[40vw] flex-col gap-1 md:w-[30vw] lg:w-[20vw]">
         <div
@@ -1740,7 +1743,8 @@ onUnmounted(() => {
   -ms-user-select: none;
 }
 
-:deep(.el-drawer__header) {
+/* Drawer 已 append-to-body，不在元件根節點底下，需用 :global */
+:global(.playlist-drawer .el-drawer__header) {
   margin-bottom: 0px;
 }
 
