@@ -1,5 +1,10 @@
 <template>
   <div class="flex h-full flex-col gap-4 px-4 py-4">
+    <div class="text-right">
+      <el-button type="primary" @click="openImportDialog">
+        從網址匯入歌曲
+      </el-button>
+    </div>
     <div class="table-container">
       <table ref="authorTableRef" class="native-table">
         <thead>
@@ -114,6 +119,101 @@
       <div class="shrink-0 text-right">
         <el-button type="primary" @click="updateAuthorInfo">更新</el-button>
         <el-button @click="authorDialogVisible = false">取消</el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <el-dialog
+    title="從網址匯入歌曲"
+    v-model="importDialogVisible"
+    width="80%"
+    top="5vh"
+    :close-on-click-modal="!importRunning"
+    :close-on-press-escape="!importRunning"
+    :show-close="!importRunning"
+  >
+    <el-form label-width="80px" label-position="left">
+      <el-form-item label="歌曲網址">
+        <el-input
+          v-model="importForm.urls"
+          type="textarea"
+          :rows="5"
+          placeholder="每行一個網址，例如 https://www.marumaru-x.com/japanese-song/play-xxxx"
+          :disabled="importRunning"
+        />
+      </el-form-item>
+      <el-form-item label="歌手名稱">
+        <el-select
+          v-model="importForm.artist"
+          filterable
+          allow-create
+          default-first-option
+          placeholder="選擇既有歌手或輸入新名稱"
+          :disabled="importRunning"
+          class="w-full"
+        >
+          <el-option
+            v-for="row in songTableData"
+            :key="row.artist_id"
+            :label="row.name"
+            :value="row.name"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="公開">
+        <el-switch v-model="importForm.is_public" :disabled="importRunning" />
+      </el-form-item>
+    </el-form>
+
+    <div v-if="importResults.length" class="table-container">
+      <table class="native-table">
+        <thead>
+          <tr>
+            <th>網址</th>
+            <th>狀態</th>
+            <th>歌曲名稱</th>
+            <th>發布網址 / 錯誤訊息</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in importResults" :key="item.url">
+            <td class="break-all">{{ item.url }}</td>
+            <td class="whitespace-nowrap">
+              <el-tag :type="importStatusMap[item.status].type">
+                {{ importStatusMap[item.status].label }}
+              </el-tag>
+            </td>
+            <td>{{ item.name }}</td>
+            <td class="break-all">
+              <a
+                v-if="item.status === 'success'"
+                :href="`/S/${item.source_id}`"
+                target="_blank"
+                class="text-blue-500 underline"
+              >
+                {{ publishedUrl(item.source_id) }}
+              </a>
+              <span v-else-if="item.status === 'error'" class="text-red-500">
+                {{ item.message }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <template #footer>
+      <div class="text-right">
+        <el-button
+          type="primary"
+          :loading="importRunning"
+          @click="startImport"
+        >
+          {{ importRunning ? "發布中..." : "開始發布" }}
+        </el-button>
+        <el-button :disabled="importRunning" @click="importDialogVisible = false">
+          關閉
+        </el-button>
       </div>
     </template>
   </el-dialog>
@@ -488,6 +588,80 @@ const songresetForm = () => {
     original: "",
     converted: "",
   };
+};
+
+// ========================================
+// 從網址匯入歌曲（抓取 marumaru 歌詞並發布）
+// ========================================
+
+// 抓取一首歌需要開啟瀏覽器並可能重試，給較長的逾時
+const IMPORT_TIMEOUT = 3 * 60 * 1000;
+
+const importStatusMap = {
+  pending: { label: "等待中", type: "info" },
+  running: { label: "處理中", type: "warning" },
+  success: { label: "已發布", type: "success" },
+  error: { label: "失敗", type: "danger" },
+};
+
+const importDialogVisible = ref(false);
+const importRunning = ref(false);
+const importForm = ref({ urls: "", artist: "", is_public: false });
+const importResults = ref([]);
+
+const publishedUrl = (sourceId) =>
+  `${import.meta.env.VITE_SITE_BASE}/S/${sourceId}`;
+
+const openImportDialog = () => {
+  importResults.value = [];
+  importDialogVisible.value = true;
+};
+
+const startImport = async () => {
+  const urls = [
+    ...new Set(
+      importForm.value.urls
+        .split("\n")
+        .map((url) => url.trim())
+        .filter(Boolean),
+    ),
+  ];
+  const artist = (importForm.value.artist || "").trim();
+  if (!urls.length) return ElMessage.warning("請填寫至少一個網址");
+  if (!artist) return ElMessage.warning("請填寫歌手名稱");
+
+  importRunning.value = true;
+  importResults.value = urls.map((url) => ({ url, status: "pending" }));
+
+  // 逐一處理，避免後端同時開啟多個瀏覽器
+  for (const item of importResults.value) {
+    item.status = "running";
+    try {
+      const res = await MYAPI.post(
+        "/import_maru_song",
+        { url: item.url, artist, is_public: importForm.value.is_public },
+        {},
+        IMPORT_TIMEOUT,
+      );
+      if (res.status === "success") {
+        Object.assign(item, res.data, { status: "success" });
+      } else {
+        Object.assign(item, { status: "error", message: res.message });
+      }
+    } catch (error) {
+      Object.assign(item, { status: "error", message: error.message });
+    }
+  }
+
+  importRunning.value = false;
+  const successCount = importResults.value.filter(
+    (item) => item.status === "success",
+  ).length;
+  ElMessage({
+    type: successCount === urls.length ? "success" : "warning",
+    message: `發布完成：成功 ${successCount} / ${urls.length}`,
+  });
+  authorfetchData();
 };
 
 onMounted(() => {

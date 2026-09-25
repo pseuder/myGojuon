@@ -31,7 +31,7 @@ export const useApi = () => {
   );
 
   const request = (path, options = {}) => {
-    const { method = "GET", params, body, headers } = options;
+    const { method = "GET", params, body, headers, timeout } = options;
 
     const config = {
       url: path,
@@ -39,6 +39,9 @@ export const useApi = () => {
       params,
       headers,
     };
+    if (timeout !== undefined) {
+      config.timeout = timeout;
+    }
 
     // Axios 會自動偵測 FormData 並設定正確的 Content-Type
     // 若是一般物件則直接傳入 data，Axios 會自動序列化為 JSON
@@ -52,8 +55,8 @@ export const useApi = () => {
   const get = (path, params = {}, headers = {}) =>
     request(path, { method: "GET", params, headers });
 
-  const post = (path, body = {}, headers = {}) =>
-    request(path, { method: "POST", body, headers });
+  const post = (path, body = {}, headers = {}, timeout) =>
+    request(path, { method: "POST", body, headers, timeout });
 
   const put = (path, body = {}, headers = {}) =>
     request(path, { method: "PUT", body, headers });
