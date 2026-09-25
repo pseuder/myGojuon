@@ -19,7 +19,7 @@
         </thead>
         <tbody>
           <tr
-            v-for="row in authorfilteredTableData"
+            v-for="row in songTableData"
             :key="row.artist_id"
             :data-id="row.artist_id"
             class="table-row"
@@ -28,12 +28,12 @@
             <td>{{ row.display_order }}</td>
             <td>{{ row.name }}</td>
             <td>{{ row.song_count }}</td>
-            <td>{{ row.is_public ? "是" : "否" }}</td>
+            <td>{{ row.artist_is_public ? "是" : "否" }}</td>
             <td class="operations">
               <el-button
                 type="primary"
                 size="small"
-                @click="handleShowAllSongs(row)"
+                @click="authorhandleEdit(row)"
               >
                 顯示歌手所有歌曲
               </el-button>
@@ -239,14 +239,17 @@ const DragIcon = {
   `,
 };
 
-const createSortable = (tbodyEl, onEndCallback) => {
-  Sortable.create(tbodyEl, {
+// 建立拖曳排序，若已有實例則先銷毀避免重複綁定
+const createSortable = (prevInstance, tbodyEl, onEndCallback) => {
+  if (prevInstance) prevInstance.destroy();
+  return Sortable.create(tbodyEl, {
     animation: 150,
     handle: ".drag-handle",
     onEnd: onEndCallback,
   });
 };
 
+// 依陣列位置重新編號 display_order（從 1 開始）
 const buildOrderData = (list, mapFn) =>
   list.map((item, index) => {
     item.display_order = index + 1;
@@ -259,37 +262,42 @@ const buildOrderData = (list, mapFn) =>
 
 const songTableData = ref([]);
 const authorTableRef = ref(null);
+let authorSortableInstance = null;
 
-const fetchArtistData = () => {
+const authorfetchData = () => {
   MYAPI.get("/get_artists_list").then((res) => {
     if (res.status === "success") {
       songTableData.value = res.data;
-      nextTick(() => initArtistSortable());
+      nextTick(() => authorinitSortable());
     } else {
       ElMessage({ type: res.status, message: res.message });
     }
   });
 };
 
-const initArtistSortable = () => {
+const authorinitSortable = () => {
   const tbody = authorTableRef.value.querySelector("tbody");
-  createSortable(tbody, async ({ oldIndex, newIndex }) => {
-    if (oldIndex === newIndex) return;
-    ElMessage.info("拖曳結束，正在更新順序...");
+  authorSortableInstance = createSortable(
+    authorSortableInstance,
+    tbody,
+    async ({ oldIndex, newIndex }) => {
+      if (oldIndex === newIndex) return;
+      ElMessage.info("拖曳結束，正在更新順序...");
 
-    const [item] = songTableData.value.splice(oldIndex, 1);
-    songTableData.value.splice(newIndex, 0, item);
+      const [item] = songTableData.value.splice(oldIndex, 1);
+      songTableData.value.splice(newIndex, 0, item);
 
-    const orderData = buildOrderData(songTableData.value, (item) => ({
-      artist_id: item.artist_id,
-      display_order: item.display_order,
-    }));
+      const orderData = buildOrderData(songTableData.value, (item) => ({
+        artist_id: item.artist_id,
+        display_order: item.display_order,
+      }));
 
-    await updateArtistOrder(orderData);
-  });
+      await updateAuthorOrder(orderData);
+    },
+  );
 };
 
-const updateArtistOrder = async (orderData) => {
+const updateAuthorOrder = async (orderData) => {
   try {
     const res = await MYAPI.post("/update_artist_order", {
       new_orders: orderData,
@@ -298,11 +306,12 @@ const updateArtistOrder = async (orderData) => {
       ElMessage.success("作者順序更新成功！");
     } else {
       ElMessage.error(res.message || "更新順序失敗");
-      fetchArtistData();
+      authorfetchData();
     }
-  } catch {
+  } catch (error) {
+    console.error("更新作者順序時發生錯誤:", error);
     ElMessage.error("更新順序時發生網路錯誤");
-    fetchArtistData();
+    authorfetchData();
   }
 };
 
@@ -314,119 +323,76 @@ const authorDialogTitle = "編輯作者";
 const authorDialogVisible = ref(false);
 const authorDialogLoading = ref(false);
 const authorformData = ref({
-  id: "",
+  artist_id: null,
   name: "",
   is_public: false,
-  display_order: 0,
   songs: [],
-  orderData: [],
 });
 
 const resetAuthorForm = () => {
   authorformData.value = {
-    id: "",
+    artist_id: null,
     name: "",
     is_public: false,
-    display_order: 0,
     songs: [],
-    orderData: [],
   };
 };
 
-const authorhandleEdit = (row) => {
-  authorresetForm();
+const authorhandleEdit = async (row) => {
+  resetAuthorForm();
   authorDialogVisible.value = true;
   authorDialogLoading.value = true;
-  MYAPI.get("/get_artist_info/" + row.artist_id).then((res) => {
-    let data = res["data"];
-    authorformData.value.is_public = data.is_public === 1;
-    authorformData.value.songs = data.songs || [];
-    authorformData.value.artist_id = data.artist_id;
-    authorformData.value.name = data.name;
-
-    MYAPI.get("/get_artist_info/" + row.artist_id).then((res) => {
-      const data = res.data;
-      authorformData.value = {
-        ...authorformData.value,
-        id: data.artist_id,
-        name: data.name,
-        is_public: data.is_public,
-        songs: data.songs || [],
-      };
-      authorDialogLoading.value = false;
-
-      // 初始化歌曲拖曳排序
-      nextTick(() => {
-        songinitSortable();
-
-        ElMessage.info("歌曲列表已初始化拖曳排序功能");
-      });
-    });
-  });
-};
-
-// 初始化特定作者的歌曲拖曳排序
-const songinitSortable = () => {
-  // 獲取原生表格的 tbody 元素
-  const tbody = songTableRef.value.querySelector("tbody");
-
-  if (songSortableInstance) {
-    songSortableInstance.destroy();
-    songSortableInstance = null;
+  try {
+    const res = await MYAPI.get("/get_artist_info/" + row.artist_id);
+    if (res.status !== "success") {
+      ElMessage.error(res.message || "無法取得作者資訊");
+      return;
+    }
+    const data = res.data;
+    authorformData.value = {
+      artist_id: data.artist_id,
+      name: data.name,
+      // PGSQL 回傳 boolean
+      is_public: Boolean(data.is_public),
+      songs: data.songs || [],
+    };
+    nextTick(() => songinitSortable());
+  } finally {
+    authorDialogLoading.value = false;
   }
-
-  songSortableInstance = Sortable.create(tbody, {
-    animation: 150, // 拖曳動畫時間
-    handle: ".drag-handle", // 只能通過這個 class 的元素來拖動
-    // 拖曳結束後觸發的事件
-    onEnd: async (evt) => {
-      ElMessage.info("拖曳結束，正在更新順序...");
-      const { oldIndex, newIndex } = evt;
-
-      // 如果位置沒有改變，則不執行任何操作
-      if (oldIndex === newIndex) {
-        return;
-      }
-
-      // 1. 更新前端數據順序，讓畫面保持同步
-      const itemToMove = authorformData.value.songs.splice(oldIndex, 1)[0];
-      authorformData.value.songs.splice(newIndex, 0, itemToMove);
-
-      // 2. 準備要送到後端的資料
-      const orderData = authorformData.value.songs.map((item, index) => {
-        // 更新本地的 display_order，雖然不是必須，但保持資料一致性是個好習慣
-        item.display_order = index + 1;
-        return {
-          song_id: item.song_id,
-          display_order: index + 1, // 順序從 1 開始
-        };
-      });
-
-      authorformData.value.orderData = orderData;
-
-      // 3. 呼叫 API 更新後端資料庫
-      await updateSongOrder(orderData);
-    },
-  });
 };
+
+// 以目前畫面上的歌曲順序組出送往後端的資料
+const currentSongOrder = () =>
+  buildOrderData(authorformData.value.songs, (item) => ({
+    song_id: item.song_id,
+    display_order: item.display_order,
+  }));
+
+const saveArtistInfoAndSongOrder = () =>
+  MYAPI.post("/update_artist_info_and_song_order", {
+    artist_id: authorformData.value.artist_id,
+    artist_name: authorformData.value.name,
+    artist_is_public: authorformData.value.is_public ? 1 : 0,
+    new_orders: currentSongOrder(),
+  });
 
 const updateAuthorInfo = async () => {
+  if (!authorformData.value.songs.length) {
+    return ElMessage.warning("此作者沒有歌曲，無法更新");
+  }
   try {
-    const res = await MYAPI.post("/update_authorInfo", {
-      artist_id: authorformData.value.id,
-      artist_name: authorformData.value.name,
-      artist_is_public: authorformData.value.is_public,
-      new_orders: authorformData.value.orderData,
-    });
+    const res = await saveArtistInfoAndSongOrder();
     if (res.status === "success") {
-      ElMessage.success("歌曲順序更新成功！");
+      ElMessage.success("作者資訊更新成功！");
+      authorDialogVisible.value = false;
+      authorfetchData();
     } else {
-      ElMessage.error(res.message || "更新順序失敗");
-      fetchArtistData();
+      ElMessage.error(res.message || "更新失敗");
     }
-  } catch {
-    ElMessage.error("更新順序時發生網路錯誤");
-    fetchArtistData();
+  } catch (error) {
+    console.error("更新作者資訊時發生錯誤:", error);
+    ElMessage.error("更新時發生網路錯誤");
   }
 };
 
@@ -435,24 +401,40 @@ const updateAuthorInfo = async () => {
 // ========================================
 
 const songTableRef = ref(null);
+let songSortableInstance = null;
 
-const initSongSortable = () => {
+const songinitSortable = () => {
   const tbody = songTableRef.value.querySelector("tbody");
-  createSortable(tbody, ({ oldIndex, newIndex }) => {
-    if (oldIndex === newIndex) return;
+  songSortableInstance = createSortable(
+    songSortableInstance,
+    tbody,
+    async ({ oldIndex, newIndex }) => {
+      if (oldIndex === newIndex) return;
+      ElMessage.info("拖曳結束，正在更新順序...");
 
-    const [item] = authorformData.value.songs.splice(oldIndex, 1);
-    authorformData.value.songs.splice(newIndex, 0, item);
+      const [item] = authorformData.value.songs.splice(oldIndex, 1);
+      authorformData.value.songs.splice(newIndex, 0, item);
 
-    authorformData.value.orderData = buildOrderData(
-      authorformData.value.songs,
-      (item) => ({
-        song_id: item.song_id,
-        author_id: authorformData.value.id,
-        display_order: item.display_order,
-      }),
-    );
-  });
+      await updateSongOrder();
+    },
+  );
+};
+
+const updateSongOrder = async () => {
+  const artistId = authorformData.value.artist_id;
+  try {
+    const res = await saveArtistInfoAndSongOrder();
+    if (res.status === "success") {
+      ElMessage.success("歌曲順序更新成功！");
+    } else {
+      ElMessage.error(res.message || "更新順序失敗");
+      authorhandleEdit({ artist_id: artistId });
+    }
+  } catch (error) {
+    console.error("更新歌曲順序時發生錯誤:", error);
+    ElMessage.error("更新順序時發生網路錯誤");
+    authorhandleEdit({ artist_id: artistId });
+  }
 };
 
 const songhandleJumpEdit = (row) => {
@@ -466,128 +448,19 @@ const handleSongDelete = (row) => {
     type: "warning",
   })
     .then(async () => {
-      await MYAPI.del("/delete_song/" + row.source_id);
-      fetchArtistData();
+      const res = await MYAPI.del("/delete_song/" + row.source_id);
+      if (res.status !== "success") {
+        return ElMessage.error(res.message || "刪除失敗");
+      }
+      authorformData.value.songs = authorformData.value.songs.filter(
+        (song) => song.song_id !== row.song_id,
+      );
+      authorfetchData();
       ElMessage({ type: "success", message: "刪除成功" });
     })
     .catch(() => {
       ElMessage({ type: "info", message: "已取消刪除" });
     });
-};
-
-const authorfetchData = () => {
-  MYAPI.get("/get_artists_list").then((res) => {
-    if (res["status"] == "success") {
-      songTableData.value = res["data"];
-
-      nextTick(() => {
-        authorinitSortable();
-      });
-    } else {
-      ElMessage({
-        type: res["status"],
-        message: res["message"],
-      });
-    }
-  });
-};
-
-const authorinitSortable = () => {
-  // 獲取原生表格的 tbody 元素
-  const tbody = authorTableRef.value.querySelector("tbody");
-
-  if (authorSortableInstance) {
-    authorSortableInstance.destroy();
-    authorSortableInstance = null;
-  }
-
-  authorSortableInstance = Sortable.create(tbody, {
-    animation: 150, // 拖曳動畫時間
-    handle: ".drag-handle", // 只能通過這個 class 的元素來拖動
-    // 拖曳結束後觸發的事件
-    onEnd: async (evt) => {
-      ElMessage.info("拖曳結束，正在更新順序...");
-      const { oldIndex, newIndex } = evt;
-
-      // 如果位置沒有改變，則不執行任何操作
-      if (oldIndex === newIndex) {
-        return;
-      }
-
-      // 1. 更新前端數據順序，讓畫面保持同步
-      const itemToMove = songTableData.value.splice(oldIndex, 1)[0];
-      songTableData.value.splice(newIndex, 0, itemToMove);
-
-      // 2. 準備要送到後端的資料
-      const orderData = songTableData.value.map((item, index) => {
-        // 更新本地的 display_order，雖然不是必須，但保持資料一致性是個好習慣
-        item.display_order = index + 1;
-        return {
-          artist_id: item.artist_id,
-          display_order: index + 1, // 順序從 1 開始
-        };
-      });
-
-      // 3. 呼叫 API 更新後端資料庫
-      await updateAuthorOrder(orderData);
-    },
-  });
-};
-
-const updateAuthorOrder = async (orderData) => {
-  try {
-    const res = await MYAPI.post("/update_artist_order", {
-      new_orders: orderData,
-    });
-    if (res.status === "success") {
-      ElMessage.success("作者順序更新成功！");
-      // 可以選擇重新獲取一次資料，以確保完全同步
-      // authorfetchData();
-    } else {
-      ElMessage.error(res.message || "更新順序失敗");
-      // 如果更新失敗，最好是重新載入資料以還原順序
-      authorfetchData();
-    }
-  } catch (error) {
-    console.error("更新作者順序時發生錯誤:", error);
-    ElMessage.error("更新順序時發生網路錯誤");
-    // 出錯時也還原順序
-    authorfetchData();
-  }
-};
-
-const updateSongOrder = async (orderData) => {
-  try {
-    const res = await MYAPI.post("/update_song_order", {
-      artist_id: authorformData.value.artist_id,
-      artist_is_public: authorformData.value.is_public ? 1 : 0,
-      artist_name: authorformData.value.name,
-      new_orders: orderData,
-    });
-    if (res.status === "success") {
-      ElMessage.success("影片順序更新成功！");
-    } else {
-      ElMessage.error(res.message || "更新順序失敗");
-      authorhandleEdit({ artist_id: authorformData.value.artist_id });
-    }
-  } catch (error) {
-    console.error("更新歌曲順序時發生錯誤:", error);
-    ElMessage.error("更新順序時發生網路錯誤");
-    authorhandleEdit({ artist_id: authorformData.value.artist_id });
-  }
-};
-
-const songresetForm = () => {
-  songformData.value = {
-    id: "",
-    source_id: "",
-    name: "",
-    author: "",
-    tags: "",
-    is_public: false,
-    original: "",
-    converted: "",
-  };
 };
 
 // ========================================
