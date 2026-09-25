@@ -712,7 +712,7 @@ watch(
         {
           "@type": "LearningResource",
           name: video.name,
-          teaches: "日文歌曲中文歌詞、漢字讀音、假名",
+          teaches: "日文歌曲歌詞、漢字讀音、假名",
           educationalLevel: "beginner",
           url: window.location.origin + window.location.pathname,
           image: `https://i.ytimg.com/vi/${video.source_id}/hqdefault.jpg`,
