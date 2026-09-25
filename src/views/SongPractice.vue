@@ -98,6 +98,16 @@
                   :min="0.3"
                   @change="changePlaybackRate"
                 />
+                <!-- 歌詞跟隨偏移 -->
+                <el-tooltip :content="t('lyric_offset_hint')" placement="top">
+                  <el-input-number
+                    v-model="songStore.lyricOffset"
+                    :precision="2"
+                    :step="0.05"
+                    :max="5"
+                    :min="-5"
+                  />
+                </el-tooltip>
                 <el-tooltip
                   :content="t('click_kana_to_play_sound')"
                   placement="top"
@@ -246,7 +256,7 @@
             v-for="(line, index) in processedLyrics"
             :key="index"
             :id="`lyric-${index}`"
-            :class="{ 'bg-yellow-200': currentLyricIndex === index }"
+            :class="{ 'current-lyric': currentLyricIndex === index }"
             class="flex items-center gap-4 py-2"
           >
             <div class="anchor-button flex shrink-0 items-center">
@@ -1130,7 +1140,8 @@ const updateCurrentLyric = () => {
     return;
   }
 
-  // 更新當前歌詞索引
+  // 更新當前歌詞索引（加上偏移，補償慢速裝置的延遲）
+  const lyricTime = currentTime + (songStore.lyricOffset || 0);
   for (let i = 0; i < lyrics.value.length; i++) {
     const lineStartTime = parseTimeToSeconds(lyrics.value[i].timestamp);
     const nextLineStartTime =
@@ -1138,7 +1149,7 @@ const updateCurrentLyric = () => {
         ? parseTimeToSeconds(lyrics.value[i + 1].timestamp)
         : player.getDuration() || Infinity;
 
-    if (currentTime >= lineStartTime && currentTime < nextLineStartTime) {
+    if (lyricTime >= lineStartTime && lyricTime < nextLineStartTime) {
       if (currentLyricIndex.value !== i) {
         currentLyricIndex.value = i;
         if (songStore.autoScroll) scrollToCurrentLyric(i);
@@ -1632,6 +1643,11 @@ onUnmounted(() => {
   100% {
     background-position: 0% 50%;
   }
+}
+
+/* 當前歌詞底色：用 hex 而非 Tailwind v4 的 oklch，舊版電視瀏覽器不支援 oklch */
+.current-lyric {
+  background-color: #fef08a;
 }
 
 /* 點擊發音的假名單元 */

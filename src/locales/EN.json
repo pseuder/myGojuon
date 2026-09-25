@@ -111,6 +111,7 @@
   "keyboard_shortcuts": "Shortcuts",
   "keyboard_shortcuts_hint": "A: Previous Line   S: Loop Line   D: Next Line\nZ: -5s  X: Play/Pause  C: +5s",
   "click_kana": "Lyric Pronunciation",
+  "lyric_offset_hint": "Lyric sync offset (sec): positive advances lyrics earlier, negative delays them",
   "click_kana_to_play_sound": "Click hiragana to play sound(Testing)",
   "left_points": "Credits",
   "play_next_song": "Playing next",
