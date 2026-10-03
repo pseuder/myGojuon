@@ -1,19 +1,9 @@
 {
-  "headers": [
+  "redirects": [
     {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "all"
-        }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/((?!google686256d77e05b44b\\.html).*)",
+      "destination": "https://mygojuon.com/$1",
+      "permanent": true
     }
   ]
 }
