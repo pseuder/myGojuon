@@ -35,21 +35,25 @@
             </div>
           </template>
           <!-- 歌手卡片 -->
+          <!-- 用真正的 <a href> 讓搜尋引擎能爬到各歌手頁；點擊時攔截改走站內分頁邏輯 -->
           <template v-else v-for="artist in allArtists" :key="artist.artist_id">
-            <div class="flex w-full cursor-pointer flex-col sm:w-fit">
+            <a
+              :href="`/SongOverview?artist=${artist.artist_id}`"
+              class="flex w-full cursor-pointer flex-col text-inherit no-underline sm:w-fit"
+              @click.prevent="handleArtistSelect(artist.artist_id, artist.name)"
+            >
               <el-card class="h-52 w-full p-0 sm:w-80 md:w-96" shadow="hover">
                 <img
                   :src="`/thumbnails/${artist.name}.jpg`"
                   class="h-full w-full"
                   :alt="artist.name"
                   style="object-fit: cover; object-position: top"
-                  @click="handleArtistSelect(artist.artist_id, artist.name)"
                 />
               </el-card>
               <div class="text-lg font-bold">
                 {{ artist.name }} - {{ artist.song_count }} {{ t("songs") }}
               </div>
-            </div>
+            </a>
           </template>
         </div>
       </el-tab-pane>
