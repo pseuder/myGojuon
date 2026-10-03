@@ -12,6 +12,9 @@
     "description": "使用書寫或觸控筆, 配合日語發音, 針對50音中的平假名, 片假名, 濁音, 半濁音, 拗音進行聽寫練習",
     "keywords": "50音, 50音學習, 50音練習,  平假名, 片假名, 濁音, 半濁音, 拗音"
   },
+  "page_not_found": "找不到這個頁面",
+  "page_not_found_desc": "您要找的頁面不存在或已被移除。",
+  "back_to_home": "回到首頁",
   "home": "首頁",
   "handwriting_practice": "手寫練習",
   "dictation_practice": "聽寫練習",

@@ -1,4 +1,4 @@
 User-Agent: *
 Disallow:
 
-Sitemap: https://mygojuon.com/mysitemap.xml
+Sitemap: https://mygojuon.com/sitemap.xml

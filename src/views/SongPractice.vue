@@ -765,6 +765,13 @@ const fetchVideoData = async (id) => {
     const response = await MYAPI.get(`/get_song/${id}`);
     if (response.data) {
       videoData.value = response.data;
+    } else {
+      // 歌曲不存在：切到 404 頁並保留原網址，讓搜尋引擎判定為不存在的頁面而非轉址
+      router.replace({
+        name: "notFound",
+        params: { pathMatch: route.path.substring(1).split("/") },
+        query: route.query,
+      });
     }
   } catch (error) {
     console.log(error);
@@ -1561,6 +1568,8 @@ onMounted(async () => {
   isLoading.value = true;
 
   await fetchVideoData(uid);
+  // 歌曲不存在時已切到 404 頁，後續初始化（播放清單、播放器）都不需要
+  if (!videoData.value) return;
   checkMarquee();
 
   updateWindowSize();

@@ -1,34 +1,30 @@
 <template>
   <nav class="flex w-full">
     <div class="user-select-none w-[50%] grow">
+      <!-- 不用 el-menu 的 router 模式，改以 <router-link> 產生真正的 <a href>，讓搜尋引擎能爬到站內連結 -->
       <el-menu
         :default-active="activeIndex"
         mode="horizontal"
-        router
         :ellipsis="false"
       >
-        <el-menu-item index="/" class="flex items-center gap-2">
-          <img src="/images/home.svg" class="w-5 h-5 shrink-0" />
-          <span class="hidden md:inline">{{ t("home") }}</span>
-        </el-menu-item>
-        <el-menu-item index="/WritingPractice" class="flex items-center gap-2">
-          <img src="/images/writting.svg" class="w-5 h-5 shrink-0" />
-          <span class="hidden md:inline">{{ t("handwriting_practice") }}</span>
-        </el-menu-item>
         <el-menu-item
-          index="/ListeningPractice"
-          class="flex items-center gap-2"
+          v-for="item in navItems"
+          :key="item.path"
+          :index="item.path"
+          class="nav-item"
         >
-          <img src="/images/listining.svg" class="w-5 h-5 shrink-0" />
-          <span class="hidden md:inline">{{ t("dictation_practice") }}</span>
-        </el-menu-item>
-        <el-menu-item index="/SongOverview" class="flex items-center gap-2">
-          <img src="/images/music.svg" class="w-5 h-5 shrink-0" />
-          <span class="hidden md:inline">{{ t("song_practice") }}</span>
+          <router-link :to="item.path" class="flex h-full items-center gap-2">
+            <img
+              :src="item.icon"
+              :alt="t(item.label)"
+              class="h-5 w-5 shrink-0"
+            />
+            <span class="hidden md:inline">{{ t(item.label) }}</span>
+          </router-link>
         </el-menu-item>
       </el-menu>
     </div>
-    <div class="flex w-fit items-center gap-2 mr-4">
+    <div class="mr-4 flex w-fit items-center gap-2">
       <NavSetting />
     </div>
   </nav>
@@ -45,4 +41,31 @@ const { t } = useI18n();
 const route = useRoute();
 
 const activeIndex = computed(() => route.path);
+
+const navItems = [
+  { path: "/", icon: "/images/home.svg", label: "home" },
+  {
+    path: "/WritingPractice",
+    icon: "/images/writting.svg",
+    label: "handwriting_practice",
+  },
+  {
+    path: "/ListeningPractice",
+    icon: "/images/listining.svg",
+    label: "dictation_practice",
+  },
+  { path: "/SongOverview", icon: "/images/music.svg", label: "song_practice" },
+];
 </script>
+
+<style scoped>
+/* 讓 <a> 撐滿整個選單項目，點擊範圍與原本相同 */
+.nav-item {
+  padding: 0;
+}
+.nav-item > a {
+  padding: 0 20px;
+  color: inherit;
+  text-decoration: none;
+}
+</style>

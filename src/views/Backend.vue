@@ -1,6 +1,6 @@
 <template>
   <div class="h-full px-4 py-4">
-    <el-tabs v-model="activeTab" class="h-full" @tab-change="handleTabChange">
+    <el-tabs v-model="activeTab" class="backend-tabs h-full" @tab-change="handleTabChange">
       <el-tab-pane label="歌手列表" name="artists">
         <div class="flex flex-col gap-4">
           <div class="text-right">
@@ -676,6 +676,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* el-tabs 高度固定為 h-full，而 .el-tabs__content 預設 overflow: hidden，內容超出會被裁切 */
+.backend-tabs :deep(.el-tabs__content) {
+  overflow-y: auto;
+}
+
 .table-container {
   width: 100%;
   overflow-x: auto;

@@ -34,26 +34,38 @@
       <div
         class="my-10 flex flex-col justify-center gap-4 text-center md:flex-row"
       >
-        <el-button
-          @click="router.push('/WritingPractice')"
-          class="rounded-lg bg-indigo-600 px-6 py-6 text-xl text-white transition duration-300 hover:bg-indigo-700"
-        >
-          {{ t("start_handwriting_practice") }}
-        </el-button>
-        <el-button
-          @click="router.push('/ListeningPractice')"
-          style="margin-left: 0px"
-          class="rounded-lg bg-indigo-600 px-6 py-6 text-xl text-white transition duration-300 hover:bg-indigo-700"
-        >
-          {{ t("start_dictation_practice") }}
-        </el-button>
-        <el-button
-          @click="router.push('/SongOverview')"
-          style="margin-left: 0px"
-          class="rounded-lg bg-indigo-600 px-6 py-6 text-xl text-white transition duration-300 hover:bg-indigo-700"
-        >
-          {{ t("start_song_practice") }}
-        </el-button>
+        <router-link to="/WritingPractice" custom v-slot="{ href, navigate }">
+          <el-button
+            tag="a"
+            :href="href"
+            @click="navigate"
+            class="rounded-lg bg-indigo-600 px-6 py-6 text-xl text-white transition duration-300 hover:bg-indigo-700"
+          >
+            {{ t("start_handwriting_practice") }}
+          </el-button>
+        </router-link>
+        <router-link to="/ListeningPractice" custom v-slot="{ href, navigate }">
+          <el-button
+            tag="a"
+            :href="href"
+            @click="navigate"
+            style="margin-left: 0px"
+            class="rounded-lg bg-indigo-600 px-6 py-6 text-xl text-white transition duration-300 hover:bg-indigo-700"
+          >
+            {{ t("start_dictation_practice") }}
+          </el-button>
+        </router-link>
+        <router-link to="/SongOverview" custom v-slot="{ href, navigate }">
+          <el-button
+            tag="a"
+            :href="href"
+            @click="navigate"
+            style="margin-left: 0px"
+            class="rounded-lg bg-indigo-600 px-6 py-6 text-xl text-white transition duration-300 hover:bg-indigo-700"
+          >
+            {{ t("start_song_practice") }}
+          </el-button>
+        </router-link>
       </div>
 
       <section class="my-10 flex flex-col">
@@ -130,11 +142,13 @@
                   class="h-18 w-18 rounded-full object-cover"
                 />
                 <div class="flex flex-col">
-                  <h3
-                    class="gradient-text-tech-animated cursor-pointer text-2xl"
-                    @click="router.push('/SongOverview?artist=25')"
-                  >
-                    LiSA
+                  <h3 class="text-2xl">
+                    <router-link
+                      to="/SongOverview?artist=25"
+                      class="gradient-text-tech-animated"
+                    >
+                      LiSA
+                    </router-link>
                   </h3>
                   <div>
                     2024/11/30 & 2024/12/01 - LiSA LiVE is Smile Always~COCKTAiL
@@ -153,18 +167,20 @@
                   class="h-18 w-18 rounded-full object-cover"
                 />
                 <div class="flex flex-col">
-                  <h3
-                    class="gradient-text-tech-animated cursor-pointer text-2xl"
-                    @click="router.push('/SongOverview?artist=1')"
-                  >
-                    孤獨搖滾
+                  <h3 class="text-2xl">
+                    <router-link
+                      to="/SongOverview?artist=1"
+                      class="gradient-text-tech-animated"
+                    >
+                      孤獨搖滾
+                    </router-link>
                   </h3>
-                  <div
-                    @click="router.push('/SongPractice/B7BxrAAXl94')"
+                  <router-link
+                    to="/SongPractice/B7BxrAAXl94"
                     class="text-blue-700 underline"
                   >
                     ギターと孤独と蒼い惑星 - 結束バンド
-                  </div>
+                  </router-link>
                 </div>
               </div>
             </div>
@@ -178,18 +194,20 @@
                   class="h-18 w-18 rounded-full object-cover"
                 />
                 <div class="flex flex-col">
-                  <h3
-                    class="gradient-text-tech-animated cursor-pointer text-2xl"
-                    @click="router.push('/SongOverview?artist=2')"
-                  >
-                    あたらよ
+                  <h3 class="text-2xl">
+                    <router-link
+                      to="/SongOverview?artist=2"
+                      class="gradient-text-tech-animated"
+                    >
+                      あたらよ
+                    </router-link>
                   </h3>
-                  <div
-                    @click="router.push('/SongPractice/Y2wZKacNue8')"
+                  <router-link
+                    to="/SongPractice/Y2wZKacNue8"
                     class="text-blue-700 underline"
                   >
                     outcry - あたらよ
-                  </div>
+                  </router-link>
                 </div>
               </div>
             </div>
@@ -203,18 +221,20 @@
                   class="h-18 w-18 rounded-full object-cover"
                 />
                 <div class="flex flex-col">
-                  <h3
-                    class="gradient-text-tech-animated cursor-pointer text-2xl"
-                    @click="router.push('/SongOverview?artist=45')"
-                  >
-                    ヨルシカ
+                  <h3 class="text-2xl">
+                    <router-link
+                      to="/SongOverview?artist=45"
+                      class="gradient-text-tech-animated"
+                    >
+                      ヨルシカ
+                    </router-link>
                   </h3>
-                  <div
-                    @click="router.push('/SongPractice/-VKIqrvVOpo')"
+                  <router-link
+                    to="/SongPractice/-VKIqrvVOpo"
                     class="text-blue-700 underline"
                   >
                     ただ君に晴れ - ヨルシカ
-                  </div>
+                  </router-link>
                 </div>
               </div>
             </div>
