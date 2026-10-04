@@ -2,6 +2,7 @@
   <div class="flex flex-col sm:h-[85vh] sm:overflow-hidden">
     <div
       class="flex h-full flex-col gap-2 px-4 py-4 sm:flex-row sm:px-10"
+      :class="{ 'select-none': isDragging }"
       ref="containerRef"
     >
       <!-- 左側面板: 影片播放器+功能列 -->
@@ -29,11 +30,23 @@
           />
         </div>
         <div class="flex gap-2">
-          <el-input
+          <el-select
             v-model="videoChannel"
+            filterable
+            allow-create
+            default-first-option
+            clearable
+            placeholder="選擇既有歌手或輸入新名稱"
             class="w-full"
-            placeholder="輸入歌手名稱"
-          />
+            :loading="artistsLoading"
+          >
+            <el-option
+              v-for="artist in artistList"
+              :key="artist.artist_id"
+              :label="artist.name"
+              :value="artist.name"
+            />
+          </el-select>
         </div>
         <div class="flex gap-2">
           <el-input
@@ -169,11 +182,13 @@
             :key="index"
             :id="`lyric-${index}`"
             :class="{ 'bg-yellow-100': currentLyricIndex === index }"
-            class="flex items-center gap-4 py-4"
+            class="flex flex-col items-stretch gap-2 py-4 sm:flex-row sm:items-center sm:gap-4"
             style="border-block-width: 6px; border-block-color: #e5e7eb"
           >
-            <!-- 行控制區 -->
-            <div class="flex shrink-0 flex-col items-center">
+            <!-- 行控制區（手機：橫排在歌詞上方；電腦：直排在左側） -->
+            <div
+              class="flex shrink-0 flex-row flex-wrap items-center justify-center gap-x-2 sm:flex-col sm:gap-x-0"
+            >
               <div class="flex">
                 <el-button link plain @click="startVideoOn(line.timestamp)">
                   <el-icon :size="25"><Switch /></el-icon>
@@ -220,13 +235,37 @@
                   >+10</el-button
                 >
               </div>
+
+              <!-- 整列上色 -->
+              <div class="mt-1 flex items-center gap-1">
+                <el-button
+                  size="small"
+                  class="h-8 w-14 p-0 text-white"
+                  style="background-color: #9b59b6; border-color: #9b59b6"
+                  title="整列套用紫色"
+                  @click="handleColorLine(index, '#9B59B6')"
+                >
+                  <span class="text-sm">整列紫</span>
+                </el-button>
+                <el-button
+                  size="small"
+                  class="h-8 w-14 p-0 text-white"
+                  style="background-color: #fa8072; border-color: #fa8072"
+                  title="整列套用鮭魚色"
+                  @click="handleColorLine(index, '#FA8072')"
+                >
+                  <span class="text-sm">整列鮭</span>
+                </el-button>
+              </div>
             </div>
 
-            <!-- 歌詞字元區 -->
-            <div class="flex w-full flex-wrap items-center gap-2">
+            <!-- 歌詞字元區（手機：兩欄 grid；電腦：固定寬度換行） -->
+            <div
+              class="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center"
+            >
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
                 <div
-                  class="flex w-56 flex-col"
+                  class="flex w-full flex-col sm:w-56"
                   :id="`lyric-cvt-${index}-${lyIndex}`"
                 >
                   <!-- 字元操作按鈕 -->
@@ -348,12 +387,12 @@
                     </el-button>
                     <el-button
                       size="small"
-                      class="h-6 w-8 p-0 text-white"
+                      class="h-8 w-14 p-0 text-white"
                       style="background-color: #9b59b6; border-color: #9b59b6"
                       title="套用紫色"
                       @click="ly.color = '#9B59B6'"
                     >
-                      <span class="text-xs">紫</span>
+                      <span class="text-sm">紫</span>
                     </el-button>
                     <el-button
                       size="small"
@@ -515,6 +554,28 @@ const formData = ref({
   converted: "",
   remark: "",
 });
+
+// ============================================================
+// 歌手名單（提供下拉選擇，仍可手動輸入新名稱）
+// ============================================================
+const artistList = ref([]);
+const artistsLoading = ref(false);
+
+const fetchArtistList = async () => {
+  artistsLoading.value = true;
+  try {
+    const res = await MYAPI.get("/get_artists_list");
+    if (res.status === "success") {
+      artistList.value = res.data || [];
+    } else {
+      ElMessage.error(res.message || "無法取得歌手名單");
+    }
+  } catch {
+    ElMessage.error("取得歌手名單時發生錯誤");
+  } finally {
+    artistsLoading.value = false;
+  }
+};
 
 // ============================================================
 // YouTube Player
@@ -1026,6 +1087,16 @@ const openColorPicker = (lyricIndex, lyricLineIndex) => {
   colorPickerVisible.value = true;
 };
 
+// 整列套用同一顏色
+const handleColorLine = (lineIndex, color) => {
+  const line = allLyrics.value[lineIndex];
+  if (!line?.lyrics?.length) return;
+  line.lyrics.forEach((ly) => {
+    ly.color = color;
+  });
+  ElMessage.success("整列顏色設定成功");
+};
+
 const applyColor = () => {
   const target =
     allLyrics.value[currentColorLyricIndex.value]?.lyrics[
@@ -1137,6 +1208,8 @@ const saveVideo = async () => {
     if (res["status"] === "success") {
       ElMessage.success("歌曲發布成功");
       isDirty.value = false;
+      // 若是新歌手，重新取得名單讓下拉選單同步
+      fetchArtistList();
     } else {
       ElMessage({
         type: res["status"] || "error",
@@ -1189,7 +1262,15 @@ const enterEditPage = () => {
 // ============================================================
 // 鍵盤事件
 // ============================================================
+// 焦點在輸入框時不觸發快捷鍵，避免手機鍵盤的「完成」(Enter) 誤插時間戳
+const isTypingTarget = (el) =>
+  el instanceof HTMLElement &&
+  (el.tagName === "INPUT" ||
+    el.tagName === "TEXTAREA" ||
+    el.isContentEditable);
+
 const handleKeyPress = (event) => {
+  if (isTypingTarget(event.target)) return;
   switch (event.key.toLowerCase()) {
     case "enter":
       handleInsert();
@@ -1217,7 +1298,36 @@ const leftPanelWidth = ref(33);
 const isDragging = ref(false);
 const isMobile = ref(false);
 
-// 在指定時間軸開始播放
+// 與 Tailwind 的 sm 斷點 (640px) 一致
+const mobileQuery = window.matchMedia("(max-width: 639px)");
+const updateIsMobile = () => {
+  isMobile.value = mobileQuery.matches;
+};
+
+const MIN_LEFT_PERCENT = 20;
+const MAX_LEFT_PERCENT = 70;
+
+const handleMouseDown = (event) => {
+  event.preventDefault();
+  isDragging.value = true;
+
+  const onMouseMove = (e) => {
+    if (!containerRef.value) return;
+    const rect = containerRef.value.getBoundingClientRect();
+    const percent = ((e.clientX - rect.left) / rect.width) * 100;
+    leftPanelWidth.value = Math.min(
+      MAX_LEFT_PERCENT,
+      Math.max(MIN_LEFT_PERCENT, percent),
+    );
+  };
+  const onMouseUp = () => {
+    isDragging.value = false;
+    window.removeEventListener("mousemove", onMouseMove);
+    window.removeEventListener("mouseup", onMouseUp);
+  };
+  window.addEventListener("mousemove", onMouseMove);
+  window.addEventListener("mouseup", onMouseUp);
+};
 
 const beforeUnloadHandler = (event) => {
   if (isDirty.value) {
@@ -1248,7 +1358,17 @@ watch(
 // 生命週期
 // ============================================================
 onMounted(async () => {
-  await initializePlayer();
+  updateIsMobile();
+  mobileQuery.addEventListener("change", updateIsMobile);
+
+  // 歌手名單不依賴播放器，先載入以免 YouTube API 載入失敗時被卡住
+  fetchArtistList();
+  try {
+    await initializePlayer();
+  } catch (error) {
+    console.error("初始化 YouTube 播放器失敗:", error);
+    ElMessage.warning("YouTube 播放器載入失敗，仍可編輯歌詞");
+  }
   enterEditPage();
   getApiKey();
 
@@ -1261,6 +1381,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (player) player.destroy();
+  mobileQuery.removeEventListener("change", updateIsMobile);
   window.removeEventListener("keypress", handleKeyPress, true);
   window.removeEventListener("beforeunload", beforeUnloadHandler);
 });
@@ -1307,12 +1428,5 @@ input {
 .resizer:active,
 .resizer-dragging {
   background-color: #6b7280;
-}
-
-.resizer-dragging * {
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
 }
 </style>

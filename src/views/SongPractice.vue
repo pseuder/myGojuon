@@ -370,9 +370,10 @@
           </el-button>
         </div>
 
-        <!-- Center: song info -->
+        <!-- Center: song info（快速點 3 下可跳到歌曲編輯頁） -->
         <div
-          class="flex min-w-0 flex-1 flex-col items-center justify-center px-2"
+          class="flex min-w-0 flex-1 flex-col items-center justify-center px-2 select-none touch-manipulation"
+          @click="handleTitleTap"
         >
           <div
             class="marquee-wrapper w-full"
@@ -985,6 +986,25 @@ const isAutoNavigating = ref(false);
 /*-- Bottom Control Bar State --*/
 const isLoopingSong = computed(() => songStore.playMode === "loop");
 const isPlaylistDrawerOpen = ref(false);
+
+/*-- 快速點擊標題 3 下跳到歌曲編輯頁 --*/
+const TITLE_TAP_COUNT = 3;
+const TITLE_TAP_INTERVAL = 500; // 兩次點擊間隔超過此毫秒數就重新計數
+let titleTapCount = 0;
+let titleTapTimer = null;
+
+const handleTitleTap = () => {
+  titleTapCount += 1;
+  clearTimeout(titleTapTimer);
+  if (titleTapCount >= TITLE_TAP_COUNT) {
+    titleTapCount = 0;
+    if (videoId.value) window.open(`/S/${videoId.value}`, "_blank");
+    return;
+  }
+  titleTapTimer = setTimeout(() => {
+    titleTapCount = 0;
+  }, TITLE_TAP_INTERVAL);
+};
 
 /*-- Marquee --*/
 const marqueeRef = ref(null);
@@ -1628,6 +1648,7 @@ onUnmounted(() => {
   window.removeEventListener("touchend", handleTouchEnd);
   document.removeEventListener("mousemove", onResize);
   document.removeEventListener("mouseup", stopResize);
+  clearTimeout(titleTapTimer);
   window.onYouTubeIframeAPIReady = null;
   document.getElementById(STRUCTURED_DATA_ID)?.remove();
 });
