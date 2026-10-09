@@ -91,7 +91,9 @@ router.afterEach((to) => {
     if (noindex) {
       canonical.remove();
     } else {
-      canonical.setAttribute("href", `${SITE_BASE}${to.path}`);
+      // 英文版 /en/... 的 canonical 指向中文版
+      const path = to.path.replace(/^\/en(?=\/|$)/, "") || "/";
+      canonical.setAttribute("href", `${SITE_BASE}${path}`);
     }
   }
 });
