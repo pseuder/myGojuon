@@ -236,9 +236,21 @@ const generateCanvasImage = async () => {
   return new Promise((resolve) => offscreenCanvas.toBlob(resolve, "image/png"));
 };
 
+// 筆劃座標 (給 Google Input Tools 辨識用): 每一筆劃為 [[x...], [y...]]
+const generateInk = () => ({
+  width: canvas.value.width,
+  height: canvas.value.height,
+  strokes: userPaths.value
+    .filter((path) => path.length > 0)
+    .map((path) => [
+      path.map((point) => Math.round(point.x)),
+      path.map((point) => Math.round(point.y)),
+    ]),
+});
+
 const handleAIRecognition = async () => {
   const imageBlob = await generateCanvasImage();
-  emit("imageRecognition", imageBlob);
+  emit("imageRecognition", imageBlob, generateInk());
 };
 
 onMounted(() => {

@@ -548,12 +548,13 @@ const handleClearSpecialLearningList = () => {
 };
 
 /*-- 影像辨識 --*/
-const imageRecognition = async (imageBlob) => {
+const imageRecognition = async (imageBlob, ink) => {
   loading.value = true;
   try {
     const formData = new FormData();
     formData.append("char_type", learningStore.listening_selectedSound.type);
     formData.append("image", imageBlob, "handwriting.png");
+    if (ink?.strokes?.length) formData.append("ink", JSON.stringify(ink));
     formData.append(
       "learning_item",
       learningStore.listening_selectedSound.kana,
