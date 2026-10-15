@@ -1,9 +1,0 @@
-{
-  "redirects": [
-    {
-      "source": "/((?!google686256d77e05b44b\\.html).*)",
-      "destination": "https://mygojuon.com/$1",
-      "permanent": true
-    }
-  ]
-}

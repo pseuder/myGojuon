@@ -7,12 +7,14 @@
     "dev": "vite",
     "build": "node scripts/generate-sitemap.js && vite build",
     "preview": "vite preview",
-    "generate-sitemap": "node scripts/generate-sitemap.js"
+    "generate-sitemap": "node scripts/generate-sitemap.js",
+    "convert-thumbnails": "node scripts/convert-thumbnails.js"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.5",
+    "echarts": "^5.6.0",
     "element-plus": "^2.7.7",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
@@ -26,6 +28,7 @@
     "@vitejs/plugin-vue": "^5.0.5",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.1.18",
     "vite": "^5.3.1"
   }

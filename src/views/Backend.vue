@@ -98,6 +98,16 @@
           />
         </div>
       </el-tab-pane>
+
+      <el-tab-pane
+        v-for="trend in usageTrendTabs"
+        :key="trend.name"
+        :label="trend.label"
+        :name="trend.name"
+        lazy
+      >
+        <UsageTrendChart :view-name="trend.view" />
+      </el-tab-pane>
     </el-tabs>
   </div>
 
@@ -281,6 +291,7 @@ import { ref, reactive, onMounted, nextTick } from "vue";
 import { ElMessageBox, ElMessage } from "element-plus";
 import Sortable from "sortablejs";
 import { useApi } from "@/composables/useApi.js";
+import UsageTrendChart from "@/components/UsageTrendChart.vue";
 
 const MYAPI = useApi();
 
@@ -589,6 +600,16 @@ const handleViewSizeChange = (viewName) => {
   viewStates[viewName].page = 1;
   fetchViewData(viewName);
 };
+
+// ========================================
+// 用量趨勢（各使用者每日用量折線圖）
+// ========================================
+
+const usageTrendTabs = [
+  { name: "trend_writing", view: "v_writing_logs", label: "手寫用量趨勢" },
+  { name: "trend_rec", view: "v_rec_logs", label: "辨識用量趨勢" },
+  { name: "trend_song", view: "v_song_logs", label: "歌曲用量趨勢" },
+];
 
 const formatCell = (value) => {
   if (value === null || value === undefined) return "";

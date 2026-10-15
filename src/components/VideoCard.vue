@@ -9,8 +9,12 @@
       >
         <img
           :src="'https://i.ytimg.com/vi/' + video.source_id + '/hqdefault.jpg'"
+          loading="lazy"
+          decoding="async"
+          width="480"
+          height="360"
           class="h-48 w-full cursor-pointer object-cover"
-          alt="video thumbnail"
+          :alt="video.song_name"
         />
       </a>
 

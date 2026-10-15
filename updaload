@@ -1,6 +1,12 @@
+[PC]
 scp -r dist iop890520@35.201.255.38:/var/www/mygojuon/dist_new
+
+
 [vm]
 cd /var/www/mygojuon && rm -rf dist_old && ([ -d dist ] && mv dist dist_old || true) && mv dist_new dist
+
+[convert webp]
+npm --prefix myGojuon run convert-thumbnails
 
 [ONCE]
 scp F:\WorkSpace\myGojuon\deploy\nginx-mygojuon.conf iop890520@35.201.255.38:/tmp/
@@ -8,3 +14,4 @@ scp F:\WorkSpace\myGojuon\deploy\nginx-mygojuon.conf iop890520@35.201.255.38:/tm
 [vm]
 sudo mv /tmp/nginx-mygojuon.conf /etc/nginx/sites-available/mygojuon && sudo ln -s /etc/nginx/sites-available/mygojuon /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
+

@@ -43,8 +43,14 @@
               @click.prevent="handleArtistSelect(artist.artist_id, artist.name)"
             >
               <el-card class="h-52 w-full p-0 sm:w-80 md:w-96" shadow="hover">
+                <!-- 優先載入 WebP；新歌手若尚未轉檔則退回 jpg -->
                 <img
-                  :src="`/thumbnails/${artist.name}.jpg`"
+                  :src="`/thumbnails/${artist.name}.webp`"
+                  @error="handleThumbnailError($event, artist.name)"
+                  loading="lazy"
+                  decoding="async"
+                  width="384"
+                  height="208"
                   class="h-full w-full"
                   :alt="artist.name"
                   style="object-fit: cover; object-position: top"
@@ -487,6 +493,14 @@ const resolvePlaylistVideoUrl = (source_id) => {
     );
   }
   return localePath(base);
+};
+
+// 縮圖 WebP 載入失敗時改用 jpg（只退回一次，避免無限觸發 error）
+const handleThumbnailError = (event, artistName) => {
+  const img = event.target;
+  if (img.dataset.fallback) return;
+  img.dataset.fallback = "1";
+  img.src = `/thumbnails/${artistName}.jpg`;
 };
 
 /*-- 紀錄滾動位置 --*/
