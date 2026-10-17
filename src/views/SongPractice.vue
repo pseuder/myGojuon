@@ -295,6 +295,9 @@
                         >
                       </div>
                     </template>
+                    <template v-else-if="ly.cvt">
+                      <div class="mb-[-3px] text-sm">{{ ly.cvt }}</div>
+                    </template>
                     <template v-else
                       ><div class="mb-[-13px] text-sm">
                         <span>{{ " " }}</span>

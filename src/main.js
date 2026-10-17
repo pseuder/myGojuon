@@ -38,6 +38,15 @@ const i18n = createI18n({
 });
 app.use(i18n);
 
+// 以 /en 開頭的網址強制切換為英文
+router.beforeEach((to) => {
+  if (/^\/en(\/|$)/.test(to.path) && i18n.global.locale.value !== "en") {
+    i18n.global.locale.value = "en";
+    settingsStore.language = "en";
+  }
+  document.documentElement.lang = i18n.global.locale.value;
+});
+
 /* 第三方套件 */
 app.use(ElementPlus);
 app.use(vue3GoogleLogin, {

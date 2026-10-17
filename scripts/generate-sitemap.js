@@ -75,12 +75,33 @@ const fetchJson = async (url) => {
   return body.data ?? [];
 };
 
-// 不輸出 lastmod：API 的歌曲清單沒有可靠的更新時間，與其填假日期不如省略（Google 會忽略不可信的 lastmod）
-const buildUrlEntry = (loc) =>
-  `  <url>\n    <loc>${escapeXml(loc)}</loc>\n  </url>`;
+const toEnPath = (p) => (p === "/" ? "/en" : `/en${p}`);
+
+// 每個頁面輸出中、英文兩筆，並以 xhtml:link 互相標示 hreflang
+const buildUrlEntries = (zhPath) => {
+  const zh = `${SITE_BASE}${zhPath}`;
+  const en = `${SITE_BASE}${toEnPath(zhPath)}`;
+  const alternates = [
+    ["zh-TW", zh],
+    ["en", en],
+    ["x-default", zh],
+  ]
+    .map(
+      ([lang, href]) =>
+        `    <xhtml:link rel="alternate" hreflang="${lang}" href="${escapeXml(href)}" />`,
+    )
+    .join("\n");
+  // 不輸出 lastmod：API 的歌曲清單沒有可靠的更新時間，與其填假日期不如省略（Google 會忽略不可信的 lastmod）
+  return [zh, en]
+    .map(
+      (loc) =>
+        `  <url>\n    <loc>${escapeXml(loc)}</loc>\n${alternates}\n  </url>`,
+    )
+    .join("\n");
+};
 
 async function build() {
-  const urls = STATIC_PAGES.map((p) => `${SITE_BASE}${p}`);
+  const paths = [...STATIC_PAGES];
 
   console.log(`API: ${API_BASE}`);
   console.log("正在取得歌手清單...");
@@ -98,9 +119,7 @@ async function build() {
       if (!song.source_id || song.is_public === false) continue;
       if (seen.has(song.source_id)) continue;
       seen.add(song.source_id);
-      urls.push(
-        `${SITE_BASE}/SongPractice/${encodeURIComponent(song.source_id)}`,
-      );
+      paths.push(`/SongPractice/${encodeURIComponent(song.source_id)}`);
     }
   }
   console.log(`共 ${seen.size} 首公開歌曲`);
@@ -110,11 +129,11 @@ async function build() {
 
   const xml =
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
-    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    `${urls.map(buildUrlEntry).join("\n")}\n</urlset>\n`;
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n` +
+    `${paths.map(buildUrlEntries).join("\n")}\n</urlset>\n`;
 
   await writeFile(OUT_PATH, xml, "utf-8");
-  console.log(`已寫入 ${OUT_PATH}，共 ${urls.length} 個網址`);
+  console.log(`已寫入 ${OUT_PATH}，共 ${paths.length * 2} 個網址`);
 }
 
 try {

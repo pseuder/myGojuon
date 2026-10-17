@@ -289,10 +289,7 @@ onMounted(() => {
 
   document
     .querySelector('meta[property="og:title"]')
-    .setAttribute(
-      "content",
-      `${t("handwriting_practice")} | ${t("meta.title")}`,
-    );
+    .setAttribute("content", `${t("meta.title")}`);
   document
     .querySelector('meta[property="og:description"]')
     .setAttribute("content", `${t("meta.description")}`);

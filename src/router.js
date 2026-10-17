@@ -82,20 +82,65 @@ const setRobotsMeta = (noindex) => {
   }
 };
 
+const EN_PREFIX = /^\/en(?=\/|$)/;
+
+// 取得或建立 <head> 內的單一標籤
+const upsertHead = (selector, create) => {
+  let el = document.querySelector(selector);
+  if (!el) {
+    el = create();
+    document.head.appendChild(el);
+  }
+  return el;
+};
+
+// 設定中英文互為 alternate 的 hreflang（只在兩種語言都有對應頁面時輸出）
+const setHreflang = (zhPath, hasEn) => {
+  document.querySelectorAll("link[hreflang]").forEach((el) => el.remove());
+  if (!hasEn) return;
+  const enPath = zhPath === "/" ? "/en" : `/en${zhPath}`;
+  [
+    ["zh-TW", zhPath],
+    ["en", enPath],
+    ["x-default", zhPath],
+  ].forEach(([lang, path]) => {
+    const link = document.createElement("link");
+    link.rel = "alternate";
+    link.hreflang = lang;
+    link.href = `${SITE_BASE}${path}`;
+    document.head.appendChild(link);
+  });
+};
+
 router.afterEach((to) => {
   const noindex = Boolean(to.meta.noindex);
   setRobotsMeta(noindex);
 
-  const canonical = document.querySelector('link[rel="canonical"]');
-  if (canonical) {
-    if (noindex) {
-      canonical.remove();
-    } else {
-      // 英文版 /en/... 的 canonical 指向中文版
-      const path = to.path.replace(/^\/en(?=\/|$)/, "") || "/";
-      canonical.setAttribute("href", `${SITE_BASE}${path}`);
-    }
+  const isEn = EN_PREFIX.test(to.path);
+  const zhPath = to.path.replace(EN_PREFIX, "") || "/";
+
+  upsertHead('meta[property="og:locale"]', () => {
+    const m = document.createElement("meta");
+    m.setAttribute("property", "og:locale");
+    return m;
+  }).setAttribute("content", isEn ? "en_US" : "zh_TW");
+
+  if (noindex) {
+    document.querySelector('link[rel="canonical"]')?.remove();
+    setHreflang(zhPath, false);
+    return;
   }
+
+  // canonical 指向自己：中英文是不同語言的頁面，不是重複內容
+  upsertHead('link[rel="canonical"]', () => {
+    const l = document.createElement("link");
+    l.rel = "canonical";
+    return l;
+  }).setAttribute("href", `${SITE_BASE}${to.path}`);
+
+  const enPath = zhPath === "/" ? "/en" : `/en${zhPath}`;
+  const hasEn = router.resolve(enPath).name !== "notFound";
+  setHreflang(zhPath, hasEn);
 });
 
 export default router;
