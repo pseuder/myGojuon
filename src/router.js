@@ -28,6 +28,10 @@ const routes = [
     meta: { noindex: true },
   },
   {
+    path: "/Tools",
+    component: () => import("@/views/Tools.vue"),
+  },
+  {
     path: "/Backend",
     component: () => import("@/views/Backend.vue"),
     meta: { noindex: true },
@@ -50,6 +54,10 @@ const routes = [
     path: "/en/SongPractice/:uid",
     name: "songPracticeEn",
     component: () => import("@/views/SongPractice.vue"),
+  },
+  {
+    path: "/en/Tools",
+    component: () => import("@/views/Tools.vue"),
   },
   // 舊網址相容
   { path: "/index.html", redirect: "/" },

@@ -240,6 +240,20 @@
             </div>
           </div>
 
+          <div class="flex justify-center">
+            <router-link to="/Tools" custom v-slot="{ href, navigate }">
+              <el-button
+                tag="a"
+                :href="href"
+                @click="navigate"
+                :icon="Tools"
+                class="rounded-lg px-6 py-5 text-lg"
+              >
+                {{ t("tools.enter") }}
+              </el-button>
+            </router-link>
+          </div>
+
           <div class="flex items-center gap-2 text-gray-700 italic">
             ©{{ t("site_title") }}
             2024 - 2026
@@ -258,7 +272,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
-import { ElementPlus, VideoCameraFilled } from "@element-plus/icons-vue";
+import { ElementPlus, VideoCameraFilled, Tools } from "@element-plus/icons-vue";
 import { useI18n } from "vue-i18n";
 
 /*-- API --*/

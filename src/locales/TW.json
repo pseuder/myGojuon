@@ -160,5 +160,16 @@
   "all": "全部",
   "playlist_already_exists": "清單已存在",
   "google_login": "Google 登入",
-  "lyrics": "假名/振り仮名/歌詞"
+  "lyrics": "歌詞/lyrics/歌詞付き",
+  "tools": {
+    "title": "小工具",
+    "enter": "小工具",
+    "converter": "日文轉換",
+    "converter_description": "輸入日文，自動標註假名、羅馬拼音與中文翻譯，點喇叭可聽發音",
+    "converter_placeholder": "在這裡輸入或貼上日文，例如：今日はいい天気ですね",
+    "converting": "轉換中…",
+    "speak": "發音",
+    "speak_all": "全部朗讀",
+    "translation": "翻譯"
+  }
 }

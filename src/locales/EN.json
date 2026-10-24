@@ -162,5 +162,16 @@
   "all": "All",
   "playlist_already_exists": "Playlist already exists",
   "google_login": "Google Login",
-  "lyrics": "假名/振り仮名/Lyrics"
+  "lyrics": "歌詞/lyrics/歌詞付き",
+  "tools": {
+    "title": "Tools",
+    "enter": "Tools",
+    "converter": "Japanese Converter",
+    "converter_description": "Type Japanese to get kana readings, romaji and an English translation; click the speaker to hear it",
+    "converter_placeholder": "Type or paste Japanese here, e.g. 今日はいい天気ですね",
+    "converting": "Converting…",
+    "speak": "Speak",
+    "speak_all": "Read all",
+    "translation": "Translation"
+  }
 }
