@@ -108,7 +108,8 @@
       <div class="flex w-full max-w-xl flex-col gap-2">
         <div class="flex items-center justify-between gap-2">
           <span class="font-bold text-gray-600">{{ index + 1 }} / {{ cards.length }}</span>
-          <div class="flex items-center gap-3">
+          <div class="flex flex-wrap items-center justify-end gap-3">
+            <el-switch v-model="autoPlay" :active-text="t('vocab.auto_play')" />
             <el-switch v-model="showKana" :active-text="t('vocab.show_kana')" />
             <el-button size="small" @click="finish">{{ t("vocab.end") }}</el-button>
           </div>
@@ -128,7 +129,7 @@
               type="button"
               class="absolute top-2 right-2 rounded-full p-2 hover:bg-indigo-100"
               :title="t('tools.speak')"
-              @click.stop="speak(current.kana || current.word, current.vocab_word_id)"
+              @click.stop="speakCurrent"
             >
               <img
                 :src="speakingKey === current.vocab_word_id ? '/images/volume2.png' : '/images/volume.png'"
@@ -215,13 +216,14 @@ import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
 import RubyWord from "@/components/vocab/RubyWord.vue";
 
 const SHOW_KANA_KEY = "vocab_show_kana";
+const AUTO_PLAY_KEY = "vocab_auto_play";
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const vocabStore = useVocabStore();
-const { speak, speakingKey, stop } = useGoogleTTS("ja");
+const { speak, speakingKey, stop, unlock } = useGoogleTTS("ja");
 
 // --- 設定 ---
 const phase = ref("setup");
@@ -256,23 +258,41 @@ const flipped = ref(false);
 const round = ref(0);
 const results = ref([]); // [{ ...card, is_familiar }]
 
-const readShowKana = () => {
+const readFlag = (key, fallback) => {
   try {
-    return localStorage.getItem(SHOW_KANA_KEY) !== "0";
+    const v = localStorage.getItem(key);
+    return v === null ? fallback : v !== "0";
   } catch {
-    return true;
+    return fallback;
   }
 };
-const showKana = ref(readShowKana());
-watch(showKana, (v) => {
+const saveFlag = (key, v) => {
   try {
-    localStorage.setItem(SHOW_KANA_KEY, v ? "1" : "0");
+    localStorage.setItem(key, v ? "1" : "0");
   } catch {
     /* 無法使用 localStorage 時只在本次有效 */
   }
-});
+};
+
+const showKana = ref(readFlag(SHOW_KANA_KEY, true));
+watch(showKana, (v) => saveFlag(SHOW_KANA_KEY, v));
 
 const current = computed(() => cards.value[index.value]);
+
+const speakCurrent = () => {
+  const card = current.value;
+  if (card) speak(card.kana || card.word, card.vocab_word_id);
+};
+
+// 自動播放：換到下一個單字時念出發音；剛打開開關時念目前這張
+const autoPlay = ref(readFlag(AUTO_PLAY_KEY, false));
+watch(autoPlay, (v) => {
+  saveFlag(AUTO_PLAY_KEY, v);
+  if (v && phase.value === "study" && speakingKey.value === null) speakCurrent();
+});
+watch([round, index], () => {
+  if (autoPlay.value && phase.value === "study") speakCurrent();
+});
 const familiarResults = computed(() => results.value.filter((r) => r.is_familiar));
 const unfamiliarResults = computed(() => results.value.filter((r) => !r.is_familiar));
 
@@ -295,6 +315,8 @@ const beginRound = (list) => {
 };
 
 const handleStart = async () => {
+  // 取題目要等 API，先在點擊當下啟用音訊，第一張的自動播放才不會被瀏覽器擋下
+  if (autoPlay.value) unlock();
   starting.value = true;
   try {
     const words = await vocabStore.getStudyWords({

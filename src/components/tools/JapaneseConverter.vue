@@ -15,7 +15,7 @@
         <span class="text-sm text-gray-500">
           {{ loading ? t("tools.converting") : "" }}
         </span>
-        <el-button round @click="speak(inputText, ALL_KEY)">
+        <el-button round @click="speak(allSpeechText(), ALL_KEY)">
           <img
             :src="speakIcon(ALL_KEY)"
             alt=""
@@ -37,7 +37,7 @@
               type="button"
               class="mt-3 shrink-0 rounded-full p-1 transition hover:bg-indigo-100"
               :title="t('tools.speak')"
-              @click="speak(line.source, idx)"
+              @click="speak(line.kana || line.source, idx)"
             >
               <img :src="speakIcon(idx)" :alt="t('tools.speak')" class="h-6 w-6" />
             </button>
@@ -91,6 +91,13 @@ const loading = ref(false);
 const lineTranslations = computed(() =>
   translations.value.length === lines.value.length ? translations.value : null,
 );
+
+// 全部朗讀以轉換後的假名為主；輸入改過還沒轉換完時用原文
+const allSpeechText = () => {
+  const converted = lines.value.map((line) => line.source).join("\n");
+  if (converted !== inputText.value) return inputText.value;
+  return lines.value.map((line) => line.kana || line.source).join("\n");
+};
 
 const speakIcon = (key) =>
   speakingKey.value === key ? "/images/volume2.png" : "/images/volume.png";
