@@ -32,6 +32,26 @@ const routes = [
     component: () => import("@/views/Tools.vue"),
   },
   {
+    path: "/VocabSets",
+    component: () => import("@/views/VocabSets.vue"),
+    meta: { noindex: true },
+  },
+  {
+    path: "/VocabSets/create",
+    component: () => import("@/views/VocabEdit.vue"),
+    meta: { noindex: true },
+  },
+  {
+    path: "/VocabSets/:id(\\d+)/edit",
+    component: () => import("@/views/VocabEdit.vue"),
+    meta: { noindex: true },
+  },
+  {
+    path: "/VocabStudy",
+    component: () => import("@/views/VocabStudy.vue"),
+    meta: { noindex: true },
+  },
+  {
     path: "/Backend",
     component: () => import("@/views/Backend.vue"),
     meta: { noindex: true },
@@ -58,6 +78,26 @@ const routes = [
   {
     path: "/en/Tools",
     component: () => import("@/views/Tools.vue"),
+  },
+  {
+    path: "/en/VocabSets",
+    component: () => import("@/views/VocabSets.vue"),
+    meta: { noindex: true },
+  },
+  {
+    path: "/en/VocabSets/create",
+    component: () => import("@/views/VocabEdit.vue"),
+    meta: { noindex: true },
+  },
+  {
+    path: "/en/VocabSets/:id(\\d+)/edit",
+    component: () => import("@/views/VocabEdit.vue"),
+    meta: { noindex: true },
+  },
+  {
+    path: "/en/VocabStudy",
+    component: () => import("@/views/VocabStudy.vue"),
+    meta: { noindex: true },
   },
   // 舊網址相容
   { path: "/index.html", redirect: "/" },

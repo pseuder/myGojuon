@@ -5,3 +5,4 @@ export { useSettingsStore } from "./settings";
 export { useLearningStore } from "./learning";
 export { useSongStore } from "./song";
 export { usePlaylistStore } from "./playlist";
+export { useVocabStore } from "./vocab";

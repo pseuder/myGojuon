@@ -240,7 +240,7 @@
             </div>
           </div>
 
-          <div class="flex justify-center">
+          <div class="flex flex-wrap justify-center gap-4">
             <router-link to="/Tools" custom v-slot="{ href, navigate }">
               <el-button
                 tag="a"
@@ -250,6 +250,18 @@
                 class="rounded-lg px-6 py-5 text-lg"
               >
                 {{ t("tools.enter") }}
+              </el-button>
+            </router-link>
+            <router-link to="/VocabSets" custom v-slot="{ href, navigate }">
+              <el-button
+                tag="a"
+                :href="href"
+                @click="navigate"
+                :icon="Collection"
+                style="margin-left: 0px"
+                class="rounded-lg px-6 py-5 text-lg"
+              >
+                {{ t("vocab.enter") }}
               </el-button>
             </router-link>
           </div>
@@ -272,7 +284,12 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
-import { ElementPlus, VideoCameraFilled, Tools } from "@element-plus/icons-vue";
+import {
+  ElementPlus,
+  VideoCameraFilled,
+  Tools,
+  Collection,
+} from "@element-plus/icons-vue";
 import { useI18n } from "vue-i18n";
 
 /*-- API --*/
