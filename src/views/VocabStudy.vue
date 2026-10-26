@@ -118,6 +118,40 @@
         </el-radio-group>
       </section>
 
+      <section class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <el-checkbox v-model="commuteMode">
+          {{ t("vocab.commute_mode") }}
+        </el-checkbox>
+        <span
+          class="flex items-center gap-2"
+          :class="{ 'opacity-50': !commuteMode }"
+        >
+          {{ t("vocab.front") }}
+          <el-input-number
+            v-model="frontTimes"
+            :min="0"
+            :max="10"
+            size="small"
+            @focus="commuteMode = true"
+          />
+          {{ t("vocab.times") }}
+        </span>
+        <span
+          class="flex items-center gap-2"
+          :class="{ 'opacity-50': !commuteMode }"
+        >
+          {{ t("vocab.back") }}
+          <el-input-number
+            v-model="backTimes"
+            :min="0"
+            :max="10"
+            size="small"
+            @focus="commuteMode = true"
+          />
+          {{ t("vocab.times") }}
+        </span>
+      </section>
+
       <div class="flex justify-center">
         <el-button
           type="success"
@@ -155,7 +189,21 @@
             </el-button>
           </div>
           <div class="flex flex-wrap items-center justify-end gap-3">
-            <el-switch v-model="autoPlay" :active-text="t('vocab.auto_play')" />
+            <el-button
+              v-if="commuteMode"
+              size="small"
+              :icon="commutePaused ? VideoPlay : VideoPause"
+              type="primary"
+              plain
+              @click="toggleCommutePause"
+            >
+              {{ commutePaused ? t("vocab.resume") : t("vocab.pause") }}
+            </el-button>
+            <el-switch
+              v-else
+              v-model="autoPlay"
+              :active-text="t('vocab.auto_play')"
+            />
             <el-switch v-model="showKana" :active-text="t('vocab.show_kana')" />
             <el-button size="small" @click="finish" type="danger" plain>{{
               t("vocab.end")
@@ -330,6 +378,7 @@ import { ElMessage } from "element-plus";
 import {
   Back,
   VideoPlay,
+  VideoPause,
   CloseBold,
   Select,
   RefreshLeft,
@@ -341,6 +390,12 @@ import RubyWord from "@/components/vocab/RubyWord.vue";
 
 const SHOW_KANA_KEY = "vocab_show_kana";
 const AUTO_PLAY_KEY = "vocab_auto_play";
+const COMMUTE_KEY = "vocab_commute_mode";
+const FRONT_TIMES_KEY = "vocab_commute_front";
+const BACK_TIMES_KEY = "vocab_commute_back";
+// 通勤模式：每次發音之間、換下一張之前的停頓（毫秒）
+const COMMUTE_GAP_MS = 800;
+const COMMUTE_NEXT_MS = 1200;
 
 const { t } = useI18n();
 const route = useRoute();
@@ -405,6 +460,22 @@ const saveFlag = (key, v) => {
   }
 };
 
+const readNumber = (key, fallback) => {
+  try {
+    const v = Number(localStorage.getItem(key));
+    return localStorage.getItem(key) === null || Number.isNaN(v) ? fallback : v;
+  } catch {
+    return fallback;
+  }
+};
+const saveNumber = (key, v) => {
+  try {
+    localStorage.setItem(key, String(v));
+  } catch {
+    /* 無法使用 localStorage 時只在本次有效 */
+  }
+};
+
 const showKana = ref(readFlag(SHOW_KANA_KEY, true));
 watch(showKana, (v) => saveFlag(SHOW_KANA_KEY, v));
 
@@ -431,13 +502,102 @@ watch(autoPlay, (v) => {
   if (v && phase.value === "study" && speakingKey.value === null)
     speakCurrent();
 });
+// 通勤模式：正面念 N 次 → 翻面念 M 次 → 自動下一張
+const commuteMode = ref(readFlag(COMMUTE_KEY, false));
+const frontTimes = ref(readNumber(FRONT_TIMES_KEY, 1));
+const backTimes = ref(readNumber(BACK_TIMES_KEY, 1));
+const commutePaused = ref(false);
+watch(commuteMode, (v) => saveFlag(COMMUTE_KEY, v));
+watch(frontTimes, (v) => saveNumber(FRONT_TIMES_KEY, v ?? 0));
+watch(backTimes, (v) => saveNumber(BACK_TIMES_KEY, v ?? 0));
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// 每次啟動都換新的 token，舊的流程看到 token 變了就自行結束
+let commuteToken = 0;
+const stopCommute = () => {
+  commuteToken += 1;
+};
+
+// 播完目前這張後切換 index，由下方 watch 接著播下一張
+const runCommute = async () => {
+  const myToken = ++commuteToken;
+  const alive = () =>
+    myToken === commuteToken &&
+    phase.value === "study" &&
+    commuteMode.value &&
+    !commutePaused.value;
+  const card = current.value;
+  if (!card) return;
+  for (const [face, times] of [
+    [false, frontTimes.value || 0],
+    [true, backTimes.value || 0],
+  ]) {
+    if (!times) continue;
+    flipped.value = face;
+    for (let i = 0; i < times; i++) {
+      if (!alive()) return;
+      stop();
+      await speak(card.kana || card.word, card.vocab_word_id);
+      if (!alive()) return;
+      await sleep(COMMUTE_GAP_MS);
+    }
+  }
+  await sleep(COMMUTE_NEXT_MS - COMMUTE_GAP_MS);
+  if (!alive()) return;
+  if (index.value + 1 >= cards.value.length) {
+    finish();
+  } else {
+    flipped.value = false;
+    index.value += 1;
+  }
+};
+
+const toggleCommutePause = () => {
+  commutePaused.value = !commutePaused.value;
+  if (commutePaused.value) {
+    stopCommute();
+    stop();
+  } else {
+    unlock();
+    runCommute();
+  }
+};
+
+// 通勤時把螢幕保持亮著，避免鎖屏後瀏覽器暫停播放
+let wakeLock = null;
+const requestWakeLock = async () => {
+  if (wakeLock || !navigator.wakeLock) return;
+  try {
+    wakeLock = await navigator.wakeLock.request("screen");
+    wakeLock.addEventListener("release", () => (wakeLock = null));
+  } catch {
+    /* 不支援或被拒絕時忽略 */
+  }
+};
+const releaseWakeLock = () => {
+  wakeLock?.release().catch(() => {});
+  wakeLock = null;
+};
+watch(
+  () => phase.value === "study" && commuteMode.value,
+  (on) => (on ? requestWakeLock() : releaseWakeLock()),
+);
+
 watch([round, index], () => {
-  if (autoPlay.value && phase.value === "study") speakCurrent();
+  if (phase.value !== "study") return;
+  if (commuteMode.value) {
+    if (!commutePaused.value) runCommute();
+  } else if (autoPlay.value) speakCurrent();
 });
 
 // 翻到背面一律念；翻回正面只在自動發音時念
 // 先停掉正在播的，避免 speak 把同一張當成「再點一次=停止」
+// 通勤模式下手動翻面視為接手操作，先暫停自動輪播
 const flip = () => {
+  if (commuteMode.value && !commutePaused.value) {
+    commutePaused.value = true;
+    stopCommute();
+  }
   flipped.value = !flipped.value;
   if (flipped.value || autoPlay.value) {
     stop();
@@ -469,13 +629,14 @@ const beginRound = (list) => {
   flipped.value = false;
   results.value = [];
   committed.value = 0;
+  commutePaused.value = false;
   round.value += 1;
   phase.value = "study";
 };
 
 const handleStart = async () => {
   // 取題目要等 API，先在點擊當下啟用音訊，第一張的自動播放才不會被瀏覽器擋下
-  if (autoPlay.value) unlock();
+  if (autoPlay.value || commuteMode.value) unlock();
   starting.value = true;
   try {
     const words = await vocabStore.getStudyWords({
@@ -536,6 +697,7 @@ const goBack = () => {
 };
 
 const finish = () => {
+  stopCommute();
   stop();
   flushRecords();
   phase.value = "result";
@@ -545,6 +707,13 @@ const finish = () => {
 const onVisibilityChange = () => {
   if (document.visibilityState === "hidden" && phase.value === "study")
     flushRecords();
+  // 切回前景時 wake lock 已被系統釋放，需重新取得
+  if (
+    document.visibilityState === "visible" &&
+    phase.value === "study" &&
+    commuteMode.value
+  )
+    requestWakeLock();
 };
 
 const restart = (list) =>
@@ -596,6 +765,8 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("keydown", onKeydown);
   document.removeEventListener("visibilitychange", onVisibilityChange);
+  stopCommute();
+  releaseWakeLock();
   // 練習到一半離開頁面，已作答的仍要記錄
   flushRecords();
 });
