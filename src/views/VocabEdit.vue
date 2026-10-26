@@ -165,22 +165,41 @@
                 </el-button>
               </div>
 
-              <!-- 讀音編輯：每個漢字/片假名段一個輸入框 -->
-              <div v-if="row.editReading" class="flex flex-wrap gap-2 rounded bg-gray-50 p-2">
-                <div
-                  v-for="(token, tIdx) in row.tokens"
-                  :key="tIdx"
-                  class="flex flex-col items-center"
+              <!-- 讀音編輯：每個漢字/片假名段一個輸入框，相鄰段可合併 -->
+              <div
+                v-if="row.editReading"
+                class="flex flex-wrap items-start gap-1 rounded bg-gray-50 p-2"
+              >
+                <template v-for="(token, tIdx) in row.tokens" :key="tIdx">
+                  <button
+                    v-if="tIdx > 0 && canMerge(row, tIdx)"
+                    type="button"
+                    class="h-[22px] rounded px-1 text-xs text-indigo-400 hover:bg-indigo-100 hover:text-indigo-700"
+                    :title="t('vocab.merge_tokens')"
+                    @click="mergeTokens(row, tIdx)"
+                  >
+                    ⇔
+                  </button>
+                  <div class="flex flex-col items-center">
+                    <input
+                      v-if="token.cvt !== '' || !isKana(token.ori)"
+                      v-model="token.cvt"
+                      class="w-20 rounded border border-gray-300 px-1 text-center text-sm"
+                      @change="onReadingChange(row)"
+                    />
+                    <span v-else class="h-[22px]"></span>
+                    <span class="text-lg">{{ token.ori }}</span>
+                  </div>
+                </template>
+                <el-button
+                  class="ml-auto self-center"
+                  link
+                  size="small"
+                  :title="t('vocab.resegment_hint')"
+                  @click="resegmentRow(row)"
                 >
-                  <input
-                    v-if="token.cvt !== '' || !isKana(token.ori)"
-                    v-model="token.cvt"
-                    class="w-20 rounded border border-gray-300 px-1 text-center text-sm"
-                    @change="onReadingChange(row)"
-                  />
-                  <span v-else class="h-[22px]"></span>
-                  <span class="text-lg">{{ token.ori }}</span>
-                </div>
+                  {{ t("vocab.resegment") }}
+                </el-button>
               </div>
             </div>
 
@@ -334,6 +353,28 @@ const onReadingChange = (row) => {
   row.tokens.forEach((tk) => (tk.cvt = tk.cvt.trim()));
   convertRow(row, { word: row.word, tokens: row.tokens });
 };
+
+// 段落沒有標讀音時，讀音就是它自己（片假名轉平假名）
+const tokenReading = (tk) =>
+  tk.cvt || tk.ori.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+
+// 兩段都沒有讀音（純假名）就不必合併
+const canMerge = (row, idx) => {
+  const [a, b] = [row.tokens[idx - 1], row.tokens[idx]];
+  return !!(a.cvt || b.cvt || !isKana(a.ori) || !isKana(b.ori));
+};
+
+// 把第 idx 段併入前一段；全假名不變，所以不用重新轉換
+const mergeTokens = (row, idx) => {
+  const [a, b] = [row.tokens[idx - 1], row.tokens[idx]];
+  row.tokens.splice(idx - 1, 2, {
+    ori: a.ori + b.ori,
+    cvt: (a.cvt || b.cvt) ? tokenReading(a) + tokenReading(b) : "",
+  });
+};
+
+// 捨棄手動修改，回到自動斷詞結果
+const resegmentRow = (row) => convertRow(row, { word: row.word });
 
 const addRow = () => {
   if (rows.value.length >= MAX_WORDS) {

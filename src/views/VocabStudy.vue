@@ -118,7 +118,7 @@
       </div>
 
       <!-- key 綁定題目：換題時重新建立，不會看到上一張的翻轉動畫 -->
-      <div :key="`${round}-${index}`" class="flip-card w-full max-w-xl" @click="flipped = !flipped">
+      <div :key="`${round}-${index}`" class="flip-card w-full max-w-xl" @click="flip">
         <div class="flip-inner" :class="{ flipped }">
           <!-- 正面 -->
           <div class="flip-face front">
@@ -293,6 +293,16 @@ watch(autoPlay, (v) => {
 watch([round, index], () => {
   if (autoPlay.value && phase.value === "study") speakCurrent();
 });
+
+// 翻到背面一律念；翻回正面只在自動發音時念
+// 先停掉正在播的，避免 speak 把同一張當成「再點一次=停止」
+const flip = () => {
+  flipped.value = !flipped.value;
+  if (flipped.value || autoPlay.value) {
+    stop();
+    speakCurrent();
+  }
+};
 const familiarResults = computed(() => results.value.filter((r) => r.is_familiar));
 const unfamiliarResults = computed(() => results.value.filter((r) => !r.is_familiar));
 
@@ -375,7 +385,7 @@ const onKeydown = (e) => {
   if (tag === "INPUT" || tag === "TEXTAREA") return;
   if (e.key === " " || e.key === "Enter") {
     e.preventDefault();
-    flipped.value = !flipped.value;
+    flip();
   } else if (e.key === "ArrowLeft") {
     answer(false);
   } else if (e.key === "ArrowRight") {

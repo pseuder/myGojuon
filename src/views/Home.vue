@@ -86,7 +86,7 @@
               <span>mygojuon@gmail.com</span>
             </div>
           </div>
-          <div class="my-4 flex flex-col gap-4">
+          <!-- <div class="my-4 flex flex-col gap-4">
             <div
               class="flex items-center gap-4"
               @click="handleContactClick('facebook')"
@@ -105,8 +105,8 @@
                 https://www.facebook.com/Pseuder
               </a>
             </div>
-          </div>
-          <div class="my-4 flex flex-col gap-4">
+          </div> -->
+          <!-- <div class="my-4 flex flex-col gap-4">
             <div
               class="flex items-center gap-4"
               @click="handleContactClick('instagram')"
@@ -125,7 +125,7 @@
                 https://www.instagram.com/uio890520/
               </a>
             </div>
-          </div>
+          </div> -->
         </div>
       </section>
 

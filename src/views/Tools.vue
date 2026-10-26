@@ -10,7 +10,7 @@
         :name="tool.name"
         :label="t(tool.label)"
       >
-        <p class="mb-4 text-gray-600">{{ t(tool.description) }}</p>
+        <!-- <p class="mb-4 text-gray-600">{{ t(tool.description) }}</p> -->
         <component :is="tool.component" />
       </el-tab-pane>
     </el-tabs>
