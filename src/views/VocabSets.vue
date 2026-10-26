@@ -13,7 +13,7 @@
         </el-button>
         <el-button
           type="success"
-          :icon="VideoPlay"
+          :icon="CaretRight"
           :disabled="!vocabStore.sets.length"
           @click="router.push('/VocabStudy')"
         >
@@ -47,9 +47,11 @@
           @click="openDetail(set)"
         >
           <div
-            class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 bg-linear-to-br from-emerald-100 to-teal-200 px-4"
+            class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 bg-linear-to-br from-emerald-100 to-teal-200 px-12"
           >
-            <span class="line-clamp-2 text-center text-3xl font-bold text-teal-800">
+            <span
+              class="line-clamp-2 text-center text-3xl font-bold text-teal-800"
+            >
               {{ set.title }}
             </span>
             <span class="text-sm text-teal-700">
@@ -60,6 +62,7 @@
           <!-- 右上角：重置次數 / 直接開始學這一集 -->
           <div class="absolute top-2 right-2 flex gap-1" @click.stop>
             <el-button
+              style="margin-left: 0; font-size: 18px"
               circle
               size="small"
               type="warning"
@@ -70,20 +73,27 @@
               @click="handleReset(set)"
             />
             <el-button
-              style="margin-left: 0"
+              style="margin-left: 0; font-size: 20px"
               circle
               size="small"
               type="success"
-              :icon="VideoPlay"
+              :icon="CaretRight"
               :title="t('vocab.study_this')"
               @click="studySet(set.vocab_set_id)"
             />
           </div>
 
-          <div class="flex flex-col gap-1 border-t border-teal-100 bg-white px-3 py-2">
+          <div
+            class="flex flex-col gap-1 border-t border-teal-100 bg-white px-3 py-2"
+          >
             <div class="flex items-center justify-between text-lg font-bold">
               <span>{{ set.word_count }} {{ t("vocab.words") }}</span>
-              <el-tag v-if="set.unfamiliar_count > 0" type="danger" size="small" effect="plain">
+              <el-tag
+                v-if="set.unfamiliar_count > 0"
+                type="danger"
+                size="small"
+                effect="plain"
+              >
                 {{ t("vocab.unfamiliar") }} {{ set.unfamiliar_count }}
               </el-tag>
             </div>
@@ -109,11 +119,15 @@
       v-model="detailVisible"
       :title="detail?.title || ''"
       width="min(720px, 95vw)"
+      top="5vh"
       append-to-body
     >
       <div v-loading="detailLoading" class="flex min-h-32 flex-col gap-3">
         <template v-if="detail">
-          <p v-if="detail.description" class="whitespace-pre-wrap text-gray-600">
+          <p
+            v-if="detail.description"
+            class="whitespace-pre-wrap text-gray-600"
+          >
             {{ detail.description }}
           </p>
           <p class="text-sm text-gray-500">
@@ -121,7 +135,9 @@
             {{ detail.words.length }} {{ t("vocab.words") }}
           </p>
 
-          <div class="max-h-[55vh] overflow-y-auto rounded border border-gray-200">
+          <div
+            class="max-h-[55vh] overflow-y-auto rounded border border-gray-200"
+          >
             <div
               v-for="w in detail.words"
               :key="w.vocab_word_id"
@@ -134,12 +150,20 @@
                 @click="speak(w.kana || w.word, w.vocab_word_id)"
               >
                 <img
-                  :src="speakingKey === w.vocab_word_id ? '/images/volume2.png' : '/images/volume.png'"
+                  :src="
+                    speakingKey === w.vocab_word_id
+                      ? '/images/volume2.png'
+                      : '/images/volume.png'
+                  "
                   alt=""
                   class="h-5 w-5"
                 />
               </button>
-              <RubyWord :word="w.word" :tokens="w.tokens" class="min-w-24 text-xl" />
+              <RubyWord
+                :word="w.word"
+                :tokens="w.tokens"
+                class="min-w-24 text-xl"
+              />
               <span class="flex-1 text-gray-700">{{ w.meaning }}</span>
               <span class="shrink-0 text-xs whitespace-nowrap">
                 <span class="text-emerald-600">✓{{ w.familiar_count }}</span>
@@ -168,7 +192,11 @@
           >
             {{ t("vocab.edit") }}
           </el-button>
-          <el-button type="success" :icon="VideoPlay" @click="studySet(detail.vocab_set_id)">
+          <el-button
+            type="success"
+            :icon="CaretRight"
+            @click="studySet(detail.vocab_set_id)"
+          >
             {{ t("vocab.study_this") }}
           </el-button>
         </div>
@@ -189,6 +217,7 @@ import {
   Edit,
   Delete,
   RefreshLeft,
+  CaretRight,
 } from "@element-plus/icons-vue";
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
 import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
@@ -239,7 +268,11 @@ const handleDelete = async () => {
     await ElMessageBox.confirm(
       t("vocab.delete_confirm", { title: detail.value.title }),
       t("vocab.delete"),
-      { type: "warning", confirmButtonText: t("vocab.delete"), cancelButtonText: t("vocab.cancel") },
+      {
+        type: "warning",
+        confirmButtonText: t("vocab.delete"),
+        cancelButtonText: t("vocab.cancel"),
+      },
     );
   } catch {
     return;

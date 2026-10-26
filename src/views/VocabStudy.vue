@@ -1,18 +1,32 @@
 <template>
   <div class="flex h-full flex-col gap-4 px-2 py-4 md:px-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h1 class="text-2xl font-bold text-indigo-700">{{ t("vocab.study_title") }}</h1>
-      <el-button :icon="Back" @click="router.push('/VocabSets')">
+      <!-- <h1 class="text-2xl font-bold text-indigo-700">
+        {{ t("vocab.study_title") }}
+      </h1> -->
+      <el-button
+        :icon="House"
+        @click="router.push('/VocabSets')"
+        type="primary"
+        plain
+      >
         {{ t("vocab.back_to_list") }}
       </el-button>
     </div>
 
-    <div v-if="!authStore.isLoggedIn" class="py-20 text-center text-lg text-gray-400">
+    <div
+      v-if="!authStore.isLoggedIn"
+      class="py-20 text-center text-lg text-gray-400"
+    >
       {{ t("vocab.login_required") }}
     </div>
 
     <!-- ===== 1. 設定 ===== -->
-    <div v-else-if="phase === 'setup'" v-loading="vocabStore.isFetching" class="flex flex-col gap-5">
+    <div
+      v-else-if="phase === 'setup'"
+      v-loading="vocabStore.isFetching"
+      class="flex flex-col gap-5"
+    >
       <section class="flex flex-col gap-2">
         <div class="flex items-center justify-between">
           <h2 class="text-lg font-bold">{{ t("vocab.choose_sets") }}</h2>
@@ -29,7 +43,11 @@
             v-for="set in vocabStore.sets"
             :key="set.vocab_set_id"
             class="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition"
-            :class="selectedIds.includes(set.vocab_set_id) ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200 hover:border-emerald-200'"
+            :class="
+              selectedIds.includes(set.vocab_set_id)
+                ? 'border-emerald-400 bg-emerald-50'
+                : 'border-gray-200 hover:border-emerald-200'
+            "
             @click="toggleSet(set.vocab_set_id)"
           >
             <!-- 只做顯示，點擊交給外層 -->
@@ -42,23 +60,34 @@
               <span class="text-xs text-gray-500">
                 {{ set.word_count }} {{ t("vocab.words") }}
                 <template v-if="set.unfamiliar_count">
-                  ・<span class="text-red-500">{{ t("vocab.unfamiliar") }} {{ set.unfamiliar_count }}</span>
+                  ・<span class="text-red-500"
+                    >{{ t("vocab.unfamiliar") }}
+                    {{ set.unfamiliar_count }}</span
+                  >
                 </template>
               </span>
             </div>
           </div>
         </div>
-        <p v-if="vocabStore.isInitialized && !vocabStore.sets.length" class="text-gray-400">
+        <p
+          v-if="vocabStore.isInitialized && !vocabStore.sets.length"
+          class="text-gray-400"
+        >
           {{ t("vocab.no_sets") }}
         </p>
       </section>
 
       <section class="flex flex-col gap-2">
         <h2 class="text-lg font-bold">{{ t("vocab.choose_mode") }}</h2>
-        <el-radio-group v-model="mode" class="mode-group flex flex-col items-start gap-2">
+        <el-radio-group
+          v-model="mode"
+          class="mode-group flex flex-col items-start gap-2"
+        >
           <el-radio value="all">
             {{ t("vocab.mode_all") }}
-            <span class="text-gray-500">（{{ selectedWordCount }} {{ t("vocab.words") }}）</span>
+            <span class="text-gray-500"
+              >（{{ selectedWordCount }} {{ t("vocab.words") }}）</span
+            >
           </el-radio>
           <el-radio value="random">
             <span class="flex items-center gap-2">
@@ -104,25 +133,53 @@
     </div>
 
     <!-- ===== 2. 卡片練習 ===== -->
-    <div v-else-if="phase === 'study' && current" class="flex flex-col items-center gap-4">
+    <div
+      v-else-if="phase === 'study' && current"
+      class="flex flex-col items-center gap-4"
+    >
       <div class="flex w-full max-w-xl flex-col gap-2">
         <div class="flex items-center justify-between gap-2">
-          <span class="font-bold text-gray-600">{{ index + 1 }} / {{ cards.length }}</span>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-gray-600"
+              >{{ index + 1 }} / {{ cards.length }}</span
+            >
+            <el-button
+              size="small"
+              :icon="Back"
+              :disabled="!canGoBack"
+              @click="goBack"
+              type="info"
+              plain
+            >
+              {{ t("vocab.prev_word") }}
+            </el-button>
+          </div>
           <div class="flex flex-wrap items-center justify-end gap-3">
             <el-switch v-model="autoPlay" :active-text="t('vocab.auto_play')" />
             <el-switch v-model="showKana" :active-text="t('vocab.show_kana')" />
-            <el-button size="small" @click="finish">{{ t("vocab.end") }}</el-button>
+            <el-button size="small" @click="finish" type="danger" plain>{{
+              t("vocab.end")
+            }}</el-button>
           </div>
         </div>
-        <el-progress :percentage="Math.round((index / cards.length) * 100)" :show-text="false" />
+        <el-progress
+          :percentage="Math.round((index / cards.length) * 100)"
+          :show-text="false"
+        />
       </div>
 
       <!-- key 綁定題目：換題時重新建立，不會看到上一張的翻轉動畫 -->
-      <div :key="`${round}-${index}`" class="flip-card w-full max-w-xl" @click="flip">
+      <div
+        :key="`${round}-${index}`"
+        class="flip-card w-full max-w-xl"
+        @click="flip"
+      >
         <div class="flip-inner" :class="{ flipped }">
           <!-- 正面 -->
           <div class="flip-face front">
-            <span class="absolute top-3 left-4 max-w-[70%] truncate text-xs text-gray-400">
+            <span
+              class="absolute top-3 left-4 max-w-[70%] truncate text-xs text-gray-400"
+            >
               {{ current.set_title }}
             </span>
             <button
@@ -132,7 +189,11 @@
               @click.stop="speakCurrent"
             >
               <img
-                :src="speakingKey === current.vocab_word_id ? '/images/volume2.png' : '/images/volume.png'"
+                :src="
+                  speakingKey === current.vocab_word_id
+                    ? '/images/volume2.png'
+                    : '/images/volume.png'
+                "
                 alt=""
                 class="h-8 w-8"
               />
@@ -143,63 +204,119 @@
               :show-kana="showKana"
               class="card-word px-4 text-center"
             />
-            <span class="absolute bottom-3 text-xs text-gray-400">{{ t("vocab.tap_to_flip") }}</span>
+            <span class="absolute bottom-3 text-xs text-gray-400">{{
+              t("vocab.tap_to_flip")
+            }}</span>
           </div>
           <!-- 背面 -->
           <div class="flip-face back">
-            <span class="px-6 text-center text-3xl font-bold whitespace-pre-wrap text-teal-800 md:text-4xl">
+            <span
+              class="px-6 text-center text-3xl font-bold whitespace-pre-wrap text-teal-800 md:text-4xl"
+            >
               {{ current.meaning }}
             </span>
-            <span class="mt-4 text-lg text-gray-600">{{ current.word }}</span>
-            <span class="text-sm text-gray-500">
-              {{ current.kana }}<template v-if="current.romaji"> ・ {{ current.romaji }}</template>
+            <!-- 背面一律顯示假名，不受「顯示假名」開關影響 -->
+            <RubyWord
+              :word="current.word"
+              :tokens="current.tokens"
+              class="mt-4 px-4 text-center text-3xl font-bold text-gray-700"
+            />
+            <span
+              v-if="(!hasRuby && current.kana) || current.romaji"
+              class="text-lg text-gray-500"
+            >
+              <template v-if="!hasRuby && current.kana">{{
+                current.kana
+              }}</template>
+              <template v-if="!hasRuby && current.kana && current.romaji">
+                ・
+              </template>
+              {{ current.romaji }}
             </span>
           </div>
         </div>
       </div>
 
       <div class="grid w-full max-w-xl grid-cols-2 gap-3">
-        <el-button class="answer-btn" type="danger" size="large" @click="answer(false)">
-          <el-icon class="mr-1"><CloseBold /></el-icon>{{ t("vocab.unfamiliar") }}
+        <el-button
+          class="answer-btn"
+          type="warning"
+          size="large"
+          :plain="currentAnswer === true"
+          @click="answer(false)"
+        >
+          <el-icon class="mr-1"><CloseBold /></el-icon
+          >{{ t("vocab.unfamiliar") }}
         </el-button>
-        <el-button class="answer-btn" type="success" size="large" style="margin-left: 0" @click="answer(true)">
+        <el-button
+          class="answer-btn"
+          type="success"
+          size="large"
+          style="margin-left: 0"
+          :plain="currentAnswer === false"
+          @click="answer(true)"
+        >
           <el-icon class="mr-1"><Select /></el-icon>{{ t("vocab.familiar") }}
         </el-button>
       </div>
-      <p class="hidden text-xs text-gray-400 md:block">{{ t("vocab.keyboard_hint") }}</p>
+      <p class="hidden text-xs text-gray-400 md:block">
+        {{ t("vocab.keyboard_hint") }}
+      </p>
     </div>
 
     <!-- ===== 3. 結果 ===== -->
-    <div v-else-if="phase === 'result'" class="flex flex-col items-center gap-4">
+    <div
+      v-else-if="phase === 'result'"
+      class="flex flex-col items-center gap-4"
+    >
       <h2 class="text-xl font-bold">{{ t("vocab.result_title") }}</h2>
       <div class="flex gap-8 text-center">
         <div>
-          <div class="text-4xl font-bold text-emerald-600">{{ familiarResults.length }}</div>
+          <div class="text-4xl font-bold text-emerald-600">
+            {{ familiarResults.length }}
+          </div>
           <div class="text-gray-500">{{ t("vocab.familiar") }}</div>
         </div>
         <div>
-          <div class="text-4xl font-bold text-red-500">{{ unfamiliarResults.length }}</div>
+          <div class="text-4xl font-bold text-red-500">
+            {{ unfamiliarResults.length }}
+          </div>
           <div class="text-gray-500">{{ t("vocab.unfamiliar") }}</div>
         </div>
       </div>
 
-      <div v-if="unfamiliarResults.length" class="w-full max-w-xl rounded-lg border border-red-100">
+      <div
+        v-if="unfamiliarResults.length"
+        class="w-full max-w-xl rounded-lg border border-red-100"
+      >
         <div
           v-for="w in unfamiliarResults"
           :key="w.vocab_word_id"
           class="flex items-center gap-3 border-b border-red-50 px-3 py-1 last:border-b-0"
         >
-          <RubyWord :word="w.word" :tokens="w.tokens" class="min-w-24 text-xl" />
+          <RubyWord
+            :word="w.word"
+            :tokens="w.tokens"
+            class="min-w-24 text-xl"
+          />
           <span class="flex-1 text-gray-700">{{ w.meaning }}</span>
         </div>
       </div>
 
       <div class="flex flex-wrap justify-center gap-2">
-        <el-button v-if="unfamiliarResults.length" type="danger" @click="restart(unfamiliarResults)">
+        <el-button
+          v-if="unfamiliarResults.length"
+          type="danger"
+          @click="restart(unfamiliarResults)"
+        >
           {{ t("vocab.retry_unfamiliar") }}
         </el-button>
-        <el-button type="primary" @click="restart(cards)">{{ t("vocab.retry_all") }}</el-button>
-        <el-button @click="phase = 'setup'">{{ t("vocab.reselect") }}</el-button>
+        <el-button type="primary" @click="restart(cards)">{{
+          t("vocab.retry_all")
+        }}</el-button>
+        <el-button @click="phase = 'setup'">{{
+          t("vocab.reselect")
+        }}</el-button>
       </div>
     </div>
   </div>
@@ -210,7 +327,14 @@ import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
-import { Back, VideoPlay, CloseBold, Select } from "@element-plus/icons-vue";
+import {
+  Back,
+  VideoPlay,
+  CloseBold,
+  Select,
+  RefreshLeft,
+  House,
+} from "@element-plus/icons-vue";
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
 import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
 import RubyWord from "@/components/vocab/RubyWord.vue";
@@ -234,7 +358,9 @@ const minUnfamiliar = ref(1);
 const starting = ref(false);
 
 const allSelected = computed(
-  () => vocabStore.sets.length > 0 && selectedIds.value.length === vocabStore.sets.length,
+  () =>
+    vocabStore.sets.length > 0 &&
+    selectedIds.value.length === vocabStore.sets.length,
 );
 const selectedWordCount = computed(() =>
   vocabStore.sets
@@ -248,7 +374,9 @@ const toggleSet = (id) => {
   else selectedIds.value.splice(i, 1);
 };
 const toggleAll = () => {
-  selectedIds.value = allSelected.value ? [] : vocabStore.sets.map((s) => s.vocab_set_id);
+  selectedIds.value = allSelected.value
+    ? []
+    : vocabStore.sets.map((s) => s.vocab_set_id);
 };
 
 // --- 練習 ---
@@ -256,7 +384,10 @@ const cards = ref([]);
 const index = ref(0);
 const flipped = ref(false);
 const round = ref(0);
+// 依題目位置存放：退回上一題重答時直接覆蓋
 const results = ref([]); // [{ ...card, is_familiar }]
+// 後端每次作答都會累加次數，所以先暫存、結束時才送出；已送出的題目不能再退回
+const committed = ref(0);
 
 const readFlag = (key, fallback) => {
   try {
@@ -279,6 +410,15 @@ watch(showKana, (v) => saveFlag(SHOW_KANA_KEY, v));
 
 const current = computed(() => cards.value[index.value]);
 
+// 與 RubyWord 相同的判斷：tokens 對得上原文且有注音才算有假名標註，否則背面另外列出假名
+const hasRuby = computed(() => {
+  const tokens = current.value?.tokens || [];
+  return (
+    tokens.some((tk) => tk.cvt) &&
+    tokens.map((tk) => tk.ori).join("") === current.value.word
+  );
+});
+
 const speakCurrent = () => {
   const card = current.value;
   if (card) speak(card.kana || card.word, card.vocab_word_id);
@@ -288,7 +428,8 @@ const speakCurrent = () => {
 const autoPlay = ref(readFlag(AUTO_PLAY_KEY, false));
 watch(autoPlay, (v) => {
   saveFlag(AUTO_PLAY_KEY, v);
-  if (v && phase.value === "study" && speakingKey.value === null) speakCurrent();
+  if (v && phase.value === "study" && speakingKey.value === null)
+    speakCurrent();
 });
 watch([round, index], () => {
   if (autoPlay.value && phase.value === "study") speakCurrent();
@@ -303,8 +444,15 @@ const flip = () => {
     speakCurrent();
   }
 };
-const familiarResults = computed(() => results.value.filter((r) => r.is_familiar));
-const unfamiliarResults = computed(() => results.value.filter((r) => !r.is_familiar));
+const familiarResults = computed(() =>
+  results.value.filter((r) => r?.is_familiar),
+);
+const unfamiliarResults = computed(() =>
+  results.value.filter((r) => r && !r.is_familiar),
+);
+// 退回時標示這題之前選了什麼
+const currentAnswer = computed(() => results.value[index.value]?.is_familiar);
+const canGoBack = computed(() => index.value > committed.value);
 
 const shuffle = (list) => {
   const arr = [...list];
@@ -320,6 +468,7 @@ const beginRound = (list) => {
   index.value = 0;
   flipped.value = false;
   results.value = [];
+  committed.value = 0;
   round.value += 1;
   phase.value = "study";
 };
@@ -348,18 +497,25 @@ const handleStart = async () => {
 };
 
 let recordErrorShown = false;
+// 送出尚未記錄的作答；記錄不阻塞畫面
+const flushRecords = () => {
+  const pending = results.value.slice(committed.value).filter(Boolean);
+  committed.value = results.value.length;
+  pending.forEach((r) =>
+    vocabStore.recordAnswer(r.vocab_word_id, r.is_familiar).catch((err) => {
+      console.error(err);
+      if (!recordErrorShown) {
+        recordErrorShown = true;
+        ElMessage.warning(t("vocab.record_failed"));
+      }
+    }),
+  );
+};
+
 const answer = (isFamiliar) => {
   const card = current.value;
   if (!card) return;
-  results.value.push({ ...card, is_familiar: isFamiliar });
-  // 記錄不阻塞換題
-  vocabStore.recordAnswer(card.vocab_word_id, isFamiliar).catch((err) => {
-    console.error(err);
-    if (!recordErrorShown) {
-      recordErrorShown = true;
-      ElMessage.warning(t("vocab.record_failed"));
-    }
-  });
+  results.value[index.value] = { ...card, is_familiar: isFamiliar };
   stop();
   // 避免按鈕保留焦點，之後按空白/Enter 又觸發一次作答
   document.activeElement?.blur?.();
@@ -371,14 +527,30 @@ const answer = (isFamiliar) => {
   }
 };
 
+const goBack = () => {
+  if (!canGoBack.value) return;
+  stop();
+  document.activeElement?.blur?.();
+  flipped.value = false;
+  index.value -= 1;
+};
+
 const finish = () => {
   stop();
+  flushRecords();
   phase.value = "result";
 };
 
-const restart = (list) => beginRound(shuffle(list.map(({ is_familiar, ...card }) => card)));
+// 切到背景（關分頁、手機切 App）時先送出，避免作答遺失
+const onVisibilityChange = () => {
+  if (document.visibilityState === "hidden" && phase.value === "study")
+    flushRecords();
+};
 
-// 鍵盤：空白/Enter 翻面，← 不熟悉，→ 熟悉
+const restart = (list) =>
+  beginRound(shuffle(list.map(({ is_familiar, ...card }) => card)));
+
+// 鍵盤：空白/Enter 翻面，← 不熟悉，→ 熟悉，Backspace/↑ 上一個
 const onKeydown = (e) => {
   if (phase.value !== "study") return;
   const tag = e.target?.tagName;
@@ -390,6 +562,9 @@ const onKeydown = (e) => {
     answer(false);
   } else if (e.key === "ArrowRight") {
     answer(true);
+  } else if (e.key === "Backspace" || e.key === "ArrowUp") {
+    e.preventDefault();
+    goBack();
   }
 };
 
@@ -415,9 +590,15 @@ watch(() => authStore.isLoggedIn, init);
 onMounted(() => {
   document.title = `${t("vocab.study_title")} - ${t("site_title")}`;
   window.addEventListener("keydown", onKeydown);
+  document.addEventListener("visibilitychange", onVisibilityChange);
   init();
 });
-onUnmounted(() => window.removeEventListener("keydown", onKeydown));
+onUnmounted(() => {
+  window.removeEventListener("keydown", onKeydown);
+  document.removeEventListener("visibilitychange", onVisibilityChange);
+  // 練習到一半離開頁面，已作答的仍要記錄
+  flushRecords();
+});
 </script>
 
 <style scoped>
