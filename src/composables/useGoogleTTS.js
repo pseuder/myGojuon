@@ -49,19 +49,24 @@ const getAudioContext = () => {
 
 // 已解碼的音訊快取，重複點同一個字不必重新下載
 const bufferCache = new Map();
-const loadBuffer = async (ctx, text) => {
-  if (bufferCache.has(text)) return bufferCache.get(text);
-  const res = await fetch(`${TTS_URL}?${new URLSearchParams({ q: text })}`);
+const loadBuffer = async (ctx, text, lang) => {
+  // 同一段文字在不同語言念法不同（例如漢字），快取要分開
+  const cacheKey = `${lang}|${text}`;
+  if (bufferCache.has(cacheKey)) return bufferCache.get(cacheKey);
+  const res = await fetch(`${TTS_URL}?${new URLSearchParams({ q: text, lang })}`);
   if (!res.ok) throw new Error(`TTS ${res.status}`);
   const buffer = await ctx.decodeAudioData(await res.arrayBuffer());
   if (bufferCache.size >= BUFFER_CACHE_SIZE) {
     bufferCache.delete(bufferCache.keys().next().value);
   }
-  bufferCache.set(text, buffer);
+  bufferCache.set(cacheKey, buffer);
   return buffer;
 };
 
-// 目前後端只支援日文
+// 瀏覽器內建語音用的語言代碼
+const BROWSER_LANGS = { ja: "ja-JP", "zh-TW": "zh-TW" };
+
+// 後端支援 ja、zh-TW；lang 是預設語言，speak 可以個別指定
 export const useGoogleTTS = (lang = "ja") => {
   // 目前正在播放的 key（用來讓對應的喇叭按鈕顯示播放中）
   const speakingKey = ref(null);
@@ -84,19 +89,19 @@ export const useGoogleTTS = (lang = "ja") => {
   };
 
   // Google 播放失敗（被擋、離線）時改用瀏覽器內建語音
-  const speakWithBrowser = (text) =>
+  const speakWithBrowser = (text, voiceLang) =>
     new Promise((resolve) => {
       if (!window.speechSynthesis) return resolve();
       const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = lang === "ja" ? "ja-JP" : lang;
+      utter.lang = BROWSER_LANGS[voiceLang] || voiceLang;
       utter.onend = resolve;
       utter.onerror = resolve;
       window.speechSynthesis.speak(utter);
     });
 
   // 回傳 false 表示播放期間被 stop() 中斷
-  const playChunk = async (ctx, text, mySession) => {
-    const buffer = await loadBuffer(ctx, text);
+  const playChunk = async (ctx, text, mySession, voiceLang) => {
+    const buffer = await loadBuffer(ctx, text, voiceLang);
     if (mySession !== session) return false;
     return new Promise((resolve) => {
       source = ctx.createBufferSource();
@@ -107,7 +112,7 @@ export const useGoogleTTS = (lang = "ja") => {
     });
   };
 
-  const speak = async (text, key = text) => {
+  const speak = async (text, key = text, voiceLang = lang) => {
     const wasSame = speakingKey.value === key;
     stop();
     // 再點一次同一個喇叭 = 停止
@@ -120,10 +125,10 @@ export const useGoogleTTS = (lang = "ja") => {
       if (mySession !== session) return;
       try {
         if (!ctx) throw new Error("Web Audio not supported");
-        if (!(await playChunk(ctx, chunk, mySession))) return;
+        if (!(await playChunk(ctx, chunk, mySession, voiceLang))) return;
       } catch {
         if (mySession !== session) return;
-        await speakWithBrowser(chunk);
+        await speakWithBrowser(chunk, voiceLang);
       }
     }
     if (mySession === session) speakingKey.value = null;

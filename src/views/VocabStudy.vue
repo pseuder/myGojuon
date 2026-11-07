@@ -1,6 +1,7 @@
 <template>
-  <div class="flex h-full flex-col gap-4 px-2 py-4 md:px-4">
-    <div class="flex flex-wrap items-center justify-between gap-2">
+  <!-- 外框高度固定為可視高度；練習/結果內容太高時在框內捲動 -->
+  <div class="flex h-full flex-col gap-4 overflow-y-auto px-2 py-4 md:px-4">
+    <div class="flex shrink-0 flex-wrap items-center justify-between gap-2">
       <!-- <h1 class="text-2xl font-bold text-indigo-700">
         {{ t("vocab.study_title") }}
       </h1> -->
@@ -25,10 +26,11 @@
     <div
       v-else-if="phase === 'setup'"
       v-loading="vocabStore.isFetching"
-      class="flex flex-col gap-5"
+      class="flex min-h-0 min-w-0 flex-1 flex-col gap-4"
     >
-      <section class="flex flex-col gap-2">
-        <div class="flex items-center justify-between">
+      <!-- 學習集占用剩下的高度，清單在區塊內捲動 -->
+      <section class="flex min-h-[160px] flex-1 flex-col gap-2">
+        <div class="flex shrink-0 items-center justify-between">
           <h2 class="text-lg font-bold">{{ t("vocab.choose_sets") }}</h2>
           <el-checkbox
             :model-value="allSelected"
@@ -38,11 +40,14 @@
             {{ t("vocab.select_all") }}
           </el-checkbox>
         </div>
-        <div class="grid gap-2 sm:grid-cols-2">
+        <!-- grid-cols-1 = minmax(0, 1fr)：長標題才會截斷，而不是把欄位撐寬 -->
+        <div
+          class="grid min-h-0 flex-1 grid-cols-1 content-start gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+        >
           <div
             v-for="set in vocabStore.sets"
             :key="set.vocab_set_id"
-            class="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition"
+            class="flex min-w-0 cursor-pointer items-center gap-3 rounded-lg border p-3 transition"
             :class="
               selectedIds.includes(set.vocab_set_id)
                 ? 'border-emerald-400 bg-emerald-50'
@@ -77,92 +82,97 @@
         </p>
       </section>
 
-      <section class="flex flex-col gap-2">
-        <h2 class="text-lg font-bold">{{ t("vocab.choose_mode") }}</h2>
-        <el-radio-group
-          v-model="mode"
-          class="mode-group flex flex-col items-start gap-2"
-        >
-          <el-radio value="all">
-            {{ t("vocab.mode_all") }}
-            <span class="text-gray-500"
-              >（{{ selectedWordCount }} {{ t("vocab.words") }}）</span
-            >
-          </el-radio>
-          <el-radio value="random">
-            <span class="flex items-center gap-2">
-              {{ t("vocab.mode_random") }}
-              <el-input-number
-                v-model="randomCount"
-                :min="1"
-                :max="500"
-                size="small"
-                @focus="mode = 'random'"
-              />
-              {{ t("vocab.questions") }}
-            </span>
-          </el-radio>
-          <el-radio value="unfamiliar">
-            <span class="flex items-center gap-2">
-              {{ t("vocab.mode_unfamiliar") }}
-              <el-input-number
-                v-model="minUnfamiliar"
-                :min="1"
-                :max="999"
-                size="small"
-                @focus="mode = 'unfamiliar'"
-              />
-              {{ t("vocab.times_or_more") }}
-            </span>
-          </el-radio>
-        </el-radio-group>
-      </section>
+      <!-- 出題方式＋開始：固定高度，永遠在學習集清單下方 -->
+      <div class="flex shrink-0 flex-col gap-3 border-t border-gray-200 pt-3">
+        <section class="flex flex-col gap-2">
+          <h2 class="text-lg font-bold">{{ t("vocab.choose_mode") }}</h2>
+          <el-radio-group
+            v-model="mode"
+            class="mode-group flex flex-col items-start gap-2"
+          >
+            <el-radio value="all">
+              {{ t("vocab.mode_all") }}
+              <span class="text-gray-500"
+                >（{{ selectedWordCount }} {{ t("vocab.words") }}）</span
+              >
+            </el-radio>
+            <el-radio value="random">
+              <span class="flex flex-wrap items-center gap-2">
+                {{ t("vocab.mode_random") }}
+                <el-input-number
+                  v-model="randomCount"
+                  :min="1"
+                  :max="500"
+                  size="small"
+                  @focus="mode = 'random'"
+                />
+                {{ t("vocab.questions") }}
+              </span>
+            </el-radio>
+            <el-radio value="unfamiliar">
+              <span class="flex flex-wrap items-center gap-2">
+                {{ t("vocab.mode_unfamiliar") }}
+                <el-input-number
+                  v-model="minUnfamiliar"
+                  :min="1"
+                  :max="999"
+                  size="small"
+                  @focus="mode = 'unfamiliar'"
+                />
+                {{ t("vocab.times_or_more") }}
+              </span>
+            </el-radio>
+          </el-radio-group>
+        </section>
 
-      <section class="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <el-checkbox v-model="commuteMode">
-          {{ t("vocab.commute_mode") }}
-        </el-checkbox>
-        <span
-          class="flex items-center gap-2"
-          :class="{ 'opacity-50': !commuteMode }"
+        <section
+          class="commute-row flex flex-wrap items-center gap-x-4 gap-y-2"
         >
-          {{ t("vocab.front") }}
-          <el-input-number
-            v-model="frontTimes"
-            :min="0"
-            :max="10"
-            size="small"
-            @focus="commuteMode = true"
-          />
-          {{ t("vocab.times") }}
-        </span>
-        <span
-          class="flex items-center gap-2"
-          :class="{ 'opacity-50': !commuteMode }"
-        >
-          {{ t("vocab.back") }}
-          <el-input-number
-            v-model="backTimes"
-            :min="0"
-            :max="10"
-            size="small"
-            @focus="commuteMode = true"
-          />
-          {{ t("vocab.times") }}
-        </span>
-      </section>
+          <el-checkbox v-model="commuteMode">
+            {{ t("vocab.commute_mode") }}
+          </el-checkbox>
+          <span
+            class="flex items-center gap-2"
+            :class="{ 'opacity-50': !commuteMode }"
+          >
+            {{ t("vocab.front") }}
+            <el-input-number
+              v-model="frontTimes"
+              :min="0"
+              :max="10"
+              size="small"
+              @focus="commuteMode = true"
+            />
+            {{ t("vocab.times") }}
+          </span>
+          <span
+            class="flex items-center gap-2"
+            :class="{ 'opacity-50': !commuteMode }"
+          >
+            {{ t("vocab.back") }}
+            <el-input-number
+              v-model="backTimes"
+              :min="0"
+              :max="10"
+              size="small"
+              @focus="commuteMode = true"
+            />
+            {{ t("vocab.times") }}
+          </span>
+        </section>
 
-      <div class="flex justify-center">
-        <el-button
-          type="success"
-          size="large"
-          :icon="VideoPlay"
-          :loading="starting"
-          :disabled="!selectedIds.length"
-          @click="handleStart"
-        >
-          {{ t("vocab.start") }}
-        </el-button>
+        <div class="flex justify-center">
+          <el-button
+            type="success"
+            size="large"
+            :icon="VideoPlay"
+            :loading="starting"
+            :disabled="!selectedIds.length"
+            @click="handleStart"
+          >
+            {{ t("vocab.start") }}
+          </el-button>
+        </div>
       </div>
     </div>
 
@@ -172,9 +182,9 @@
       class="flex flex-col items-center gap-4"
     >
       <div class="flex w-full max-w-xl flex-col gap-2">
-        <div class="flex items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2">
-            <span class="font-bold text-gray-600"
+            <span class="font-bold whitespace-nowrap text-gray-600"
               >{{ index + 1 }} / {{ cards.length }}</span
             >
             <el-button
@@ -257,29 +267,50 @@
             }}</span>
           </div>
           <!-- 背面 -->
+          <!-- 版面同正面，但一律標假名（不受「顯示假名」開關影響），下方依序羅馬音、意思 -->
           <div class="flip-face back">
             <span
-              class="px-6 text-center text-3xl font-bold whitespace-pre-wrap text-teal-800 md:text-4xl"
+              class="absolute top-3 left-4 max-w-[70%] truncate text-xs text-gray-400"
             >
-              {{ current.meaning }}
+              {{ current.set_title }}
             </span>
-            <!-- 背面一律顯示假名，不受「顯示假名」開關影響 -->
+            <button
+              type="button"
+              class="absolute top-2 right-2 rounded-full p-2 hover:bg-blue-50"
+              :title="t('tools.speak')"
+              @click.stop="speakCurrent"
+            >
+              <img
+                :src="
+                  speakingKey === current.vocab_word_id
+                    ? '/images/volume2.png'
+                    : '/images/volume.png'
+                "
+                alt=""
+                class="h-8 w-8"
+              />
+            </button>
             <RubyWord
               :word="current.word"
               :tokens="current.tokens"
-              class="mt-4 px-4 text-center text-3xl font-bold text-gray-700"
+              class="card-word back-word px-4 text-center"
             />
             <span
               v-if="(!hasRuby && current.kana) || current.romaji"
-              class="text-lg text-gray-500"
+              class="back-romaji px-4 text-center"
             >
-              <template v-if="!hasRuby && current.kana">{{
+              <span v-if="!hasRuby && current.kana" class="back-kana">{{
                 current.kana
-              }}</template>
+              }}</span>
               <template v-if="!hasRuby && current.kana && current.romaji">
                 ・
               </template>
               {{ current.romaji }}
+            </span>
+            <!-- 分隔線：上方是讀音區，下方是意思區 -->
+            <span class="back-divider" />
+            <span class="back-meaning px-6 text-center whitespace-pre-wrap">
+              {{ current.meaning }}
             </span>
           </div>
         </div>
@@ -528,16 +559,19 @@ const runCommute = async () => {
     !commutePaused.value;
   const card = current.value;
   if (!card) return;
-  for (const [face, times] of [
-    [false, frontTimes.value || 0],
-    [true, backTimes.value || 0],
+  const word = [card.kana || card.word, "ja"];
+  // 背面念中文意思；沒有意思時退回念日文
+  const meaning = card.meaning?.trim() ? [card.meaning, "zh-TW"] : word;
+  for (const [face, times, [text, lang]] of [
+    [false, frontTimes.value || 0, word],
+    [true, backTimes.value || 0, meaning],
   ]) {
     if (!times) continue;
     flipped.value = face;
     for (let i = 0; i < times; i++) {
       if (!alive()) return;
       stop();
-      await speak(card.kana || card.word, card.vocab_word_id);
+      await speak(text, card.vocab_word_id, lang);
       if (!alive()) return;
       await sleep(COMMUTE_GAP_MS);
     }
@@ -804,14 +838,47 @@ onUnmounted(() => {
 .front {
   background: linear-gradient(135deg, #eef2ff, #ffffff);
 }
+/* 背面維持同色系，只用頂部色條提示已翻面，避免和下方綠色按鈕撞色 */
 .back {
-  background: linear-gradient(135deg, #d1fae5, #ccfbf1);
+  background: #f8fafc;
+  box-shadow:
+    inset 0 4px 0 #3b82f6,
+    0 6px 20px rgba(0, 0, 0, 0.12);
   transform: rotateY(180deg);
+}
+.back .back-word {
+  color: #111827;
+}
+.back .back-word :deep(rt),
+.back .back-kana {
+  color: #3b82f6;
+}
+.back-romaji {
+  color: #9ca3af;
+  font-size: 16px;
+  letter-spacing: 0.05em;
+}
+.back-divider {
+  width: 48px;
+  height: 1px;
+  margin: 16px auto;
+  background: #e5e7eb;
+}
+.back-meaning {
+  color: #374151;
+  font-size: clamp(1.25rem, 5vw, 1.75rem);
+  font-weight: 400;
+  line-height: 1.4;
 }
 .card-word {
   font-size: clamp(2.5rem, 10vw, 4rem);
   font-weight: 700;
   word-break: break-all;
+}
+/* RubyWord 的行高是為了上方假名留空間，下方也會多出一截；背面改用上方內距留假名位置，讓羅馬音緊貼單字 */
+.back .back-word {
+  line-height: 1.15;
+  padding-top: 0.6em;
 }
 .answer-btn {
   height: 56px;
@@ -820,5 +887,12 @@ onUnmounted(() => {
 .mode-group :deep(.el-radio) {
   height: auto;
   min-height: 32px;
+  max-width: 100%;
+  margin-right: 0;
+}
+/* el-radio / el-checkbox 預設不換行，窄螢幕會撐出畫面 */
+.mode-group :deep(.el-radio__label),
+.commute-row :deep(.el-checkbox__label) {
+  white-space: normal;
 }
 </style>

@@ -10,6 +10,7 @@
         :class="{
           'wide-layout': isWideLayout,
           'song-layout': isSongLayout,
+          'fill-layout': isFillLayout,
         }"
       >
         <router-view v-slot="{ Component }">
@@ -49,10 +50,14 @@ const isWideLayout = computed(
     route.path.includes("/Backend") ||
     route.path.includes("/backend") ||
     route.path.includes("/S/") ||
-    route.path.includes("/s/"),
+    route.path.includes("/s/") ||
+    route.path.includes("/VocabStudy"),
 );
 
 const isSongLayout = computed(() => route.path.includes("/SongPractice"));
+
+// 頁面自己分配高度（內部區塊各自捲動），外框撐滿可視高度
+const isFillLayout = computed(() => route.path.includes("/VocabStudy"));
 
 /*-- 鼠標樣式 --*/
 watch(
@@ -99,6 +104,10 @@ onMounted(() => {
 
 .song-layout {
   max-width: 95vw;
+}
+
+.fill-layout {
+  height: 100%;
 }
 
 @media (min-width: 1024px) {
