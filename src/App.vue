@@ -51,13 +51,21 @@ const isWideLayout = computed(
     route.path.includes("/backend") ||
     route.path.includes("/S/") ||
     route.path.includes("/s/") ||
-    route.path.includes("/VocabStudy"),
+    route.path.includes("/VocabStudy") ||
+    isVocabSetsList.value,
 );
 
 const isSongLayout = computed(() => route.path.includes("/SongPractice"));
 
+// 只有單字集列表本身，不含 /VocabSets/create、/VocabSets/:id/edit
+const isVocabSetsList = computed(() =>
+  /^(\/en)?\/VocabSets\/?$/.test(route.path),
+);
+
 // 頁面自己分配高度（內部區塊各自捲動），外框撐滿可視高度
-const isFillLayout = computed(() => route.path.includes("/VocabStudy"));
+const isFillLayout = computed(
+  () => route.path.includes("/VocabStudy") || isVocabSetsList.value,
+);
 
 /*-- 鼠標樣式 --*/
 watch(

@@ -1,6 +1,7 @@
 <template>
-  <div class="flex h-full flex-col gap-4 px-2 py-4 md:px-4">
-    <div class="flex flex-wrap items-center justify-between gap-3">
+  <!-- 外框高度固定為可視高度（寬版版面），卡片清單在框內捲動 -->
+  <div class="flex h-full flex-col gap-4 overflow-y-auto px-2 py-4 md:px-4">
+    <div class="flex shrink-0 flex-wrap items-center justify-between gap-3">
       <h1 class="text-2xl font-bold text-indigo-700">{{ t("vocab.title") }}</h1>
       <div v-if="authStore.isLoggedIn" class="flex gap-2">
         <el-button
