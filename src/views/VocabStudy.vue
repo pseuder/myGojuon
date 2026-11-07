@@ -13,6 +13,17 @@
       >
         {{ t("vocab.back_to_list") }}
       </el-button>
+      <!-- 開始鍵放在右上方，設定階段才顯示 -->
+      <el-button
+        v-if="authStore.isLoggedIn && phase === 'setup'"
+        type="success"
+        :icon="VideoPlay"
+        :loading="starting"
+        :disabled="!selectedIds.length"
+        @click="handleStart"
+      >
+        {{ t("vocab.start") }}
+      </el-button>
     </div>
 
     <div
@@ -28,76 +39,13 @@
       v-loading="vocabStore.isFetching"
       class="flex min-h-0 min-w-0 flex-1 flex-col gap-4"
     >
-      <!-- 學習集占用剩下的高度，清單在區塊內捲動 -->
-      <section class="flex min-h-[160px] flex-1 flex-col gap-2">
-        <div class="flex shrink-0 items-center justify-between">
-          <h2 class="text-lg font-bold">{{ t("vocab.choose_sets") }}</h2>
-          <el-checkbox
-            :model-value="allSelected"
-            :indeterminate="selectedIds.length > 0 && !allSelected"
-            @change="toggleAll"
-          >
-            {{ t("vocab.select_all") }}
-          </el-checkbox>
-        </div>
-        <!-- grid-cols-1 = minmax(0, 1fr)：長標題才會截斷，而不是把欄位撐寬 -->
-        <div
-          class="grid min-h-0 flex-1 grid-cols-1 content-start gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-        >
-          <div
-            v-for="set in vocabStore.sets"
-            :key="set.vocab_set_id"
-            class="flex min-w-0 cursor-pointer items-center gap-3 rounded-lg border p-3 transition"
-            :class="
-              selectedIds.includes(set.vocab_set_id)
-                ? 'border-emerald-400 bg-emerald-50'
-                : 'border-gray-200 hover:border-emerald-200'
-            "
-            @click="toggleSet(set.vocab_set_id)"
-          >
-            <!-- 只做顯示，點擊交給外層 -->
-            <el-checkbox
-              class="pointer-events-none"
-              :model-value="selectedIds.includes(set.vocab_set_id)"
-            />
-            <div class="flex min-w-0 flex-1 flex-col">
-              <span class="truncate font-bold">{{ set.title }}</span>
-              <span class="text-xs text-gray-500">
-                {{ set.word_count }} {{ t("vocab.words") }}
-                <template v-if="set.unfamiliar_count">
-                  ・<span class="text-red-500"
-                    >{{ t("vocab.unfamiliar") }}
-                    {{ set.unfamiliar_count }}</span
-                  >
-                </template>
-              </span>
-            </div>
-            <!-- 查看單字集內容；stop 避免同時切換勾選 -->
-            <el-button
-              class="shrink-0"
-              circle
-              size="small"
-              :icon="View"
-              :title="t('vocab.view_detail')"
-              @click.stop="openDetail(set.vocab_set_id)"
-            />
-          </div>
-        </div>
-        <p
-          v-if="vocabStore.isInitialized && !vocabStore.sets.length"
-          class="text-gray-400"
-        >
-          {{ t("vocab.no_sets") }}
-        </p>
-      </section>
-
-      <!-- 出題方式＋開始：固定高度，永遠在學習集清單下方 -->
-      <div class="flex shrink-0 flex-col gap-3 border-t border-gray-200 pt-3">
+      <!-- 出題方式：固定高度，在學習集清單上方 -->
+      <div class="flex shrink-0 flex-col gap-3 border-b border-gray-200 pb-3">
         <section class="flex flex-col gap-2">
-          <h2 class="text-lg font-bold">{{ t("vocab.choose_mode") }}</h2>
+          <!-- <h2 class="text-lg font-bold">{{ t("vocab.choose_mode") }}</h2> -->
           <el-radio-group
             v-model="mode"
-            class="mode-group flex flex-col items-start gap-2"
+            class="mode-group flex flex-wrap items-center gap-x-6 gap-y-2"
           >
             <el-radio value="all">
               {{ t("vocab.mode_all") }}
@@ -169,20 +117,70 @@
             {{ t("vocab.times") }}
           </span>
         </section>
-
-        <div class="flex justify-center">
-          <el-button
-            type="success"
-            size="large"
-            :icon="VideoPlay"
-            :loading="starting"
-            :disabled="!selectedIds.length"
-            @click="handleStart"
-          >
-            {{ t("vocab.start") }}
-          </el-button>
-        </div>
       </div>
+
+      <!-- 學習集占用剩下的高度，清單在區塊內捲動 -->
+      <section class="flex min-h-[160px] flex-1 flex-col gap-2">
+        <div class="flex shrink-0 items-center justify-between">
+          <h2 class="text-lg font-bold">{{ t("vocab.choose_sets") }}</h2>
+          <el-checkbox
+            :model-value="allSelected"
+            :indeterminate="selectedIds.length > 0 && !allSelected"
+            @change="toggleAll"
+          >
+            {{ t("vocab.select_all") }}
+          </el-checkbox>
+        </div>
+        <!-- grid-cols-1 = minmax(0, 1fr)：長標題才會截斷，而不是把欄位撐寬 -->
+        <div
+          class="grid min-h-0 flex-1 grid-cols-1 content-start gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+        >
+          <div
+            v-for="set in vocabStore.sets"
+            :key="set.vocab_set_id"
+            class="flex min-w-0 cursor-pointer items-center gap-3 rounded-lg border p-3 transition"
+            :class="
+              selectedIds.includes(set.vocab_set_id)
+                ? 'border-emerald-400 bg-emerald-50'
+                : 'border-gray-200 hover:border-emerald-200'
+            "
+            @click="toggleSet(set.vocab_set_id)"
+          >
+            <!-- 只做顯示，點擊交給外層 -->
+            <el-checkbox
+              class="pointer-events-none"
+              :model-value="selectedIds.includes(set.vocab_set_id)"
+            />
+            <div class="flex min-w-0 flex-1 flex-col">
+              <span class="truncate font-bold">{{ set.title }}</span>
+              <span class="text-xs text-gray-500">
+                {{ set.word_count }} {{ t("vocab.words") }}
+                <template v-if="set.unfamiliar_count">
+                  ・<span class="text-red-500"
+                    >{{ t("vocab.unfamiliar") }}
+                    {{ set.unfamiliar_count }}</span
+                  >
+                </template>
+              </span>
+            </div>
+            <!-- 查看單字集內容；stop 避免同時切換勾選 -->
+            <el-button
+              class="shrink-0"
+              circle
+              size="small"
+              :icon="View"
+              :title="t('vocab.view_detail')"
+              @click.stop="openDetail(set.vocab_set_id)"
+            />
+          </div>
+        </div>
+        <p
+          v-if="vocabStore.isInitialized && !vocabStore.sets.length"
+          class="text-gray-400"
+        >
+          {{ t("vocab.no_sets") }}
+        </p>
+      </section>
     </div>
 
     <!-- ===== 2. 卡片練習 ===== -->
