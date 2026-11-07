@@ -116,73 +116,15 @@
     </div>
 
     <!-- 單字集詳細 -->
-    <el-dialog
-      v-model="detailVisible"
-      :title="detail?.title || ''"
-      width="min(720px, 95vw)"
-      top="5vh"
-      append-to-body
-    >
-      <div v-loading="detailLoading" class="flex min-h-32 flex-col gap-3">
-        <template v-if="detail">
-          <p
-            v-if="detail.description"
-            class="whitespace-pre-wrap text-gray-600"
-          >
-            {{ detail.description }}
-          </p>
-          <p class="text-sm text-gray-500">
-            {{ t("vocab.creator") }}：{{ detail.creator_name || "-" }} ・
-            {{ detail.words.length }} {{ t("vocab.words") }}
-          </p>
-
-          <div
-            class="max-h-[55vh] overflow-y-auto rounded border border-gray-200"
-          >
-            <div
-              v-for="w in detail.words"
-              :key="w.vocab_word_id"
-              class="flex items-center gap-3 border-b border-gray-100 px-3 py-1 last:border-b-0"
-            >
-              <button
-                type="button"
-                class="shrink-0 rounded-full p-1 hover:bg-indigo-100"
-                :title="t('tools.speak')"
-                @click="speak(w.kana || w.word, w.vocab_word_id)"
-              >
-                <img
-                  :src="
-                    speakingKey === w.vocab_word_id
-                      ? '/images/volume2.png'
-                      : '/images/volume.png'
-                  "
-                  alt=""
-                  class="h-5 w-5"
-                />
-              </button>
-              <RubyWord
-                :word="w.word"
-                :tokens="w.tokens"
-                class="min-w-24 text-xl"
-              />
-              <span class="flex-1 text-gray-700">{{ w.meaning }}</span>
-              <span class="shrink-0 text-xs whitespace-nowrap">
-                <span class="text-emerald-600">✓{{ w.familiar_count }}</span>
-                <span class="ml-2 text-red-500">✗{{ w.unfamiliar_count }}</span>
-              </span>
-            </div>
-          </div>
-        </template>
-      </div>
-
-      <template #footer>
-        <div v-if="detail" class="flex flex-wrap justify-end gap-2">
+    <VocabSetDetailDialog v-model="detailVisible" :set-id="detailId">
+      <template #footer="{ detail }">
+        <div class="flex flex-wrap justify-end gap-2">
           <el-button
             v-if="authStore.isAdmin"
             type="danger"
             :icon="Delete"
             plain
-            @click="handleDelete"
+            @click="handleDelete(detail)"
           >
             {{ t("vocab.delete") }}
           </el-button>
@@ -202,7 +144,7 @@
           </el-button>
         </div>
       </template>
-    </el-dialog>
+    </VocabSetDetailDialog>
   </div>
 </template>
 
@@ -221,18 +163,15 @@ import {
   CaretRight,
 } from "@element-plus/icons-vue";
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
-import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
-import RubyWord from "@/components/vocab/RubyWord.vue";
+import VocabSetDetailDialog from "@/components/vocab/VocabSetDetailDialog.vue";
 
 const { t } = useI18n();
 const router = useRouter();
 const authStore = useAuthStore();
 const vocabStore = useVocabStore();
-const { speak, speakingKey } = useGoogleTTS("ja");
 
 const detailVisible = ref(false);
-const detailLoading = ref(false);
-const detail = ref(null);
+const detailId = ref(null);
 
 const progressOf = (set) =>
   set.word_count ? Math.round((set.studied_count / set.word_count) * 100) : 0;
@@ -246,28 +185,19 @@ const loadSets = async () => {
   }
 };
 
-const openDetail = async (set) => {
-  detail.value = null;
+const openDetail = (set) => {
+  detailId.value = set.vocab_set_id;
   detailVisible.value = true;
-  detailLoading.value = true;
-  try {
-    detail.value = await vocabStore.getSet(set.vocab_set_id);
-  } catch (err) {
-    ElMessage.error(err.message);
-    detailVisible.value = false;
-  } finally {
-    detailLoading.value = false;
-  }
 };
 
 const studySet = (setId) => {
   router.push({ path: "/VocabStudy", query: { sets: String(setId) } });
 };
 
-const handleDelete = async () => {
+const handleDelete = async (detail) => {
   try {
     await ElMessageBox.confirm(
-      t("vocab.delete_confirm", { title: detail.value.title }),
+      t("vocab.delete_confirm", { title: detail.title }),
       t("vocab.delete"),
       {
         type: "warning",
@@ -279,7 +209,7 @@ const handleDelete = async () => {
     return;
   }
   try {
-    await vocabStore.deleteSet(detail.value.vocab_set_id);
+    await vocabStore.deleteSet(detail.vocab_set_id);
     detailVisible.value = false;
     ElMessage.success(t("vocab.deleted"));
   } catch (err) {

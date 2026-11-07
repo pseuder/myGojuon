@@ -72,6 +72,15 @@
                 </template>
               </span>
             </div>
+            <!-- 查看單字集內容；stop 避免同時切換勾選 -->
+            <el-button
+              class="shrink-0"
+              circle
+              size="small"
+              :icon="View"
+              :title="t('vocab.view_detail')"
+              @click.stop="openDetail(set.vocab_set_id)"
+            />
           </div>
         </div>
         <p
@@ -398,6 +407,26 @@
         }}</el-button>
       </div>
     </div>
+
+    <VocabSetDetailDialog v-model="detailVisible" :set-id="detailId">
+      <template #footer="{ detail }">
+        <el-button
+          :type="
+            selectedIds.includes(detail.vocab_set_id) ? 'default' : 'success'
+          "
+          @click="
+            toggleSet(detail.vocab_set_id);
+            detailVisible = false;
+          "
+        >
+          {{
+            selectedIds.includes(detail.vocab_set_id)
+              ? t("vocab.unselect_set")
+              : t("vocab.select_set")
+          }}
+        </el-button>
+      </template>
+    </VocabSetDetailDialog>
   </div>
 </template>
 
@@ -414,7 +443,9 @@ import {
   Select,
   RefreshLeft,
   House,
+  View,
 } from "@element-plus/icons-vue";
+import VocabSetDetailDialog from "@/components/vocab/VocabSetDetailDialog.vue";
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
 import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
 import RubyWord from "@/components/vocab/RubyWord.vue";
@@ -463,6 +494,14 @@ const toggleAll = () => {
   selectedIds.value = allSelected.value
     ? []
     : vocabStore.sets.map((s) => s.vocab_set_id);
+};
+
+// --- 單字集詳細 ---
+const detailVisible = ref(false);
+const detailId = ref(null);
+const openDetail = (id) => {
+  detailId.value = id;
+  detailVisible.value = true;
 };
 
 // --- 練習 ---
