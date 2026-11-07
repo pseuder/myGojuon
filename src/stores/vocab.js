@@ -28,6 +28,10 @@ export const useVocabStore = defineStore("vocab", () => {
     }
   };
 
+  /** 搜尋單字是否已存在於學習集（日文 / 假名 / 羅馬拼音 / 意思） */
+  const searchWords = async (q) =>
+    unwrap(await MYAPI.get("/search_vocab_words", { q })) ?? [];
+
   const getSet = async (setId) =>
     unwrap(await MYAPI.get(`/get_vocab_set/${setId}`));
 
@@ -87,6 +91,7 @@ export const useVocabStore = defineStore("vocab", () => {
     isInitialized,
     fetchSets,
     getSet,
+    searchWords,
     convertWords,
     saveSet,
     deleteSet,

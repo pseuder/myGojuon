@@ -259,6 +259,11 @@
     "reset_stats": "Reset study counts",
     "reset_confirm": "Reset your \"got it / not yet\" counts for \"{title}\"? Only your own records are cleared",
     "reset_done": "Reset done",
-    "admin_only": "Only admins can create or edit sets"
+    "admin_only": "Only admins can create or edit sets",
+    "search_placeholder": "Search words (Japanese / kana / romaji / meaning)",
+    "search_found": "{n} matching words found",
+    "search_not_found": "\"{q}\" is not in any set yet",
+    "search_exact": "Exact",
+    "search_limit_hint": "Showing the first {n} only; try a more specific keyword"
   }
 }

@@ -257,6 +257,11 @@
     "reset_stats": "重置熟悉 / 不熟悉次數",
     "reset_confirm": "確定要重置「{title}」的熟悉 / 不熟悉次數？只會清除你自己的紀錄",
     "reset_done": "已重置",
-    "admin_only": "只有管理員可以新增或修改學習集"
+    "admin_only": "只有管理員可以新增或修改學習集",
+    "search_placeholder": "搜尋單字（日文 / 假名 / 羅馬拼音 / 意思）",
+    "search_found": "找到 {n} 筆符合的單字",
+    "search_not_found": "系統中沒有「{q}」這個單字",
+    "search_exact": "完全符合",
+    "search_limit_hint": "只顯示前 {n} 筆，請輸入更精確的關鍵字"
   }
 }

@@ -51,6 +51,12 @@ const routes = [
     component: () => import("@/views/VocabStudy.vue"),
     meta: { noindex: true },
   },
+  // 練習中 / 結果頁：進度存在 localStorage，重新整理後可接著練
+  {
+    path: "/VocabStudy/session",
+    component: () => import("@/views/VocabStudySession.vue"),
+    meta: { noindex: true },
+  },
   {
     path: "/Backend",
     component: () => import("@/views/Backend.vue"),
@@ -97,6 +103,11 @@ const routes = [
   {
     path: "/en/VocabStudy",
     component: () => import("@/views/VocabStudy.vue"),
+    meta: { noindex: true },
+  },
+  {
+    path: "/en/VocabStudy/session",
+    component: () => import("@/views/VocabStudySession.vue"),
     meta: { noindex: true },
   },
   // 舊網址相容
