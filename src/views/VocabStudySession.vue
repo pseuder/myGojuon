@@ -546,22 +546,35 @@ const reselect = () => {
 };
 
 // 鍵盤：空白/Enter 翻面，← 不熟悉，→ 熟悉，Backspace/↑ 上一個
-const onKeydown = (e) => {
-  if (phase.value !== "study") return;
+// 鍵盤操作在 keyup 才觸發：按住不放不會連續觸發（keydown 會 auto-repeat）。
+// keydown 只負責記錄「在本頁按下的鍵」並擋掉預設行為（空白捲動、Enter 點按鈕、Backspace）；
+// 只有在本頁按下的鍵放開時才動作，避免從上一頁按 Enter 進來時放開就被當成翻面。
+const STUDY_KEYS = new Set([" ", "Enter", "ArrowLeft", "ArrowRight", "Backspace", "ArrowUp"]);
+const pressedKeys = new Set();
+const isTyping = (e) => {
   const tag = e.target?.tagName;
-  if (tag === "INPUT" || tag === "TEXTAREA") return;
+  return tag === "INPUT" || tag === "TEXTAREA";
+};
+const onKeydown = (e) => {
+  if (phase.value !== "study" || isTyping(e) || !STUDY_KEYS.has(e.key)) return;
+  if (e.key === " " || e.key === "Enter" || e.key === "Backspace") e.preventDefault();
+  pressedKeys.add(e.key);
+};
+const onKeyup = (e) => {
+  if (!pressedKeys.delete(e.key)) return;
+  if (phase.value !== "study" || isTyping(e)) return;
   if (e.key === " " || e.key === "Enter") {
-    e.preventDefault();
     flip();
   } else if (e.key === "ArrowLeft") {
     answer(false);
   } else if (e.key === "ArrowRight") {
     answer(true);
   } else if (e.key === "Backspace" || e.key === "ArrowUp") {
-    e.preventDefault();
     goBack();
   }
 };
+// 視窗失焦時收不到 keyup，清掉避免殘留
+const clearPressedKeys = () => pressedKeys.clear();
 
 // --- 初始化：從 localStorage 還原進度 ---
 const init = () => {
@@ -597,11 +610,15 @@ watch(
 onMounted(() => {
   document.title = `${t("vocab.study_title")} - ${t("site_title")}`;
   window.addEventListener("keydown", onKeydown);
+  window.addEventListener("keyup", onKeyup);
+  window.addEventListener("blur", clearPressedKeys);
   document.addEventListener("visibilitychange", onVisibilityChange);
   init();
 });
 onUnmounted(() => {
   window.removeEventListener("keydown", onKeydown);
+  window.removeEventListener("keyup", onKeyup);
+  window.removeEventListener("blur", clearPressedKeys);
   document.removeEventListener("visibilitychange", onVisibilityChange);
   stopCommute();
   releaseWakeLock();
