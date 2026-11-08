@@ -256,6 +256,27 @@
                 >
                   <span class="text-sm">整列鮭</span>
                 </el-button>
+                <!-- 插入 JSON 歌詞（往前 / 往後） -->
+                <div class="flex flex-col">
+                  <el-button
+                    link
+                    class="!h-4 !p-0"
+                    style="margin-left: 0"
+                    title="在此行之前插入 JSON 歌詞"
+                    @click="openInsertJsonDialog(index, 'before')"
+                  >
+                    <el-icon :size="16" color="#409eff"><ArrowUp /></el-icon>
+                  </el-button>
+                  <el-button
+                    link
+                    class="!h-4 !p-0"
+                    style="margin-left: 0"
+                    title="在此行之後插入 JSON 歌詞"
+                    @click="openInsertJsonDialog(index, 'after')"
+                  >
+                    <el-icon :size="16" color="#409eff"><ArrowDown /></el-icon>
+                  </el-button>
+                </div>
               </div>
             </div>
 
@@ -449,6 +470,28 @@
       </div>
     </el-dialog>
 
+    <!-- Dialog: 插入 JSON 歌詞 -->
+    <el-dialog
+      :title="`插入 JSON 歌詞（第 ${insertJsonTarget.index + 1} 行${insertJsonTarget.position === 'before' ? '之前' : '之後'}）`"
+      v-model="insertJsonDialogVisible"
+      width="80%"
+    >
+      <div>
+        <el-input
+          v-model="insertJsonText"
+          type="textarea"
+          rows="10"
+          placeholder='貼上「複製轉換歌詞」產生的 JSON，例如：[{"timestamp": "[00:10.00]", "lyrics": [{"cvt": "ねえ", "ori": "ねえ"}]}]'
+        />
+        <div class="mt-4 flex justify-end gap-4">
+          <el-button @click="insertJsonDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleInsertJsonSubmit"
+            >插入</el-button
+          >
+        </div>
+      </div>
+    </el-dialog>
+
     <!-- Dialog: YouTube 搜尋 -->
     <el-dialog
       title="搜尋 YouTube 影片"
@@ -524,7 +567,14 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch } from "vue";
-import { Delete, Switch, Plus, CopyDocument } from "@element-plus/icons-vue";
+import {
+  Delete,
+  Switch,
+  Plus,
+  CopyDocument,
+  ArrowUp,
+  ArrowDown,
+} from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import axios from "axios";
 import { useApi } from "@/composables/useApi.js";
@@ -910,6 +960,66 @@ const handleDuplicateLyricLine = (index) => {
 };
 
 // ============================================================
+// 插入 JSON 歌詞（貼上「複製轉換歌詞」的結果，往前 / 往後插入）
+// ============================================================
+const insertJsonDialogVisible = ref(false);
+const insertJsonText = ref("");
+const insertJsonTarget = ref({ index: 0, position: "after" });
+
+const openInsertJsonDialog = async (index, position) => {
+  insertJsonTarget.value = { index, position };
+  insertJsonText.value = "";
+  insertJsonDialogVisible.value = true;
+  // 嘗試自動帶入剪貼簿內容（瀏覽器可能拒絕，失敗就留空讓使用者手動貼）
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text && text.trim().startsWith("[")) insertJsonText.value = text;
+  } catch {
+    /* ignore */
+  }
+};
+
+const normalizeLyricLine = (line) => ({
+  timestamp: typeof line.timestamp === "string" ? line.timestamp : "",
+  lyrics: Array.isArray(line.lyrics)
+    ? line.lyrics.map((ly) => ({
+        cvt: ly.cvt ?? "",
+        ori: ly.ori ?? "",
+        color: ly.color ?? "",
+        meaning: ly.meaning ?? "",
+      }))
+    : [],
+});
+
+const handleInsertJsonSubmit = () => {
+  let parsed;
+  try {
+    parsed = JSON.parse(insertJsonText.value);
+  } catch {
+    return ElMessage.error("JSON 格式錯誤，無法解析");
+  }
+  if (!Array.isArray(parsed)) parsed = [parsed];
+  if (
+    parsed.length === 0 ||
+    !parsed.every(
+      (line) => line && typeof line === "object" && "lyrics" in line,
+    )
+  ) {
+    return ElMessage.error(
+      "格式不符：需為 [{ timestamp, lyrics: [...] }, ...]",
+    );
+  }
+
+  const lines = parsed.map(normalizeLyricLine);
+  const { index, position } = insertJsonTarget.value;
+  const at = position === "before" ? index : index + 1;
+  allLyrics.value.splice(at, 0, ...lines);
+  insertJsonDialogVisible.value = false;
+  ElMessage.success(`已插入 ${lines.length} 行歌詞`);
+  nextTick(() => scrollToCurrentLyric(at));
+};
+
+// ============================================================
 // 歌詞字元操作（刪除、新增、加寬）
 // ============================================================
 const handleDeleteLyric = (lyricIndex, lyricLineIndex) => {
@@ -1265,9 +1375,7 @@ const enterEditPage = () => {
 // 焦點在輸入框時不觸發快捷鍵，避免手機鍵盤的「完成」(Enter) 誤插時間戳
 const isTypingTarget = (el) =>
   el instanceof HTMLElement &&
-  (el.tagName === "INPUT" ||
-    el.tagName === "TEXTAREA" ||
-    el.isContentEditable);
+  (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
 
 const handleKeyPress = (event) => {
   if (isTypingTarget(event.target)) return;
