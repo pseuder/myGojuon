@@ -1,0 +1,58 @@
+name: Deploy Web
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch: # 允許在 GitHub 網頁上手動重跑
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+
+      - name: Install
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        run: yarn build
+
+      - name: Upload dist to VM (dist_new)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.PORT || 22 }}
+          source: dist/*
+          target: /var/www/mygojuon/dist_new
+          strip_components: 1
+          rm: true
+
+      - name: Swap dist_new -> dist
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.PORT || 22 }}
+          script: |
+            set -e
+            cd /var/www/mygojuon
+            test -f dist_new/index.html
+            rm -rf dist_old
+            if [ -d dist ]; then mv dist dist_old; fi
+            mv dist_new dist
+            echo "swapped: $(ls dist | wc -l) entries in dist"
+            curl -fsS -o /dev/null -w "nginx / -> %{http_code}\n" -H "Host: mygojuon.com" http://127.0.0.1/
