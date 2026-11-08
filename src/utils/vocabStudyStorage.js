@@ -3,6 +3,7 @@
 // 2. 進行中的練習進度（讓 /VocabStudy/session 重新整理後能接著練）
 
 export const SHOW_KANA_KEY = "vocab_show_kana";
+export const SHOW_ROMAJI_KEY = "vocab_show_romaji";
 export const AUTO_PLAY_KEY = "vocab_auto_play";
 export const COMMUTE_KEY = "vocab_commute_mode";
 export const FRONT_TIMES_KEY = "vocab_commute_front";

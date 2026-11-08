@@ -58,6 +58,10 @@
               :active-text="t('vocab.auto_play')"
             />
             <el-switch v-model="showKana" :active-text="t('vocab.show_kana')" />
+            <el-switch
+              v-model="showRomaji"
+              :active-text="t('vocab.show_romaji')"
+            />
             <el-button size="small" @click="finish" type="danger" plain>{{
               t("vocab.end")
             }}</el-button>
@@ -104,7 +108,15 @@
               :tokens="current.tokens"
               :show-kana="showKana"
               class="card-word px-4 text-center"
+              :class="{ 'tight-word': showRomaji && current.romaji }"
             />
+            <!-- 羅馬音位置同背面，由「顯示羅馬音」開關決定（背面一律顯示） -->
+            <span
+              v-if="showRomaji && current.romaji"
+              class="back-romaji px-4 text-center"
+            >
+              {{ current.romaji }}
+            </span>
             <span class="absolute bottom-3 text-xs text-gray-400">{{
               t("vocab.tap_to_flip")
             }}</span>
@@ -261,6 +273,7 @@ import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
 import RubyWord from "@/components/vocab/RubyWord.vue";
 import {
   SHOW_KANA_KEY,
+  SHOW_ROMAJI_KEY,
   AUTO_PLAY_KEY,
   COMMUTE_KEY,
   FRONT_TIMES_KEY,
@@ -315,6 +328,9 @@ const persist = () =>
 
 const showKana = ref(readFlag(SHOW_KANA_KEY, true));
 watch(showKana, (v) => saveFlag(SHOW_KANA_KEY, v));
+// 正面是否顯示羅馬音（背面一律顯示）
+const showRomaji = ref(readFlag(SHOW_ROMAJI_KEY, false));
+watch(showRomaji, (v) => saveFlag(SHOW_ROMAJI_KEY, v));
 
 const current = computed(() => cards.value[index.value]);
 
@@ -706,7 +722,9 @@ onUnmounted(() => {
   word-break: break-all;
 }
 /* RubyWord 的行高是為了上方假名留空間，下方也會多出一截；背面改用上方內距留假名位置，讓羅馬音緊貼單字 */
-.back .back-word {
+/* 正面開啟羅馬音時也用同樣排版，讓羅馬音位置和背面一致 */
+.back .back-word,
+.front .tight-word {
   line-height: 1.15;
   padding-top: 0.6em;
 }
