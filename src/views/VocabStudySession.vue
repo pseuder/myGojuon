@@ -142,12 +142,13 @@
               v-if="(!hasRuby && current.kana) || current.romaji"
               class="back-romaji px-4 text-center"
             >
-              <span v-if="!hasRuby && current.kana" class="back-kana">{{
+              <!-- <span v-if="!hasRuby && current.kana" class="back-kana">{{
                 current.kana
               }}</span>
               <template v-if="!hasRuby && current.kana && current.romaji">
                 ・
               </template>
+               -->
               {{ current.romaji }}
             </span>
             <!-- 分隔線：上方是讀音區，下方是意思區 -->
@@ -549,7 +550,14 @@ const reselect = () => {
 // 鍵盤操作在 keyup 才觸發：按住不放不會連續觸發（keydown 會 auto-repeat）。
 // keydown 只負責記錄「在本頁按下的鍵」並擋掉預設行為（空白捲動、Enter 點按鈕、Backspace）；
 // 只有在本頁按下的鍵放開時才動作，避免從上一頁按 Enter 進來時放開就被當成翻面。
-const STUDY_KEYS = new Set([" ", "Enter", "ArrowLeft", "ArrowRight", "Backspace", "ArrowUp"]);
+const STUDY_KEYS = new Set([
+  " ",
+  "Enter",
+  "ArrowLeft",
+  "ArrowRight",
+  "Backspace",
+  "ArrowUp",
+]);
 const pressedKeys = new Set();
 const isTyping = (e) => {
   const tag = e.target?.tagName;
@@ -557,7 +565,8 @@ const isTyping = (e) => {
 };
 const onKeydown = (e) => {
   if (phase.value !== "study" || isTyping(e) || !STUDY_KEYS.has(e.key)) return;
-  if (e.key === " " || e.key === "Enter" || e.key === "Backspace") e.preventDefault();
+  if (e.key === " " || e.key === "Enter" || e.key === "Backspace")
+    e.preventDefault();
   pressedKeys.add(e.key);
 };
 const onKeyup = (e) => {
