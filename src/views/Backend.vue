@@ -1,6 +1,10 @@
 <template>
   <div class="h-full px-4 py-4">
-    <el-tabs v-model="activeTab" class="backend-tabs h-full" @tab-change="handleTabChange">
+    <el-tabs
+      v-model="activeTab"
+      class="backend-tabs h-full"
+      @tab-change="handleTabChange"
+    >
       <el-tab-pane label="歌手列表" name="artists">
         <div class="flex flex-col gap-4">
           <div class="text-right">
@@ -271,14 +275,13 @@
 
     <template #footer>
       <div class="text-right">
-        <el-button
-          type="primary"
-          :loading="importRunning"
-          @click="startImport"
-        >
+        <el-button type="primary" :loading="importRunning" @click="startImport">
           {{ importRunning ? "發布中..." : "開始發布" }}
         </el-button>
-        <el-button :disabled="importRunning" @click="importDialogVisible = false">
+        <el-button
+          :disabled="importRunning"
+          @click="importDialogVisible = false"
+        >
           關閉
         </el-button>
       </div>
@@ -547,6 +550,7 @@ const viewTabs = [
   { name: "v_feedbacks", label: "意見回饋" },
   { name: "v_contact_logs", label: "聯絡紀錄" },
   { name: "v_special_activity_logs", label: "特殊活動紀錄" },
+  { name: "v_user_vocab_progress", label: "單字學習進度" },
 ];
 
 const activeTab = ref("artists");
