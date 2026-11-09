@@ -2,14 +2,65 @@
   <!-- 練習中 / 結果頁：進度存在 localStorage，重新整理後接著練 -->
   <div class="flex h-full flex-col gap-4 overflow-y-auto px-2 py-4 md:px-4">
     <div class="flex shrink-0 flex-wrap items-center justify-between gap-2">
-      <el-button
-        :icon="House"
-        @click="router.push('/VocabSets')"
-        type="primary"
-        plain
+      <!-- 上排按鈕只顯示圖示，文字放在 title 當提示 -->
+      <div class="flex flex-wrap items-center gap-2">
+        <el-button
+          :icon="House"
+          :title="t('vocab.back_to_list')"
+          @click="router.push('/VocabSets')"
+          type="warning"
+          plain
+        />
+        <!-- 上一個 / 結束 只在練習中顯示，和「回單字集」同一排 -->
+        <el-button
+          v-if="authStore.isLoggedIn && phase === 'study' && current"
+          :icon="Back"
+          :title="t('vocab.prev_word')"
+          :disabled="!canGoBack"
+          @click="goBack"
+          type="info"
+          plain
+          style="margin-left: 0"
+          >{{ t("vocab.prev_word") }}
+        </el-button>
+      </div>
+      <div
+        v-if="authStore.isLoggedIn && phase === 'study' && current"
+        class="flex items-center gap-2"
       >
-        {{ t("vocab.back_to_list") }}
-      </el-button>
+        <!-- 通勤模式的暫停 / 繼續，放在「結束」左邊 -->
+        <el-button
+          v-if="commuteMode"
+          :icon="commutePaused ? VideoPlay : VideoPause"
+          :title="commutePaused ? t('vocab.resume') : t('vocab.pause')"
+          type="primary"
+          plain
+          @click="toggleCommutePause"
+        >
+          {{ commutePaused ? t("vocab.resume") : t("vocab.pause") }}
+        </el-button>
+        <!-- Element Plus 沒有正方形的停止圖示，自己畫一個 -->
+        <el-button
+          :title="t('vocab.end')"
+          @click="finish"
+          type="danger"
+          plain
+          style="margin-left: 0"
+        >
+          <el-icon>
+            <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+              <rect
+                x="192"
+                y="192"
+                width="640"
+                height="640"
+                rx="96"
+                fill="currentColor"
+              />
+            </svg>
+          </el-icon>
+        </el-button>
+      </div>
     </div>
 
     <div
@@ -26,34 +77,13 @@
     >
       <div class="flex w-full max-w-xl flex-col gap-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <span class="font-bold whitespace-nowrap text-gray-600"
-              >{{ index + 1 }} / {{ cards.length }}</span
-            >
-            <el-button
-              size="small"
-              :icon="Back"
-              :disabled="!canGoBack"
-              @click="goBack"
-              type="info"
-              plain
-            >
-              {{ t("vocab.prev_word") }}
-            </el-button>
-          </div>
+          <span class="font-bold whitespace-nowrap text-gray-600"
+            >{{ index + 1 }} / {{ cards.length }}</span
+          >
           <div class="flex flex-wrap items-center justify-end gap-3">
-            <el-button
-              v-if="commuteMode"
-              size="small"
-              :icon="commutePaused ? VideoPlay : VideoPause"
-              type="primary"
-              plain
-              @click="toggleCommutePause"
-            >
-              {{ commutePaused ? t("vocab.resume") : t("vocab.pause") }}
-            </el-button>
+            <!-- 通勤模式一律自動發音，開關改由上排的暫停 / 繼續取代 -->
             <el-switch
-              v-else
+              v-if="!commuteMode"
               v-model="autoPlay"
               :active-text="t('vocab.auto_play')"
             />
@@ -62,9 +92,6 @@
               v-model="showRomaji"
               :active-text="t('vocab.show_romaji')"
             />
-            <el-button size="small" @click="finish" type="danger" plain>{{
-              t("vocab.end")
-            }}</el-button>
           </div>
         </div>
         <el-progress
