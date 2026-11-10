@@ -203,15 +203,29 @@
               </div>
             </div>
 
-            <el-button
-              class="self-end md:self-start"
-              circle
-              plain
-              type="danger"
-              :icon="Delete"
-              :title="t('vocab.delete')"
-              @click="removeRow(idx)"
-            />
+            <div class="flex shrink-0 items-center gap-2 self-end md:self-start">
+              <el-dropdown trigger="click" @command="(offset) => insertRow(idx + offset)">
+                <el-button circle plain type="primary" :icon="Plus" :title="t('vocab.insert_row')" />
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item :command="0" :icon="Top">
+                      {{ t("vocab.insert_above") }}
+                    </el-dropdown-item>
+                    <el-dropdown-item :command="1" :icon="Bottom">
+                      {{ t("vocab.insert_below") }}
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              <el-button
+                circle
+                plain
+                type="danger"
+                :icon="Delete"
+                :title="t('vocab.delete')"
+                @click="removeRow(idx)"
+              />
+            </div>
           </div>
         </div>
 
@@ -231,7 +245,16 @@ import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
-import { Back, Close, Plus, Upload, Delete, Loading } from "@element-plus/icons-vue";
+import {
+  Back,
+  Close,
+  Plus,
+  Upload,
+  Delete,
+  Loading,
+  Top,
+  Bottom,
+} from "@element-plus/icons-vue";
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
 import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
 import RubyWord from "@/components/vocab/RubyWord.vue";
@@ -376,13 +399,16 @@ const mergeTokens = (row, idx) => {
 // 捨棄手動修改，回到自動斷詞結果
 const resegmentRow = (row) => convertRow(row, { word: row.word });
 
-const addRow = () => {
+// 在指定位置插入一列空白列；不給位置就加在最後
+const insertRow = (index = rows.value.length) => {
   if (rows.value.length >= MAX_WORDS) {
     ElMessage.warning(t("vocab.too_many", { n: MAX_WORDS }));
     return;
   }
-  rows.value.push(makeRow());
+  rows.value.splice(index, 0, makeRow());
 };
+
+const addRow = () => insertRow();
 
 const removeRow = (idx) => rows.value.splice(idx, 1);
 

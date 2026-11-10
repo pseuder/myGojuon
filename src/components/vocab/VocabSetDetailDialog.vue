@@ -48,7 +48,10 @@
               class="min-w-24 text-xl"
             />
             <span class="flex-1 text-gray-700">{{ w.meaning }}</span>
-            <span class="shrink-0 text-xs whitespace-nowrap">
+            <span
+              v-if="authStore.isLoggedIn"
+              class="shrink-0 text-xs whitespace-nowrap"
+            >
               <span class="text-emerald-600">✓{{ w.familiar_count }}</span>
               <span class="ml-2 text-red-500">✗{{ w.unfamiliar_count }}</span>
             </span>
@@ -67,7 +70,7 @@
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
-import { useVocabStore } from "@/stores/index.js";
+import { useAuthStore, useVocabStore } from "@/stores/index.js";
 import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
 import RubyWord from "@/components/vocab/RubyWord.vue";
 
@@ -78,6 +81,7 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue"]);
 
 const { t } = useI18n();
+const authStore = useAuthStore();
 const vocabStore = useVocabStore();
 const { speak, speakingKey, stop } = useGoogleTTS("ja");
 

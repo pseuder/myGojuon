@@ -3,7 +3,7 @@
   <div class="flex h-full flex-col gap-4 overflow-y-auto px-2 py-4 md:px-4">
     <div class="flex shrink-0 flex-wrap items-center justify-between gap-3">
       <h1 class="text-2xl font-bold text-indigo-700">{{ t("vocab.title") }}</h1>
-      <div v-if="authStore.isLoggedIn" class="flex gap-2">
+      <div class="flex gap-2">
         <el-button
           v-if="authStore.isAdmin"
           type="primary"
@@ -16,24 +16,16 @@
           type="success"
           :icon="CaretRight"
           :disabled="!vocabStore.sets.length"
-          @click="router.push('/VocabStudy')"
+          @click="goStudy()"
         >
           {{ t("vocab.start_study") }}
         </el-button>
       </div>
     </div>
 
-    <!-- 未登入 -->
-    <div
-      v-if="!authStore.isLoggedIn"
-      class="flex flex-col items-center justify-center gap-4 py-20 text-gray-400"
-    >
-      <el-icon class="text-6xl"><Collection /></el-icon>
-      <p class="text-lg">{{ t("vocab.login_required") }}</p>
-    </div>
-
+    <!-- 訪客可瀏覽與搜尋；學習需要登入 -->
     <!-- 搜尋在上、單字集在下 -->
-    <div v-else class="flex flex-col gap-4">
+    <div class="flex flex-col gap-4">
       <!-- 單字搜尋：查某個單字是否已存在於系統中 -->
       <div class="flex shrink-0 flex-col gap-2">
         <el-input
@@ -132,6 +124,7 @@
             <!-- 右上角：重置次數 / 直接開始學這一集 -->
             <div class="absolute top-2 right-2 flex gap-1" @click.stop>
               <el-button
+                v-if="authStore.isLoggedIn"
                 style="margin-left: 0; font-size: 18px"
                 circle
                 size="small"
@@ -168,6 +161,7 @@
                 </el-tag>
               </div>
               <el-progress
+                v-if="authStore.isLoggedIn"
                 :percentage="progressOf(set)"
                 :stroke-width="6"
                 :format="() => `${set.studied_count}/${set.word_count}`"
@@ -225,8 +219,6 @@ import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Plus,
-  VideoPlay,
-  Collection,
   Edit,
   Delete,
   RefreshLeft,
@@ -247,8 +239,8 @@ const detailId = ref(null);
 const progressOf = (set) =>
   set.word_count ? Math.round((set.studied_count / set.word_count) * 100) : 0;
 
+// 訪客也能載入（只有公開學習集、沒有學習進度）；登入狀態改變時重抓
 const loadSets = async () => {
-  if (!authStore.isLoggedIn) return;
   try {
     await vocabStore.fetchSets();
   } catch (err) {
@@ -297,9 +289,19 @@ watch(keyword, () => {
   searchTimer = setTimeout(runSearch, 300);
 });
 
-const studySet = (setId) => {
-  router.push({ path: "/VocabStudy", query: { sets: String(setId) } });
+// 學習需要登入；訪客只提示，不離開列表
+const goStudy = (setId) => {
+  if (!authStore.isLoggedIn) {
+    ElMessage.warning(t("vocab.study_login_required"));
+    return;
+  }
+  router.push(
+    setId == null
+      ? "/VocabStudy"
+      : { path: "/VocabStudy", query: { sets: String(setId) } },
+  );
 };
+const studySet = (setId) => goStudy(setId);
 
 const handleDelete = async (detail) => {
   try {
