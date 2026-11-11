@@ -110,7 +110,11 @@
         :name="trend.name"
         lazy
       >
-        <UsageTrendChart :view-name="trend.view" />
+        <UsageTrendChart
+          :view-name="trend.view"
+          :guest="trend.guest"
+          :limit="trend.limit"
+        />
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -611,6 +615,14 @@ const handleViewSizeChange = (viewName) => {
 
 const usageTrendTabs = [
   { name: "trend_writing", view: "v_writing_logs", label: "手寫用量趨勢" },
+  // 訪客：未登入的紀錄，以 IP 區分使用者
+  {
+    name: "trend_writing_guest",
+    view: "v_writing_logs",
+    label: "訪客手寫用量趨勢",
+    guest: true,
+    limit: 500,
+  },
   { name: "trend_rec", view: "v_rec_logs", label: "辨識用量趨勢" },
   { name: "trend_song", view: "v_song_logs", label: "歌曲用量趨勢" },
 ];

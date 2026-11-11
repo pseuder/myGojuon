@@ -26,7 +26,8 @@
         重新整理
       </el-button>
       <span class="text-sm text-gray-500">
-        {{ viewName }}，用量前 {{ USER_LIMIT }} 名，共 {{ users.length }} 位使用者
+        {{ viewName }}{{ guest ? "（訪客）" : "" }}，用量前 {{ limit }} 名，共
+        {{ users.length }} 位使用者
       </span>
     </div>
 
@@ -41,8 +42,17 @@
       @current-change="highlightUser"
     >
       <el-table-column type="index" label="排名" width="70" />
-      <el-table-column prop="user_name" label="使用者" min-width="140" />
-      <el-table-column prop="user_email" label="Email" min-width="200" />
+      <el-table-column
+        prop="user_name"
+        :label="guest ? 'IP' : '使用者'"
+        min-width="140"
+      />
+      <el-table-column
+        v-if="!guest"
+        prop="user_email"
+        label="Email"
+        min-width="200"
+      />
       <el-table-column prop="total" label="總用量" width="100" />
     </el-table>
   </div>
@@ -71,16 +81,19 @@ echarts.use([
 
 const props = defineProps({
   viewName: { type: String, required: true },
+  // 只看未登入訪客（以 IP 區分使用者）
+  guest: { type: Boolean, default: false },
+  // 用量前幾名
+  limit: { type: Number, default: 1000 },
 });
 
-const DAY_PRESETS = [1, 5, 30];
-const USER_LIMIT = 1000;
+const DAY_PRESETS = [7, 14, 21, 30];
 // 天數多時隱藏資料點，避免上千條線 × 每日點數造成卡頓
 const MAX_DAYS_WITH_SYMBOL = 60;
 
 const MYAPI = useApi();
 
-const days = ref(30);
+const days = ref(DAY_PRESETS[0]);
 const loading = ref(false);
 const users = ref([]);
 const chartRef = ref(null);
@@ -126,7 +139,8 @@ const fetchData = async () => {
   try {
     const res = await MYAPI.get("/get_usage_trend/" + props.viewName, {
       days: days.value,
-      limit: USER_LIMIT,
+      limit: props.limit,
+      guest: props.guest,
     });
     if (res.status === "success") {
       users.value = res.data.users;
