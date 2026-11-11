@@ -84,9 +84,19 @@ export const useVocabStore = defineStore("vocab", () => {
     }
   };
 
+  /** 重置自己在所有學習集的熟悉 / 不熟悉次數 */
+  const resetAllStats = async () => {
+    unwrap(await MYAPI.post("/reset_all_vocab_stats", {}));
+    sets.value.forEach((set) => {
+      set.studied_count = 0;
+      set.unfamiliar_count = 0;
+    });
+  };
+
   return {
     sets,
     resetStats,
+    resetAllStats,
     isFetching,
     isInitialized,
     fetchSets,

@@ -263,6 +263,8 @@
     "reset_stats": "重置熟悉 / 不熟悉次數",
     "reset_confirm": "確定要重置「{title}」的熟悉 / 不熟悉次數？只會清除你自己的紀錄",
     "reset_done": "已重置",
+    "reset_all": "重置全部次數",
+    "reset_all_confirm": "確定要重置「所有單字集」的熟悉 / 不熟悉次數？只會清除你自己的紀錄，且無法復原",
     "admin_only": "只有管理員可以新增或修改學習集",
     "search_placeholder": "搜尋單字（日文 / 假名 / 羅馬拼音 / 意思）",
     "search_found": "找到 {n} 筆符合的單字",

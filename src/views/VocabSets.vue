@@ -13,6 +13,16 @@
           {{ t("vocab.create_set") }}
         </el-button>
         <el-button
+          v-if="authStore.isLoggedIn"
+          type="warning"
+          :icon="RefreshLeft"
+          :disabled="!hasAnyStats"
+          :loading="isResettingAll"
+          @click="handleResetAll"
+        >
+          {{ t("vocab.reset_all") }}
+        </el-button>
+        <el-button
           type="success"
           :icon="CaretRight"
           :disabled="!vocabStore.sets.length"
@@ -213,7 +223,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
@@ -350,6 +360,36 @@ const handleReset = async (set) => {
     ElMessage.error(err.message);
   } finally {
     resettingId.value = null;
+  }
+};
+
+// 重置自己在所有學習集的熟悉 / 不熟悉次數
+const isResettingAll = ref(false);
+const hasAnyStats = computed(() =>
+  vocabStore.sets.some((s) => s.studied_count > 0),
+);
+const handleResetAll = async () => {
+  try {
+    await ElMessageBox.confirm(
+      t("vocab.reset_all_confirm"),
+      t("vocab.reset_all"),
+      {
+        type: "warning",
+        confirmButtonText: t("vocab.reset"),
+        cancelButtonText: t("vocab.cancel"),
+      },
+    );
+  } catch {
+    return;
+  }
+  isResettingAll.value = true;
+  try {
+    await vocabStore.resetAllStats();
+    ElMessage.success(t("vocab.reset_done"));
+  } catch (err) {
+    ElMessage.error(err.message);
+  } finally {
+    isResettingAll.value = false;
   }
 };
 
