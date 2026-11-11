@@ -175,6 +175,7 @@
   "vocab": {
     "title": "單字集",
     "enter": "單字集",
+    "beta": "測試中",
     "create_set": "建立學習集",
     "edit_set": "編輯學習集",
     "start_study": "開始學習",

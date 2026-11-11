@@ -259,9 +259,15 @@
                 @click="navigate"
                 :icon="Collection"
                 style="margin-left: 0px"
-                class="rounded-lg px-6 py-5 text-lg"
+                class="relative overflow-hidden rounded-lg py-5 pr-9 pl-6 text-lg"
               >
                 {{ t("vocab.enter") }}
+                <!-- 右上角斜標籤 -->
+                <span
+                  class="pointer-events-none absolute top-[7px] right-[-26px] w-[84px] rotate-45 bg-amber-500 text-center text-[10px] leading-4 font-bold tracking-wider text-white shadow-sm"
+                >
+                  {{ t("vocab.beta") }}
+                </span>
               </el-button>
             </router-link>
           </div>

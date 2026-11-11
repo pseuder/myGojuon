@@ -177,6 +177,7 @@
   "vocab": {
     "title": "Vocabulary",
     "enter": "Vocabulary",
+    "beta": "BETA",
     "create_set": "Create Set",
     "edit_set": "Edit Set",
     "start_study": "Start Studying",
