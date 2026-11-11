@@ -30,7 +30,7 @@
               type="button"
               class="shrink-0 rounded-full p-1 hover:bg-indigo-100"
               :title="t('tools.speak')"
-              @click="speak(w.kana || w.word, w.vocab_word_id)"
+              @click="handleSpeak(w)"
             >
               <img
                 :src="
@@ -72,6 +72,7 @@ import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
 import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
+import { useApi } from "@/composables/useApi.js";
 import RubyWord from "@/components/vocab/RubyWord.vue";
 
 const props = defineProps({
@@ -84,6 +85,18 @@ const { t } = useI18n();
 const authStore = useAuthStore();
 const vocabStore = useVocabStore();
 const { speak, speakingKey, stop } = useGoogleTTS("ja");
+const MYAPI = useApi();
+
+// 點擊喇叭播放單字發音並記錄活動（訪客也會記錄；再點一次停止時不記錄）
+const handleSpeak = (w) => {
+  speak(w.kana || w.word, w.vocab_word_id);
+  if (speakingKey.value !== w.vocab_word_id) return;
+  MYAPI.post("/activity_log", {
+    c1: "vocab",
+    c2: "play_word",
+    c3: w.word,
+  }).catch(() => {});
+};
 
 const detail = ref(null);
 const loading = ref(false);
