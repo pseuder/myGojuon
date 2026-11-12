@@ -5,6 +5,7 @@
 export const SHOW_KANA_KEY = "vocab_show_kana";
 export const SHOW_ROMAJI_KEY = "vocab_show_romaji";
 export const AUTO_PLAY_KEY = "vocab_auto_play";
+export const SHOW_WRITING_KEY = "vocab_show_writing";
 export const COMMUTE_KEY = "vocab_commute_mode";
 export const FRONT_TIMES_KEY = "vocab_commute_front";
 export const BACK_TIMES_KEY = "vocab_commute_back";

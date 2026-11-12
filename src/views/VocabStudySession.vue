@@ -92,6 +92,10 @@
               v-model="showRomaji"
               :active-text="t('vocab.show_romaji')"
             />
+            <el-switch
+              v-model="showWriting"
+              :active-text="t('vocab.show_writing')"
+            />
           </div>
         </div>
         <el-progress
@@ -145,7 +149,7 @@
               {{ current.romaji }}
             </span>
             <span class="absolute bottom-3 text-xs text-gray-400">{{
-              t("vocab.tap_to_flip")
+              t(showWriting ? "vocab.writing_hint" : "vocab.tap_to_flip")
             }}</span>
           </div>
           <!-- 背面 -->
@@ -197,6 +201,8 @@
             </span>
           </div>
         </div>
+        <!-- 手寫層疊在卡片上（不跟著翻轉）；輕點翻面、拖曳書寫，換題時隨 key 重建而清空 -->
+        <VocabWritingPad v-if="showWriting" @tap="flip" />
       </div>
 
       <div class="grid w-full max-w-xl grid-cols-2 gap-3">
@@ -298,9 +304,11 @@ import {
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
 import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
 import RubyWord from "@/components/vocab/RubyWord.vue";
+import VocabWritingPad from "@/components/vocab/VocabWritingPad.vue";
 import {
   SHOW_KANA_KEY,
   SHOW_ROMAJI_KEY,
+  SHOW_WRITING_KEY,
   AUTO_PLAY_KEY,
   COMMUTE_KEY,
   FRONT_TIMES_KEY,
@@ -358,6 +366,9 @@ watch(showKana, (v) => saveFlag(SHOW_KANA_KEY, v));
 // 正面是否顯示羅馬音（背面一律顯示）
 const showRomaji = ref(readFlag(SHOW_ROMAJI_KEY, false));
 watch(showRomaji, (v) => saveFlag(SHOW_ROMAJI_KEY, v));
+// 卡片下方的手寫練習板
+const showWriting = ref(readFlag(SHOW_WRITING_KEY, true));
+watch(showWriting, (v) => saveFlag(SHOW_WRITING_KEY, v));
 
 const current = computed(() => cards.value[index.value]);
 
@@ -681,6 +692,7 @@ onUnmounted(() => {
 
 <style scoped>
 .flip-card {
+  position: relative;
   height: 340px;
   perspective: 1200px;
   cursor: pointer;
