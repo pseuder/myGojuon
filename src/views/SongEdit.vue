@@ -285,7 +285,59 @@
               class="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center"
             >
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
+                <!-- GIF 格 -->
                 <div
+                  v-if="ly.gif"
+                  class="flex w-full flex-col items-center gap-1 sm:w-56"
+                  :id="`lyric-cvt-${index}-${lyIndex}`"
+                >
+                  <span class="flex">
+                    <el-button
+                      class="text-sm text-green-600"
+                      @click="openGifPicker(index, lyIndex, 'replace')"
+                      type="text"
+                      title="換成另一張 GIF"
+                      >換</el-button
+                    >
+                    <el-button
+                      class="text-sm text-red-500"
+                      @click="handleDeleteLyric(index, lyIndex)"
+                      type="text"
+                      >刪</el-button
+                    >
+                    <el-button
+                      class="text-sm text-yellow-800"
+                      @click="handleAddLyric(index, lyIndex)"
+                      type="text"
+                      >加</el-button
+                    >
+                    <el-button
+                      class="text-sm text-green-600"
+                      @click="openGifPicker(index, lyIndex, 'after')"
+                      type="text"
+                      title="插入 GIF"
+                      >圖</el-button
+                    >
+                  </span>
+                  <img
+                    :src="gifUrl(ly.gif)"
+                    :alt="ly.gif"
+                    :style="{ height: `${gifSize(ly)}px` }"
+                  />
+                  <span class="text-xs text-gray-500">{{ ly.gif }}</span>
+                  <el-input-number
+                    size="small"
+                    :model-value="gifSize(ly)"
+                    :min="16"
+                    :max="200"
+                    :step="8"
+                    title="GIF 高度 (px)"
+                    @change="(val) => handleGifSizeChange(ly, val)"
+                  />
+                </div>
+
+                <div
+                  v-else
                   class="flex w-full flex-col sm:w-56"
                   :id="`lyric-cvt-${index}-${lyIndex}`"
                 >
@@ -326,6 +378,13 @@
                     >
                       加
                     </el-button>
+                    <el-button
+                      class="text-sm text-green-600"
+                      @click="openGifPicker(index, lyIndex, 'after')"
+                      type="text"
+                      title="插入 GIF"
+                      >圖</el-button
+                    >
                     <el-button
                       class="text-sm text-purple-500"
                       @click="handleAddBracketAfter(index, lyIndex)"
@@ -492,6 +551,54 @@
       </div>
     </el-dialog>
 
+    <!-- Dialog: 選擇 GIF -->
+    <el-dialog
+      :title="gifPickerTarget.mode === 'replace' ? '更換 GIF' : '插入 GIF'"
+      v-model="gifPickerVisible"
+      width="min(560px, 94vw)"
+    >
+      <div class="flex flex-col gap-4">
+        <div
+          v-if="gifPickerTarget.mode !== 'replace'"
+          class="flex flex-wrap items-center gap-3"
+        >
+          <el-radio-group v-model="gifPickerTarget.mode">
+            <el-radio-button value="before">插入在此格之前</el-radio-button>
+            <el-radio-button value="after">插入在此格之後</el-radio-button>
+          </el-radio-group>
+          <span class="flex items-center gap-1">
+            數量
+            <el-input-number
+              v-model="gifInsertCount"
+              :min="1"
+              :max="20"
+              :step="1"
+              step-strictly
+              class="!w-28"
+            />
+          </span>
+        </div>
+        <div
+          v-if="LYRIC_GIFS.length"
+          class="grid max-h-[60vh] grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4"
+        >
+          <button
+            v-for="name in LYRIC_GIFS"
+            :key="name"
+            type="button"
+            class="flex cursor-pointer flex-col items-center gap-1 rounded border border-gray-200 p-2 hover:border-green-500 hover:bg-green-50"
+            @click="handlePickGif(name)"
+          >
+            <img :src="gifUrl(name)" :alt="name" class="h-16" loading="lazy" />
+            <span class="text-xs break-all text-gray-600">{{ name }}</span>
+          </button>
+        </div>
+        <div v-else class="text-gray-500">
+          public/gifs 內沒有 GIF 檔
+        </div>
+      </div>
+    </el-dialog>
+
     <!-- Dialog: YouTube 搜尋 -->
     <el-dialog
       title="搜尋 YouTube 影片"
@@ -578,6 +685,12 @@ import {
 import { ElMessage, ElMessageBox } from "element-plus";
 import axios from "axios";
 import { useApi } from "@/composables/useApi.js";
+import {
+  LYRIC_GIFS,
+  DEFAULT_GIF_SIZE,
+  gifUrl,
+  gifSize,
+} from "@/utils/lyricGifs.js";
 const MYAPI = useApi();
 
 import { useRoute } from "vue-router";
@@ -872,11 +985,7 @@ const handleRefineLyrics = async () => {
 
   lyricsLoading.value = true;
   try {
-    const lyrics = customStringify(
-      allLyrics.value
-        .filter((line) => line.lyrics.length > 0)
-        .map((line) => ({ timestamp: line.timestamp, lyrics: line.lyrics })),
-    );
+    const lyrics = customStringify(serializeLyricLines());
 
     const response = await MYAPI.post("/refine_lyrics", { lyrics });
 
@@ -982,12 +1091,16 @@ const openInsertJsonDialog = async (index, position) => {
 const normalizeLyricLine = (line) => ({
   timestamp: typeof line.timestamp === "string" ? line.timestamp : "",
   lyrics: Array.isArray(line.lyrics)
-    ? line.lyrics.map((ly) => ({
-        cvt: ly.cvt ?? "",
-        ori: ly.ori ?? "",
-        color: ly.color ?? "",
-        meaning: ly.meaning ?? "",
-      }))
+    ? line.lyrics.map((ly) =>
+        ly.gif
+          ? toGifToken(ly)
+          : {
+              cvt: ly.cvt ?? "",
+              ori: ly.ori ?? "",
+              color: ly.color ?? "",
+              meaning: ly.meaning ?? "",
+            },
+      )
     : [],
 });
 
@@ -1065,6 +1178,53 @@ const handleWidthenLyric = (lyricIndex, lyricLineIndex) => {
   const originWidth = el.style.width;
   el.style.width =
     originWidth === "" ? "162px" : `${parseInt(originWidth) + 50}px`;
+};
+
+// ============================================================
+// GIF：以一格 token 的形式插在歌詞之間 { cvt: "", ori: "", gif, gifSize? }
+// ============================================================
+const gifPickerVisible = ref(false);
+// mode: "before" | "after"（插入在該格前/後）| "replace"（更換該格的 GIF）
+const gifPickerTarget = ref({ lineIndex: -1, lyricIndex: -1, mode: "after" });
+
+// 只保留 GIF token 需要的欄位（gifSize 為預設值時不存）
+const toGifToken = (token) => {
+  const item = { cvt: "", ori: "", gif: token.gif };
+  const size = Number(token.gifSize);
+  if (size && size !== DEFAULT_GIF_SIZE) item.gifSize = size;
+  return item;
+};
+
+// 一次插入幾張（每次開啟選擇視窗都重設為 1）
+const gifInsertCount = ref(1);
+
+const openGifPicker = (lineIndex, lyricIndex, mode) => {
+  gifInsertCount.value = 1;
+  gifPickerTarget.value = { lineIndex, lyricIndex, mode };
+  gifPickerVisible.value = true;
+};
+
+const handlePickGif = (name) => {
+  const { lineIndex, lyricIndex, mode } = gifPickerTarget.value;
+  const tokens = allLyrics.value[lineIndex]?.lyrics;
+  if (!Array.isArray(tokens)) return;
+  if (mode === "replace") {
+    tokens[lyricIndex].gif = name;
+  } else {
+    const at = mode === "before" ? lyricIndex : lyricIndex + 1;
+    const count = Math.min(20, Math.max(1, gifInsertCount.value || 1));
+    tokens.splice(
+      at,
+      0,
+      ...Array.from({ length: count }, () => toGifToken({ gif: name })),
+    );
+  }
+  gifPickerVisible.value = false;
+};
+
+const handleGifSizeChange = (token, value) => {
+  if (!value || value === DEFAULT_GIF_SIZE) delete token.gifSize;
+  else token.gifSize = value;
 };
 
 // ============================================================
@@ -1202,7 +1362,7 @@ const handleColorLine = (lineIndex, color) => {
   const line = allLyrics.value[lineIndex];
   if (!line?.lyrics?.length) return;
   line.lyrics.forEach((ly) => {
-    ly.color = color;
+    if (!ly.gif) ly.color = color;
   });
   ElMessage.success("整列顏色設定成功");
 };
@@ -1240,7 +1400,21 @@ const customStringify = (obj) =>
       /{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)"\s*}/g,
       '{"cvt": "$1","ori": "$2"}',
     )
+    .replace(
+      /{\s*"cvt":\s*"",\s*"ori":\s*"",\s*"gif":\s*"([^"]*)"(?:,\s*"gifSize":\s*(\d+))?\s*}/g,
+      (_, gif, size) =>
+        `{"cvt": "","ori": "","gif": "${gif}"${size ? `,"gifSize": ${size}` : ""}}`,
+    )
     .replace(/},\s+]/g, "},\n  ]");
+
+// 儲存/送出用：GIF token 只留必要欄位，其餘 token 原樣保留
+const serializeLyricLines = () =>
+  allLyrics.value
+    .filter((line) => line.lyrics.length > 0)
+    .map((line) => ({
+      timestamp: line.timestamp,
+      lyrics: line.lyrics.map((ly) => (ly.gif ? toGifToken(ly) : ly)),
+    }));
 
 const combinedLyric = () =>
   allLyrics.value
@@ -1267,6 +1441,7 @@ const handleCopyHiragana = () => {
     .map((line) => ({
       timestamp: line.timestamp,
       lyrics: line.lyrics.map((ly) => {
+        if (ly.gif) return toGifToken(ly);
         const item = { cvt: ly.cvt, ori: ly.ori };
         if (ly.color) item.color = ly.color;
         if (ly.meaning) item.meaning = ly.meaning;
@@ -1296,11 +1471,7 @@ const handlePublishSong = async () => {
     formData.value.artist = videoChannel.value;
     formData.value.tags = tag.value;
     formData.value.original = originalLyrics.value;
-    formData.value.converted = customStringify(
-      allLyrics.value
-        .filter((line) => line.lyrics.length > 0)
-        .map((line) => ({ timestamp: line.timestamp, lyrics: line.lyrics })),
-    );
+    formData.value.converted = customStringify(serializeLyricLines());
 
     await saveVideo();
   } catch (error) {

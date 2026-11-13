@@ -275,7 +275,18 @@
             </div>
             <div class="flex flex-wrap items-end gap-1">
               <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
+                <!-- 歌詞中插入的 GIF -->
+                <img
+                  v-if="ly.gif"
+                  :src="gifUrl(ly.gif)"
+                  alt=""
+                  class="lyric-gif"
+                  :style="{ height: `${gifSize(ly)}px` }"
+                  loading="lazy"
+                  @error="$event.target.style.display = 'none'"
+                />
                 <el-tooltip
+                  v-else
                   :content="ly.meaning"
                   :disabled="true"
                   placement="bottom"
@@ -576,6 +587,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
 import { useApi } from "@/composables/useApi.js";
 import { useKanaAudio, splitKanaUnits } from "@/composables/useKanaAudio.js";
+import { gifUrl, gifSize } from "@/utils/lyricGifs.js";
 
 /*-- store --*/
 import {
@@ -1698,6 +1710,15 @@ onUnmounted(() => {
 
 .kana-clickable:hover {
   background-color: rgba(64, 158, 255, 0.2);
+}
+
+/* 歌詞中插入的 GIF：維持比例、不被 flex 壓扁 */
+.lyric-gif {
+  align-self: center;
+  width: auto;
+  max-width: none;
+  flex-shrink: 0;
+  user-select: none;
 }
 
 /* 手機版懸浮播放器 */
