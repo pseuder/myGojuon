@@ -1,15 +1,28 @@
 <template>
   <div class="flex flex-col sm:h-[85vh] sm:overflow-hidden">
-    <div
-      class="flex h-full flex-col gap-2 px-4 py-4 sm:flex-row sm:px-10"
-      :class="{ 'select-none': isDragging }"
-      ref="containerRef"
-    >
-      <!-- 左側面板: 影片播放器+功能列 -->
-      <div
-        class="flex flex-col gap-2"
-        :style="{ width: isMobile ? '100%' : `${leftPanelWidth}%` }"
+    <div class="flex h-full flex-col gap-2 px-4 py-4 sm:px-10">
+      <!-- 工具列: 開關左側面板 -->
+      <div class="flex shrink-0 items-center gap-3">
+        <el-button type="primary" plain @click="drawerVisible = !drawerVisible">
+          <el-icon class="mr-1"><Operation /></el-icon>
+          {{ drawerVisible ? "收起面板" : "影片 / 工具" }}
+        </el-button>
+        <span class="truncate text-gray-600">{{ videoTitle }}</span>
+      </div>
+
+      <!-- 左側面板: 影片播放器+功能列（抽屜） -->
+      <el-drawer
+        v-model="drawerVisible"
+        direction="ltr"
+        :size="isMobile ? '90%' : '33%'"
+        :modal="false"
+        modal-penetrable
+        :lock-scroll="false"
+        :close-on-press-escape="true"
+        resizable
+        title="影片 / 工具"
       >
+      <div class="flex flex-col gap-2">
         <!-- 影片資訊區 -->
         <div class="flex">
           <el-input v-model="videoId" class="w-full" placeholder="輸入YT ID" />
@@ -161,19 +174,11 @@
           </div>
         </div>
       </div>
+      </el-drawer>
 
-      <!-- 可拖動的分隔線 -->
-      <div
-        v-if="!isMobile"
-        class="resizer"
-        :class="{ 'resizer-dragging': isDragging }"
-        @mousedown="handleMouseDown"
-      ></div>
-
-      <!-- 右側面板: 歌詞列表 -->
+      <!-- 歌詞列表 -->
       <el-scrollbar
-        class="lyrics-container h-full overflow-x-auto"
-        :style="{ width: isMobile ? '100%' : `${100 - leftPanelWidth}%` }"
+        class="lyrics-container min-h-0 w-full flex-1 overflow-x-auto"
         v-loading="lyricsLoading"
       >
         <div>
@@ -380,7 +385,7 @@
                     </el-button>
                     <el-button
                       class="text-sm text-green-600"
-                      @click="openGifPicker(index, lyIndex, 'after')"
+                      @click="openGifPicker(index, lyIndex, 'before')"
                       type="text"
                       title="插入 GIF"
                       >圖</el-button
@@ -407,6 +412,7 @@
                     title="推薦假名"
                     :width="200"
                     trigger="manual"
+                    :trigger-keys="[]"
                     :visible="isPopoverVisible(index, lyIndex)"
                     @update:visible="(val) => !val && closePopover()"
                   >
@@ -593,9 +599,7 @@
             <span class="text-xs break-all text-gray-600">{{ name }}</span>
           </button>
         </div>
-        <div v-else class="text-gray-500">
-          public/gifs 內沒有 GIF 檔
-        </div>
+        <div v-else class="text-gray-500">public/gifs 內沒有 GIF 檔</div>
       </div>
     </el-dialog>
 
@@ -681,6 +685,7 @@ import {
   CopyDocument,
   ArrowUp,
   ArrowDown,
+  Operation,
 } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import axios from "axios";
@@ -753,8 +758,11 @@ const apiKey = ref("");
 
 const loadYouTubeAPI = () => {
   return new Promise((resolve) => {
-    if (window.YT) {
+    if (window.YT?.Player) {
       resolve();
+    } else if (window.YT?.ready) {
+      // index.html 已非同步載入 API，YT 物件先出現但 Player 尚未就緒
+      window.YT.ready(resolve);
     } else {
       const tag = document.createElement("script");
       tag.src = "https://www.youtube.com/iframe_api";
@@ -1570,42 +1578,17 @@ const handleKeyPress = (event) => {
 };
 
 // ============================================================
-// 可拖動分隔線 (Resizer)
+// 左側抽屜 / 版面
 // ============================================================
-const containerRef = ref(null);
-const leftPanelWidth = ref(33);
-const isDragging = ref(false);
+// 預設開啟：el-drawer 只在第一次開啟時才渲染內容，播放器需要 DOM 才能初始化；
+// 之後關閉只是隱藏（不銷毀），影片仍可在背景播放、快捷鍵照常運作
+const drawerVisible = ref(true);
 const isMobile = ref(false);
 
 // 與 Tailwind 的 sm 斷點 (640px) 一致
 const mobileQuery = window.matchMedia("(max-width: 639px)");
 const updateIsMobile = () => {
   isMobile.value = mobileQuery.matches;
-};
-
-const MIN_LEFT_PERCENT = 20;
-const MAX_LEFT_PERCENT = 70;
-
-const handleMouseDown = (event) => {
-  event.preventDefault();
-  isDragging.value = true;
-
-  const onMouseMove = (e) => {
-    if (!containerRef.value) return;
-    const rect = containerRef.value.getBoundingClientRect();
-    const percent = ((e.clientX - rect.left) / rect.width) * 100;
-    leftPanelWidth.value = Math.min(
-      MAX_LEFT_PERCENT,
-      Math.max(MIN_LEFT_PERCENT, percent),
-    );
-  };
-  const onMouseUp = () => {
-    isDragging.value = false;
-    window.removeEventListener("mousemove", onMouseMove);
-    window.removeEventListener("mouseup", onMouseUp);
-  };
-  window.addEventListener("mousemove", onMouseMove);
-  window.addEventListener("mouseup", onMouseUp);
 };
 
 const beforeUnloadHandler = (event) => {
@@ -1643,6 +1626,8 @@ onMounted(async () => {
   // 歌手名單不依賴播放器，先載入以免 YouTube API 載入失敗時被卡住
   fetchArtistList();
   try {
+    // 等抽屜內容渲染出 #player 後再初始化
+    await nextTick();
     await initializePlayer();
   } catch (error) {
     console.error("初始化 YouTube 播放器失敗:", error);
@@ -1691,21 +1676,5 @@ onUnmounted(() => {
 input {
   cursor: pointer;
   color: black;
-}
-
-.resizer {
-  width: 6px;
-  background-color: #e5e7eb;
-  cursor: col-resize;
-  flex-shrink: 0;
-  transition: background-color 0.2s;
-  position: relative;
-}
-.resizer:hover {
-  background-color: #9ca3af;
-}
-.resizer:active,
-.resizer-dragging {
-  background-color: #6b7280;
 }
 </style>
