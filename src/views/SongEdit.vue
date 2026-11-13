@@ -1,27 +1,36 @@
 <template>
   <div class="flex flex-col sm:h-[85vh] sm:overflow-hidden">
     <div class="flex h-full flex-col gap-2 px-4 py-4 sm:px-10">
-      <!-- 工具列: 開關左側面板 -->
+      <!-- 工具列: 面板顯示方式 / 開關抽屜 -->
       <div class="flex shrink-0 items-center gap-3">
-        <el-button type="primary" plain @click="drawerVisible = !drawerVisible">
+        <el-radio-group v-model="panelMode" size="small">
+          <el-radio-button value="fixed">固定左側</el-radio-button>
+          <el-radio-button value="drawer">抽屜</el-radio-button>
+        </el-radio-group>
+        <el-button
+          v-if="panelMode === 'drawer'"
+          type="primary"
+          plain
+          @click="drawerVisible = !drawerVisible"
+        >
           <el-icon class="mr-1"><Operation /></el-icon>
           {{ drawerVisible ? "收起面板" : "影片 / 工具" }}
         </el-button>
         <span class="truncate text-gray-600">{{ videoTitle }}</span>
       </div>
 
-      <!-- 左側面板: 影片播放器+功能列（抽屜） -->
-      <el-drawer
-        v-model="drawerVisible"
-        direction="ltr"
-        :size="isMobile ? '90%' : '33%'"
-        :modal="false"
-        modal-penetrable
-        :lock-scroll="false"
-        :close-on-press-escape="true"
-        resizable
-        title="影片 / 工具"
+      <div
+        class="flex min-h-0 flex-1 flex-col gap-2 sm:flex-row"
+        :class="{ 'select-none': isDragging }"
+        ref="containerRef"
       >
+      <!-- 左側面板（固定模式）；抽屜模式時內容會被 Teleport 到抽屜裡 -->
+      <div
+        v-show="panelMode === 'fixed'"
+        class="flex shrink-0 flex-col sm:overflow-y-auto"
+        :style="{ width: isMobile ? '100%' : `${leftPanelWidth}%` }"
+      >
+      <Teleport :to="drawerPanelHost" :disabled="!teleportToDrawer">
       <div class="flex flex-col gap-2">
         <!-- 影片資訊區 -->
         <div class="flex">
@@ -158,6 +167,7 @@
         <div class="flex h-[10%] flex-col gap-2">
           <div id="player-container" ref="playerContainerRef" class="h-fit">
             <div
+              :key="playerKey"
               id="player"
               ref="playerRef"
               style="max-height: 430px; aspect-ratio: 4/3"
@@ -174,11 +184,20 @@
           </div>
         </div>
       </div>
-      </el-drawer>
+      </Teleport>
+      </div>
+
+      <!-- 可拖動的分隔線（固定模式） -->
+      <div
+        v-if="panelMode === 'fixed' && !isMobile"
+        class="resizer"
+        :class="{ 'resizer-dragging': isDragging }"
+        @mousedown="handleMouseDown"
+      ></div>
 
       <!-- 歌詞列表 -->
       <el-scrollbar
-        class="lyrics-container min-h-0 w-full flex-1 overflow-x-auto"
+        class="lyrics-container min-h-0 min-w-0 flex-1 overflow-x-auto"
         v-loading="lyricsLoading"
       >
         <div>
@@ -504,6 +523,21 @@
           </div>
         </div>
       </el-scrollbar>
+      </div>
+
+      <!-- 左側面板（抽屜模式） -->
+      <el-drawer
+        v-model="drawerVisible"
+        direction="ltr"
+        :size="isMobile ? '90%' : '33%'"
+        :modal="false"
+        modal-penetrable
+        :lock-scroll="false"
+        resizable
+        title="影片 / 工具"
+      >
+        <div ref="drawerPanelHost"></div>
+      </el-drawer>
     </div>
 
     <!-- Dialog: 貼上原始歌詞 -->
@@ -677,7 +711,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import {
   Delete,
   Switch,
@@ -773,19 +807,59 @@ const loadYouTubeAPI = () => {
   });
 };
 
-const initializePlayer = async () => {
+// 面板在「固定 / 抽屜」之間搬移時，iframe 被移動會重新載入、原本的 player 會失效，
+// 所以每次搬移都銷毀並重建 player，並還原影片、進度與播放狀態
+const playerKey = ref(0);
+let playerGen = 0;
+
+const snapshotPlayer = () => {
+  if (!player?.getCurrentTime) return null;
+  return {
+    videoId: player.getVideoData?.()?.video_id || videoId.value,
+    time: player.getCurrentTime(),
+    playing: isPlaying.value,
+  };
+};
+
+const destroyPlayer = () => {
+  try {
+    player?.destroy?.();
+  } catch {
+    /* ignore */
+  }
+  player = null;
+  window.player = null;
+  isPlaying.value = false;
+};
+
+// 必須在 DOM 搬移「之前」同步呼叫 destroy（由 flush: "pre" 的 watch 觸發）
+const rebuildPlayer = async () => {
+  const gen = ++playerGen;
+  const snap = snapshotPlayer();
+  destroyPlayer();
+  playerKey.value++; // 換一個全新的 #player div 給新 player
+  await nextTick();
+  if (gen !== playerGen) return;
+  await initializePlayer(snap, gen);
+};
+
+const initializePlayer = async (snap = null, gen = playerGen) => {
   await loadYouTubeAPI();
+  if (gen !== playerGen || !playerRef.value) return;
   player = new YT.Player(playerRef.value, {
-    videoId: videoId.value,
+    videoId: snap?.videoId || videoId.value,
     height: "100%",
     width: "100%",
     playerVars: { autoplay: 0, playsinline: 1 },
     events: {
       onReady: (event) => {
-        setInterval(updateCurrentLyric, 100);
         event.target.setPlaybackRate(playbackRate.value);
         window.player = event.target;
-        if (videoId.value) handleReloadYT();
+        if (snap?.videoId) {
+          event.target.seekTo(snap.time, true);
+          if (snap.playing) event.target.playVideo();
+          else event.target.pauseVideo();
+        } else if (videoId.value) handleReloadYT();
       },
       onStateChange: (event) => {
         isPlaying.value = event.data === YT.PlayerState.PLAYING;
@@ -1578,11 +1652,56 @@ const handleKeyPress = (event) => {
 };
 
 // ============================================================
-// 左側抽屜 / 版面
+// 左側面板版面：固定左側（可拖動寬度）/ 抽屜，選擇記在 localStorage
 // ============================================================
-// 預設開啟：el-drawer 只在第一次開啟時才渲染內容，播放器需要 DOM 才能初始化；
-// 之後關閉只是隱藏（不銷毀），影片仍可在背景播放、快捷鍵照常運作
-const drawerVisible = ref(true);
+const PANEL_MODE_KEY = "songEdit.panelMode";
+const PANEL_WIDTH_KEY = "songEdit.leftPanelWidth";
+const readStorage = (key) => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+const writeStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* ignore */
+  }
+};
+
+const panelMode = ref(
+  readStorage(PANEL_MODE_KEY) === "drawer" ? "drawer" : "fixed",
+);
+// 抽屜模式進入頁面時先打開，讓使用者看到播放器；之後關閉只是隱藏，
+// 影片仍可在背景播放、快捷鍵照常運作
+const drawerVisible = ref(panelMode.value === "drawer");
+// 抽屜內容第一次開啟才會渲染，渲染後才有 Teleport 目標
+const drawerPanelHost = ref(null);
+const teleportToDrawer = computed(
+  () => panelMode.value === "drawer" && !!drawerPanelHost.value,
+);
+
+watch(panelMode, (mode) => {
+  writeStorage(PANEL_MODE_KEY, mode);
+  drawerVisible.value = mode === "drawer";
+});
+// 面板內容搬家前（pre flush）先銷毀 player，搬完再重建
+watch(
+  teleportToDrawer,
+  () =>
+    rebuildPlayer().catch((error) =>
+      console.error("重建 YouTube 播放器失敗:", error),
+    ),
+  { flush: "pre" },
+);
+
+const containerRef = ref(null);
+const leftPanelWidth = ref(
+  Math.min(70, Math.max(20, Number(readStorage(PANEL_WIDTH_KEY)) || 33)),
+);
+const isDragging = ref(false);
 const isMobile = ref(false);
 
 // 與 Tailwind 的 sm 斷點 (640px) 一致
@@ -1619,16 +1738,46 @@ watch(
 // ============================================================
 // 生命週期
 // ============================================================
+const MIN_LEFT_PERCENT = 20;
+const MAX_LEFT_PERCENT = 70;
+
+const handleMouseDown = (event) => {
+  event.preventDefault();
+  isDragging.value = true;
+
+  const onMouseMove = (e) => {
+    if (!containerRef.value) return;
+    const rect = containerRef.value.getBoundingClientRect();
+    const percent = ((e.clientX - rect.left) / rect.width) * 100;
+    leftPanelWidth.value = Math.min(
+      MAX_LEFT_PERCENT,
+      Math.max(MIN_LEFT_PERCENT, percent),
+    );
+  };
+  const onMouseUp = () => {
+    isDragging.value = false;
+    writeStorage(PANEL_WIDTH_KEY, String(Math.round(leftPanelWidth.value)));
+    window.removeEventListener("mousemove", onMouseMove);
+    window.removeEventListener("mouseup", onMouseUp);
+  };
+  window.addEventListener("mousemove", onMouseMove);
+  window.addEventListener("mouseup", onMouseUp);
+};
+
+// ============================================================
+// 生命週期
+// ============================================================
+let lyricTimer = null;
+
 onMounted(async () => {
   updateIsMobile();
   mobileQuery.addEventListener("change", updateIsMobile);
+  lyricTimer = setInterval(updateCurrentLyric, 100);
 
   // 歌手名單不依賴播放器，先載入以免 YouTube API 載入失敗時被卡住
   fetchArtistList();
   try {
-    // 等抽屜內容渲染出 #player 後再初始化
-    await nextTick();
-    await initializePlayer();
+    await rebuildPlayer();
   } catch (error) {
     console.error("初始化 YouTube 播放器失敗:", error);
     ElMessage.warning("YouTube 播放器載入失敗，仍可編輯歌詞");
@@ -1644,7 +1793,9 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  if (player) player.destroy();
+  playerGen++;
+  clearInterval(lyricTimer);
+  destroyPlayer();
   mobileQuery.removeEventListener("change", updateIsMobile);
   window.removeEventListener("keypress", handleKeyPress, true);
   window.removeEventListener("beforeunload", beforeUnloadHandler);
