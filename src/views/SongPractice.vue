@@ -330,7 +330,7 @@
                       </div></template
                     >
 
-                    <template v-if="ly.oriUnits">
+                    <div v-if="ly.oriUnits" class="lyric-ori">
                       <span
                         v-for="(unit, uIndex) in ly.oriUnits"
                         :key="uIndex"
@@ -338,10 +338,8 @@
                         @click="handleKanaClick(unit)"
                         >{{ unit.text }}</span
                       >
-                    </template>
-                    <template v-else
-                      ><div>{{ ly.ori }}</div></template
-                    >
+                    </div>
+                    <div v-else class="lyric-ori">{{ ly.ori }}</div>
                   </div>
                 </el-tooltip>
               </template>
@@ -1864,5 +1862,11 @@ onUnmounted(() => {
 
 ruby {
   ruby-align: center;
+}
+
+/* 主歌詞字距：讓連續假名分開一點；負 margin 抵銷最後一字後多出的空白，保持與注音置中 */
+.lyric-ori {
+  letter-spacing: 0.15em;
+  margin-right: -0.15em;
 }
 </style>
