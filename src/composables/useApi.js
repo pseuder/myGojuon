@@ -63,7 +63,7 @@ export const useApi = () => {
   );
 
   const request = (path, options = {}) => {
-    const { method = "GET", params, body, headers, timeout, retry } = options;
+    const { method = "GET", params, body, headers, timeout, retry, responseType } = options;
 
     const config = {
       url: path,
@@ -77,6 +77,10 @@ export const useApi = () => {
     // retry：覆寫此請求的最大重試次數（例如 POST 傳 3 開啟、GET 傳 0 關閉）
     if (retry !== undefined) {
       config.retry = retry;
+    }
+    // responseType：下載音檔等二進位資料時傳 "blob"
+    if (responseType !== undefined) {
+      config.responseType = responseType;
     }
 
     // Axios 會自動偵測 FormData 並設定正確的 Content-Type

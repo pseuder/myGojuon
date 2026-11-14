@@ -122,6 +122,9 @@ const loadBuffer = async (ctx, text, lang) => {
   return buffer;
 };
 
+// 發音被手動覆寫/刪除後清掉已解碼的快取，下次點喇叭才會重新下載
+export const clearTTSCache = () => bufferCache.clear();
+
 // 瀏覽器內建語音用的語言代碼
 const BROWSER_LANGS = { ja: "ja-JP", "zh-TW": "zh-TW" };
 

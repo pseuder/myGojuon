@@ -116,6 +116,42 @@
                   class="h-5 w-5"
                 />
               </button>
+              <!-- 自訂發音：覺得音調怪時上傳正確的音檔取代自動發音 -->
+              <el-dropdown
+                trigger="click"
+                :disabled="!speechKey(row)"
+                @command="(cmd) => handleAudioCommand(cmd, row)"
+              >
+                <button
+                  type="button"
+                  class="-ml-1 shrink-0 rounded-full p-1 text-xs hover:bg-indigo-100"
+                  :class="overrideSet.has(speechKey(row)) ? 'text-amber-500' : 'text-gray-300'"
+                  :title="overrideSet.has(speechKey(row)) ? t('vocab.custom_audio') : t('vocab.upload_audio')"
+                >
+                  <el-icon v-if="row.uploadingAudio" class="is-loading"><Loading /></el-icon>
+                  <el-icon v-else><Microphone /></el-icon>
+                </button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item disabled class="!text-xs">
+                      {{ t("vocab.audio_hint", { text: speechKey(row) }) }}
+                    </el-dropdown-item>
+                    <el-dropdown-item command="google" :icon="Download">
+                      {{ t("vocab.google_audio") }}
+                    </el-dropdown-item>
+                    <el-dropdown-item command="upload" :icon="Upload">
+                      {{ overrideSet.has(speechKey(row)) ? t("vocab.replace_audio") : t("vocab.upload_audio") }}
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="overrideSet.has(speechKey(row))"
+                      command="delete"
+                      :icon="Delete"
+                    >
+                      {{ t("vocab.delete_audio") }}
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
               <div class="flex min-w-0 flex-col">
                 <RubyWord :word="row.word" :tokens="row.tokens" class="truncate text-2xl" />
                 <span class="truncate text-xs text-gray-500">
@@ -229,6 +265,56 @@
           </div>
         </div>
 
+        <!-- 從 Google 翻譯取得發音：可改寫要念的文字（例如換成漢字讓音調正確），試聽滿意再套用 -->
+        <el-dialog
+          v-model="googleDialog.visible"
+          :title="t('vocab.google_audio')"
+          width="min(92vw, 420px)"
+          @closed="resetGoogleDialog"
+        >
+          <div class="flex flex-col gap-3">
+            <div class="text-sm text-gray-600">
+              {{ t("vocab.google_audio_target", { text: googleDialog.target }) }}
+            </div>
+            <div class="flex gap-2">
+              <el-input
+                v-model="googleDialog.source"
+                :maxlength="200"
+                :placeholder="t('vocab.google_audio_placeholder')"
+                @input="googleDialog.blob = null"
+                @keyup.enter="previewGoogleAudio"
+              />
+              <el-button
+                :loading="googleDialog.loading"
+                :disabled="!googleDialog.source.trim()"
+                @click="previewGoogleAudio"
+              >
+                {{ t("vocab.google_audio_preview") }}
+              </el-button>
+            </div>
+            <p class="text-xs text-gray-400">{{ t("vocab.google_audio_hint") }}</p>
+          </div>
+          <template #footer>
+            <el-button @click="googleDialog.visible = false">{{ t("vocab.cancel") }}</el-button>
+            <el-button
+              type="primary"
+              :disabled="!googleDialog.blob"
+              :loading="googleDialog.saving"
+              @click="applyGoogleAudio"
+            >
+              {{ t("vocab.google_audio_apply") }}
+            </el-button>
+          </template>
+        </el-dialog>
+
+        <input
+          ref="audioInput"
+          type="file"
+          accept="audio/*"
+          class="hidden"
+          @change="onAudioFileChange"
+        />
+
         <div class="sticky bottom-0 flex justify-end gap-2 bg-white/90 py-3">
           <el-button @click="router.push('/VocabSets')">{{ t("vocab.cancel") }}</el-button>
           <el-button type="primary" size="large" :loading="saving" @click="handleSave">
@@ -241,7 +327,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
@@ -254,9 +340,11 @@ import {
   Loading,
   Top,
   Bottom,
+  Microphone,
+  Download,
 } from "@element-plus/icons-vue";
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
-import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
+import { useGoogleTTS, clearTTSCache } from "@/composables/useGoogleTTS.js";
 import RubyWord from "@/components/vocab/RubyWord.vue";
 
 const MAX_WORDS = 500;
@@ -294,6 +382,7 @@ const makeRow = (w = {}) => ({
   convertedWord: w.word ?? "", // 上次轉換時的原文，用來判斷是否需要重轉
   editReading: false,
   converting: false,
+  uploadingAudio: false,
 });
 
 const translateTarget = () => (locale.value === "en" ? "en" : "zh-TW");
@@ -345,6 +434,125 @@ const kanjiTokens = (row) => row.tokens.filter((tk) => tk.cvt || !isKana(tk.ori)
 // 發音以標記的假名為主；原文改過還沒重轉時用原文
 const speechText = (row) =>
   (row.word.trim() === row.convertedWord && row.kana) || row.word;
+
+// --- 自訂發音 ---
+// 覆寫以「實際送去發音的文字」為準，學習頁播放 kana || word 時也對得上
+const speechKey = (row) => speechText(row).trim();
+const overrideSet = ref(new Set());
+const audioInput = ref(null);
+let audioTargetRow = null;
+
+const loadOverrides = async () => {
+  try {
+    overrideSet.value = new Set(await vocabStore.listTtsOverrides("ja"));
+  } catch {
+    // 拿不到清單只是不顯示標記，不影響編輯
+  }
+};
+
+const handleAudioCommand = async (cmd, row) => {
+  const text = speechKey(row);
+  if (!text) return;
+  if (cmd === "upload") {
+    audioTargetRow = row;
+    audioInput.value.value = "";
+    audioInput.value.click();
+    return;
+  }
+  if (cmd === "google") {
+    Object.assign(googleDialog, { visible: true, row, target: text, source: text, blob: null });
+    return;
+  }
+  row.uploadingAudio = true;
+  try {
+    await vocabStore.deleteTtsOverride(text, "ja");
+    overrideSet.value.delete(text);
+    overrideSet.value = new Set(overrideSet.value);
+    clearTTSCache();
+    ElMessage.success(t("vocab.audio_deleted"));
+  } catch (err) {
+    ElMessage.error(err.message);
+  } finally {
+    row.uploadingAudio = false;
+  }
+};
+
+const googleDialog = reactive({
+  visible: false,
+  row: null,
+  target: "", // 覆寫哪個字的發音
+  source: "", // 送去 Google 翻譯念的文字
+  blob: null,
+  loading: false,
+  saving: false,
+});
+let previewAudio = null;
+
+const stopPreview = () => {
+  if (!previewAudio) return;
+  previewAudio.pause();
+  URL.revokeObjectURL(previewAudio.src);
+  previewAudio = null;
+};
+
+const resetGoogleDialog = () => {
+  stopPreview();
+  Object.assign(googleDialog, { row: null, blob: null, loading: false, saving: false });
+};
+
+const previewGoogleAudio = async () => {
+  const source = googleDialog.source.trim();
+  if (!source || googleDialog.loading) return;
+  stopPreview();
+  googleDialog.loading = true;
+  try {
+    const blob = await vocabStore.fetchGoogleTranslateTts(source, "ja");
+    if (!googleDialog.visible) return;
+    googleDialog.blob = blob;
+    previewAudio = new Audio(URL.createObjectURL(blob));
+    previewAudio.play().catch(() => {});
+  } catch (err) {
+    ElMessage.error(err.message);
+  } finally {
+    googleDialog.loading = false;
+  }
+};
+
+const applyGoogleAudio = async () => {
+  const { row, target, blob } = googleDialog;
+  if (!row || !blob) return;
+  googleDialog.saving = true;
+  const file = new File([blob], "google.mp3", { type: "audio/mpeg" });
+  if (await saveOverride(row, target, file)) googleDialog.visible = false;
+  googleDialog.saving = false;
+};
+
+const onAudioFileChange = async (e) => {
+  const file = e.target.files?.[0];
+  const row = audioTargetRow;
+  audioTargetRow = null;
+  if (!file || !row) return;
+  saveOverride(row, speechKey(row), file);
+};
+
+// 存成自訂發音並播一次確認；回傳是否成功
+const saveOverride = async (row, text, file) => {
+  row.uploadingAudio = true;
+  try {
+    await vocabStore.uploadTtsOverride(text, file, "ja");
+    overrideSet.value = new Set(overrideSet.value).add(text);
+    clearTTSCache();
+    ElMessage.success(t("vocab.audio_uploaded"));
+    stopPreview();
+    speak(text, row.key);
+    return true;
+  } catch (err) {
+    ElMessage.error(err.message);
+    return false;
+  } finally {
+    row.uploadingAudio = false;
+  }
+};
 
 const convertRow = async (row, payload) => {
   row.converting = true;
@@ -505,6 +713,7 @@ const loadSet = async () => {
 onMounted(() => {
   document.title = `${isEdit.value ? t("vocab.edit_set") : t("vocab.create_set")} - ${t("site_title")}`;
   loadSet();
+  if (authStore.isAdmin) loadOverrides();
 });
 </script>
 

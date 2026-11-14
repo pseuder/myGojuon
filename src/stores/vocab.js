@@ -93,8 +93,41 @@ export const useVocabStore = defineStore("vocab", () => {
     });
   };
 
+  // --- 手動覆寫發音（管理員） ---
+  const ttsOverrideForm = (text, lang, file) => {
+    const form = new FormData();
+    form.append("text", text);
+    form.append("lang", lang);
+    if (file) form.append("file", file);
+    return form;
+  };
+
+  const listTtsOverrides = async (lang = "ja") =>
+    unwrap(await MYAPI.get("/tts_overrides", { lang })) ?? [];
+
+  const uploadTtsOverride = async (text, file, lang = "ja") =>
+    unwrap(await MYAPI.post("/upload_tts_override", ttsOverrideForm(text, lang, file)));
+
+  /** 取得 Google 翻譯網頁的發音（Blob）；後端失敗時回的是 JSON 錯誤 */
+  const fetchGoogleTranslateTts = async (text, lang = "ja") => {
+    const blob = await MYAPI.request("/google_translate_tts", {
+      params: { q: text, lang },
+      responseType: "blob",
+      timeout: 20000,
+    });
+    if (blob.type.includes("json")) unwrap(JSON.parse(await blob.text()));
+    return blob;
+  };
+
+  const deleteTtsOverride = async (text, lang = "ja") =>
+    unwrap(await MYAPI.post("/delete_tts_override", ttsOverrideForm(text, lang)));
+
   return {
     sets,
+    listTtsOverrides,
+    uploadTtsOverride,
+    fetchGoogleTranslateTts,
+    deleteTtsOverride,
     resetStats,
     resetAllStats,
     isFetching,
