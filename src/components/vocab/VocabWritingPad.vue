@@ -1,8 +1,7 @@
 <template>
-  <!-- 疊在單字卡上的手寫層：手指 / 觸控筆 / 滑鼠直接在卡片上寫，純練習不做辨識 -->
-  <!-- 放在翻轉層外面，翻面時筆跡不跟著轉，可直接對照背面答案 -->
-  <div class="ink-layer">
-    <!-- 上方留給學習集名稱與發音鈕，不蓋住 -->
+  <!-- 鋪滿整個練習頁的手寫層：手指 / 觸控筆 / 滑鼠在任何空白處都能寫，純練習不做辨識 -->
+  <!-- 不跟著卡片翻轉，翻面時可直接對照背面答案；輕點會轉交給底下的元素（翻面、發音鈕等） -->
+  <div ref="layer" class="ink-layer">
     <canvas
       ref="canvas"
       class="ink-canvas"
@@ -39,8 +38,7 @@ import { useI18n } from "vue-i18n";
 import { RefreshLeft, Delete } from "@element-plus/icons-vue";
 
 // 換題時由外層 key 重建元件即清空，不需額外 prop
-// 輕點（幾乎沒移動）視為翻面，拖曳才是書寫
-const emit = defineEmits(["tap"]);
+// 輕點（幾乎沒移動）不留墨點，改為點擊底下的元素（卡片翻面、發音鈕…），拖曳才是書寫
 
 const { t } = useI18n();
 
@@ -48,6 +46,7 @@ const PEN_COLOR = "rgba(79, 70, 229, 0.85)";
 const TAP_MOVE_PX = 6;
 const TAP_MS = 350;
 
+const layer = ref(null);
 const canvas = ref(null);
 let ctx = null;
 let dpr = 1;
@@ -160,6 +159,21 @@ const onMove = (e) => {
   }
 };
 
+// 把輕點轉交給手寫層底下的元素
+const forwardTap = (x, y) => {
+  layer.value.style.display = "none";
+  const target = document.elementFromPoint(x, y);
+  layer.value.style.display = "";
+  target?.dispatchEvent(
+    new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      clientX: x,
+      clientY: y,
+    }),
+  );
+};
+
 const onUp = (e) => {
   if (!active || e.pointerId !== activePointerId) return;
   const isTap =
@@ -169,10 +183,10 @@ const onUp = (e) => {
   active = null;
   activePointerId = null;
   if (isTap) {
-    // 輕點不留墨點，改為翻面
+    // 輕點不留墨點，改為點擊底下的元素
     strokes.value.pop();
     redraw();
-    emit("tap");
+    forwardTap(e.clientX, e.clientY);
   }
 };
 
@@ -208,12 +222,9 @@ defineExpose({ clear });
 }
 .ink-canvas {
   position: absolute;
-  top: 52px;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   width: 100%;
-  height: calc(100% - 52px);
+  height: 100%;
   pointer-events: auto;
   /* 禁止瀏覽器把觸控當成捲動 / 縮放，手指才能寫字 */
   touch-action: none;
@@ -225,6 +236,7 @@ defineExpose({ clear });
   position: absolute;
   right: 10px;
   bottom: 10px;
+  z-index: 1;
   display: flex;
   gap: 6px;
   pointer-events: auto;

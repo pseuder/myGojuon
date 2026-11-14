@@ -1,10 +1,22 @@
 <template>
   <!-- 練習中 / 結果頁：進度存在 localStorage，重新整理後接著練 -->
-  <div class="flex h-full flex-col gap-4 overflow-y-auto px-2 py-4 md:px-4">
+  <!-- 整頁禁止選取 / 長按選單 / 拖曳圖片：平板用觸控筆書寫時，手掌壓到畫面不會選到文字或跳出選單 -->
+  <div
+    class="no-select relative flex h-full flex-col gap-4 overflow-y-auto px-2 py-4 md:px-4"
+    @selectstart.prevent
+    @contextmenu.prevent
+    @dragstart.prevent
+  >
+    <!-- 手寫層鋪滿整頁空白處（不跟著翻轉）；輕點會點到底下的卡片 / 按鈕，拖曳書寫，換題時隨 key 重建而清空 -->
+    <VocabWritingPad
+      v-if="showWriting && authStore.isLoggedIn && phase === 'study' && current"
+      :key="`ink-${round}-${index}`"
+    />
     <div class="flex shrink-0 flex-wrap items-center justify-between gap-2">
       <!-- 上排按鈕只顯示圖示，文字放在 title 當提示 -->
       <div class="flex flex-wrap items-center gap-2">
         <el-button
+          class="above-ink"
           :icon="House"
           :title="t('vocab.back_to_list')"
           @click="router.push('/VocabSets')"
@@ -14,6 +26,7 @@
         <!-- 上一個 / 結束 只在練習中顯示，和「回單字集」同一排 -->
         <el-button
           v-if="authStore.isLoggedIn && phase === 'study' && current"
+          class="above-ink"
           :icon="Back"
           :title="t('vocab.prev_word')"
           :disabled="!canGoBack"
@@ -31,6 +44,7 @@
         <!-- 通勤模式的暫停 / 繼續，放在「結束」左邊 -->
         <el-button
           v-if="commuteMode"
+          class="above-ink"
           :icon="commutePaused ? VideoPlay : VideoPause"
           :title="commutePaused ? t('vocab.resume') : t('vocab.pause')"
           type="primary"
@@ -41,6 +55,7 @@
         </el-button>
         <!-- Element Plus 沒有正方形的停止圖示，自己畫一個 -->
         <el-button
+          class="above-ink"
           :title="t('vocab.end')"
           @click="finish"
           type="danger"
@@ -84,16 +99,23 @@
             <!-- 通勤模式一律自動發音，開關改由上排的暫停 / 繼續取代 -->
             <el-switch
               v-if="!commuteMode"
+              class="above-ink"
               v-model="autoPlay"
               :active-text="t('vocab.auto_play')"
             />
-            <el-switch v-model="showKana" :active-text="t('vocab.show_kana')" />
+            <el-switch
+              v-model="showKana"
+              class="above-ink"
+              :active-text="t('vocab.show_kana')"
+            />
             <el-switch
               v-model="showRomaji"
+              class="above-ink"
               :active-text="t('vocab.show_romaji')"
             />
             <el-switch
               v-model="showWriting"
+              class="above-ink"
               :active-text="t('vocab.show_writing')"
             />
           </div>
@@ -201,13 +223,11 @@
             </span>
           </div>
         </div>
-        <!-- 手寫層疊在卡片上（不跟著翻轉）；輕點翻面、拖曳書寫，換題時隨 key 重建而清空 -->
-        <VocabWritingPad v-if="showWriting" @tap="flip" />
       </div>
 
       <div class="grid w-full max-w-xl grid-cols-2 gap-3">
         <el-button
-          class="answer-btn"
+          class="answer-btn above-ink"
           type="warning"
           size="large"
           :plain="currentAnswer === true"
@@ -217,7 +237,7 @@
           >{{ t("vocab.unfamiliar") }}
         </el-button>
         <el-button
-          class="answer-btn"
+          class="answer-btn above-ink"
           type="success"
           size="large"
           style="margin-left: 0"
@@ -766,6 +786,18 @@ onUnmounted(() => {
 .front .tight-word {
   line-height: 1.15;
   padding-top: 0.6em;
+}
+.no-select,
+.no-select :deep(*) {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* 鋪滿整頁的手寫層之上：按鈕與開關維持可直接點按（有 hover 效果） */
+.above-ink {
+  position: relative;
+  z-index: 3;
 }
 .answer-btn {
   height: 56px;
