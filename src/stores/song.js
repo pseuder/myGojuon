@@ -14,6 +14,8 @@ export const useSongStore = defineStore(
     // 歌詞跟隨偏移（秒）：正值讓歌詞提早切換，負值延後
     const lyricOffset = ref(0);
     const display_mode = ref("both");
+    // 歌詞字級（px）
+    const lyricFontSize = ref(20);
 
     return {
       playMode,
@@ -22,6 +24,7 @@ export const useSongStore = defineStore(
       leftWidth,
       lyricOffset,
       display_mode,
+      lyricFontSize,
     };
   },
   {

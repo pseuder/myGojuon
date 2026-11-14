@@ -88,36 +88,12 @@
 
           <div class="flex h-full w-full flex-col items-center gap-2">
             <div class="flex w-full flex-row items-center gap-2">
-              <!-- 速度調整 -->
               <div class="flex flex-1 items-center gap-1">
-                <!-- 手機寬度直向排列，避免把右側按鈕擠出去 -->
-                <div class="flex flex-col gap-1 sm:flex-row sm:items-center">
-                  <el-input-number
-                    v-model="songStore.playbackRate"
-                    :precision="1"
-                    :step="0.1"
-                    :max="2"
-                    :min="0.3"
-                    @change="changePlaybackRate"
-                  />
-                  <!-- 歌詞跟隨偏移 -->
-                  <el-tooltip :content="t('lyric_offset_hint')" placement="top">
-                    <el-input-number
-                      v-model="songStore.lyricOffset"
-                      :precision="2"
-                      :step="0.05"
-                      :max="5"
-                      :min="-5"
-                    />
-                  </el-tooltip>
-                </div>
                 <el-tooltip
                   :content="t('click_kana_to_play_sound')"
                   placement="top"
                 >
-                  <el-tag type="warning" round class="hidden sm:flex">{{
-                    t("click_kana")
-                  }}</el-tag>
+                  <el-tag type="warning" round>{{ t("click_kana") }}</el-tag>
                 </el-tooltip>
 
                 <el-tooltip placement="top">
@@ -126,15 +102,69 @@
                       {{ t("keyboard_shortcuts_hint") }}
                     </div>
                   </template>
-                  <el-tag type="primary" round class="hidden sm:flex">{{
+                  <el-tag type="primary" round>{{
                     t("keyboard_shortcuts")
                   }}</el-tag>
                 </el-tooltip>
               </div>
 
+              <!-- 播放設定：速度 / 歌詞偏移 -->
+              <el-popover trigger="hover" placement="bottom-end" :width="240">
+                <template #reference>
+                  <el-button circle>
+                    <el-icon><Setting /></el-icon>
+                  </el-button>
+                </template>
+                <div class="flex flex-col gap-3">
+                  <div class="flex flex-col gap-1">
+                    <span class="text-sm text-gray-500">{{
+                      t("lyric_font_size")
+                    }}</span>
+                    <el-input-number
+                      v-model="songStore.lyricFontSize"
+                      :step="2"
+                      :max="40"
+                      :min="12"
+                      class="!w-full"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <span class="text-sm text-gray-500">{{
+                      t("playback_speed")
+                    }}</span>
+                    <el-input-number
+                      v-model="songStore.playbackRate"
+                      :precision="1"
+                      :step="0.1"
+                      :max="2"
+                      :min="0.3"
+                      class="!w-full"
+                      @change="changePlaybackRate"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <span class="text-sm text-gray-500">{{
+                      t("lyric_offset")
+                    }}</span>
+                    <el-input-number
+                      v-model="songStore.lyricOffset"
+                      :precision="2"
+                      :step="0.05"
+                      :max="5"
+                      :min="-5"
+                      class="!w-full"
+                    />
+                    <span class="text-xs leading-snug text-gray-400">{{
+                      t("lyric_offset_hint")
+                    }}</span>
+                  </div>
+                </div>
+              </el-popover>
+
               <!-- 我的最愛 -->
               <el-button
                 circle
+                class="!ml-0"
                 :type="
                   authStore.isLoggedIn &&
                   playlistStore.isFavorite(currentVideo.source_id)
@@ -214,25 +244,6 @@
                 </template>
               </el-dropdown>
             </div>
-            <div class="flex w-full sm:hidden">
-              <el-tooltip
-                :content="t('click_kana_to_play_sound')"
-                placement="top"
-              >
-                <el-tag type="warning" round>{{ t("click_kana") }}</el-tag>
-              </el-tooltip>
-
-              <el-tooltip placement="top">
-                <template #content>
-                  <div style="white-space: pre-wrap">
-                    {{ t("keyboard_shortcuts_hint") }}
-                  </div>
-                </template>
-                <el-tag type="primary" round>{{
-                  t("keyboard_shortcuts")
-                }}</el-tag>
-              </el-tooltip>
-            </div>
           </div>
         </div>
       </div>
@@ -254,7 +265,7 @@
             : `calc(${100 - songStore.leftWidth}% - 4px)`,
         }"
       >
-        <div lang="ja">
+        <div lang="ja" :style="{ fontSize: `${lyricFontSize}px` }">
           <div
             v-for="(line, index) in processedLyrics"
             :key="index"
@@ -281,7 +292,7 @@
                   :src="gifUrl(ly.gif)"
                   alt=""
                   class="lyric-gif"
-                  :style="{ height: `${gifSize(ly)}px` }"
+                  :style="{ height: `${gifSize(ly) * lyricScale}px` }"
                   loading="lazy"
                   @error="$event.target.style.display = 'none'"
                 />
@@ -292,11 +303,11 @@
                   placement="bottom"
                 >
                   <div
-                    class="rounded text-center text-xl"
+                    class="rounded text-center"
                     :style="ly.color ? { color: ly.color } : {}"
                   >
                     <template v-if="ly.cvtUnits">
-                      <div class="mb-[-3px] text-sm">
+                      <div class="mb-[-3px] text-[0.7em]">
                         <span
                           v-for="(unit, uIndex) in ly.cvtUnits"
                           :key="uIndex"
@@ -307,10 +318,10 @@
                       </div>
                     </template>
                     <template v-else-if="ly.cvt">
-                      <div class="mb-[-3px] text-sm">{{ ly.cvt }}</div>
+                      <div class="mb-[-3px] text-[0.7em]">{{ ly.cvt }}</div>
                     </template>
                     <template v-else
-                      ><div class="mb-[-13px] text-sm">
+                      ><div class="mb-[-13px] text-[0.7em]">
                         <span>{{ " " }}</span>
                       </div></template
                     >
@@ -386,7 +397,7 @@
 
         <!-- Center: song info（快速點 3 下可跳到歌曲編輯頁） -->
         <div
-          class="flex min-w-0 flex-1 flex-col items-center justify-center px-2 select-none touch-manipulation"
+          class="flex min-w-0 flex-1 touch-manipulation flex-col items-center justify-center px-2 select-none"
           @click="handleTitleTap"
         >
           <div
@@ -581,6 +592,7 @@ import {
   Plus,
   FolderAdd,
   Headset,
+  Setting,
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
@@ -987,6 +999,14 @@ const navigateToSong = (song) => {
 
 /*-- 歌詞 scrollbar ref --*/
 const lyricsScrollbarRef = ref(null);
+// 歌詞字級（px），預設 20 = 原本的 text-xl；GIF 依比例縮放
+const DEFAULT_LYRIC_FONT_SIZE = 20;
+const lyricFontSize = computed(
+  () => songStore.lyricFontSize || DEFAULT_LYRIC_FONT_SIZE,
+);
+const lyricScale = computed(
+  () => lyricFontSize.value / DEFAULT_LYRIC_FONT_SIZE,
+);
 const scrollLyricsToTop = () => {
   const lyricElement = document.getElementById(`lyric-0`);
   if (lyricElement) {
