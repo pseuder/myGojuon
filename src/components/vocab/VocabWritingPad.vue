@@ -16,14 +16,14 @@
       <el-button
         :icon="RefreshLeft"
         :title="t('vocab.writing_undo')"
-        size="small"
+        size="large"
         circle
         @click.stop="undo"
       />
       <el-button
         :icon="Delete"
         :title="t('vocab.writing_clear')"
-        size="small"
+        size="large"
         circle
         style="margin-left: 0"
         @click.stop="clear"
@@ -31,6 +31,12 @@
     </div>
   </div>
 </template>
+
+<script>
+// 偵測到觸控筆後只接受觸控筆，避免手掌壓到畫面畫出線條。
+// 放在模組層級：手寫層每換一題都會重建，若存在元件內，換題後手掌先碰到螢幕就會佔住畫筆
+let penOnly = false;
+</script>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
@@ -43,8 +49,11 @@ import { RefreshLeft, Delete } from "@element-plus/icons-vue";
 const { t } = useI18n();
 
 const PEN_COLOR = "rgba(79, 70, 229, 0.85)";
+// 輕點判定：觸控筆很容易畫出極短的筆劃（゛、、），門檻比手指 / 滑鼠嚴格，避免被當成輕點刪掉
 const TAP_MOVE_PX = 6;
 const TAP_MS = 350;
+const PEN_TAP_MOVE_PX = 2;
+const PEN_TAP_MS = 250;
 
 const layer = ref(null);
 const canvas = ref(null);
@@ -55,10 +64,9 @@ let dpr = 1;
 const strokes = ref([]); // [{ points: [{x, y, w}] }]
 let active = null;
 let activePointerId = null;
+let activeType = null;
 let downAt = 0;
 let moved = 0;
-// 偵測到觸控筆後只接受觸控筆，避免手掌壓到畫面畫出線條
-let penOnly = false;
 
 const lineWidth = (e) => {
   const base = 6;
@@ -131,10 +139,18 @@ const onDown = (e) => {
   if (e.pointerType === "pen") penOnly = true;
   else if (penOnly && e.pointerType === "touch") return;
   if (e.pointerType === "mouse" && e.button !== 0) return;
-  if (active) return;
+  if (active) {
+    // 手掌 / 手指先碰到螢幕佔住畫筆時，觸控筆落下就丟掉那一筆、由觸控筆接手
+    if (e.pointerType !== "pen" || activeType === "pen") return;
+    canvas.value.releasePointerCapture?.(activePointerId);
+    strokes.value.splice(strokes.value.indexOf(active), 1);
+    active = null;
+    redraw();
+  }
   e.preventDefault();
   canvas.value.setPointerCapture?.(e.pointerId);
   activePointerId = e.pointerId;
+  activeType = e.pointerType;
   downAt = performance.now();
   moved = 0;
   const p = pointOf(e);
@@ -176,12 +192,14 @@ const forwardTap = (x, y) => {
 
 const onUp = (e) => {
   if (!active || e.pointerId !== activePointerId) return;
+  const isPen = activeType === "pen";
   const isTap =
     e.type === "pointerup" &&
-    moved < TAP_MOVE_PX &&
-    performance.now() - downAt < TAP_MS;
+    moved < (isPen ? PEN_TAP_MOVE_PX : TAP_MOVE_PX) &&
+    performance.now() - downAt < (isPen ? PEN_TAP_MS : TAP_MS);
   active = null;
   activePointerId = null;
+  activeType = null;
   if (isTap) {
     // 輕點不留墨點，改為點擊底下的元素
     strokes.value.pop();
@@ -194,6 +212,7 @@ const clear = () => {
   strokes.value = [];
   active = null;
   activePointerId = null;
+  activeType = null;
   redraw();
 };
 
@@ -202,13 +221,26 @@ const undo = () => {
   redraw();
 };
 
+// iPadOS 的「隨手寫」等系統手勢會對觸控筆送出 pointercancel 讓筆劃中斷，
+// 只靠 CSS touch-action 擋不住，要在 touch 事件上 preventDefault（必須是非 passive 監聽）
+const blockTouch = (e) => e.preventDefault();
+const TOUCH_EVENTS = ["touchstart", "touchmove"];
+
 let observer = null;
 onMounted(() => {
   resize();
   observer = new ResizeObserver(resize);
   observer.observe(canvas.value);
+  TOUCH_EVENTS.forEach((type) =>
+    canvas.value.addEventListener(type, blockTouch, { passive: false }),
+  );
 });
-onUnmounted(() => observer?.disconnect());
+onUnmounted(() => {
+  observer?.disconnect();
+  TOUCH_EVENTS.forEach((type) =>
+    canvas.value?.removeEventListener(type, blockTouch),
+  );
+});
 
 defineExpose({ clear });
 </script>
@@ -238,7 +270,13 @@ defineExpose({ clear });
   bottom: 10px;
   z-index: 1;
   display: flex;
-  gap: 6px;
+  gap: 10px;
   pointer-events: auto;
+}
+/* 平板上用手指 / 觸控筆點按，按鈕與圖示放大一點 */
+.ink-tools :deep(.el-button) {
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
 }
 </style>
