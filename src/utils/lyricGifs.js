@@ -5,7 +5,7 @@ import gifNames from "virtual:lyric-gifs";
 export const LYRIC_GIFS = gifNames;
 
 // GIF 顯示高度（px），token 沒有 gifSize 時使用
-export const DEFAULT_GIF_SIZE = 32;
+export const DEFAULT_GIF_SIZE = 48;
 
 export const gifUrl = (name) => `/gifs/${name}.gif`;
 
