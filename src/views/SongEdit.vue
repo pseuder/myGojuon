@@ -24,520 +24,551 @@
         :class="{ 'select-none': isDragging }"
         ref="containerRef"
       >
-      <!-- 左側面板（固定模式）；抽屜模式時內容會被 Teleport 到抽屜裡 -->
-      <div
-        v-show="panelMode === 'fixed'"
-        class="flex shrink-0 flex-col sm:overflow-y-auto"
-        :style="{ width: isMobile ? '100%' : `${leftPanelWidth}%` }"
-      >
-      <Teleport :to="drawerPanelHost" :disabled="!teleportToDrawer">
-      <div class="flex flex-col gap-2">
-        <!-- 影片資訊區 -->
-        <div class="flex">
-          <el-input v-model="videoId" class="w-full" placeholder="輸入YT ID" />
-          <el-button type="primary" plain @click="handleReloadYT"
-            >載入</el-button
-          >
-          <el-button type="primary" @click="openSearchDialog">搜尋</el-button>
-          <el-button class="grow" type="success" @click="handlePublishSong"
-            >發布</el-button
-          >
-          <el-button type="info" @click="handleGoToPractice">GO</el-button>
-        </div>
-        <div class="flex gap-2">
-          <el-input
-            v-model="videoTitle"
-            class="w-full"
-            placeholder="輸入歌名"
-          />
-        </div>
-        <div class="flex gap-2">
-          <el-select
-            v-model="videoChannel"
-            filterable
-            allow-create
-            default-first-option
-            clearable
-            placeholder="選擇既有歌手或輸入新名稱"
-            class="w-full"
-            :loading="artistsLoading"
-          >
-            <el-option
-              v-for="artist in artistList"
-              :key="artist.artist_id"
-              :label="artist.name"
-              :value="artist.name"
-            />
-          </el-select>
-        </div>
-        <div class="flex gap-2">
-          <el-input
-            v-model="tag"
-            class="w-full"
-            placeholder="輸入標籤(用,分隔)"
-          />
-        </div>
-        <div class="flex gap-2">
-          <el-input
-            v-model="formData.remark"
-            class="w-full"
-            placeholder="輸入備註"
-          />
-        </div>
-
-        <!-- 歌詞操作區 -->
-        <div class="flex gap-2">
-          <el-button type="info" plain @click="handleClearLyrics" class="flex-1"
-            >清空</el-button
-          >
-          <el-button
-            class="flex-1"
-            type="primary"
-            plain
-            @click="handleLyricsDialogOpen"
-            >貼上歌詞</el-button
-          >
-          <el-button
-            class="flex-1"
-            type="primary"
-            plain
-            @click="convertedLyricsDialogVisible = true"
-            >貼上轉換歌詞</el-button
-          >
-        </div>
-        <div class="flex gap-2">
-          <el-button
-            class="flex-1"
-            type="warning"
-            plain
-            @click="handleClearTime"
-            >清空時間部分</el-button
-          >
-          <el-button class="flex-1" type="warning" plain @click="handleCopy"
-            >複製歌詞</el-button
-          >
-          <el-button
-            class="flex-1"
-            type="warning"
-            plain
-            @click="handleCopyHiragana"
-            >複製轉換歌詞</el-button
-          >
-        </div>
-        <div class="flex gap-2">
-          <el-button
-            class="flex-1"
-            type="success"
-            plain
-            @click="handleRefineLyrics"
-            >AI 校正轉換歌詞</el-button
-          >
-        </div>
-
-        <!-- 時間控制區 -->
-        <div class="flex gap-2">
-          <el-input
-            v-model="timeDiff"
-            class="w-full"
-            placeholder="輸入時間差"
-          ></el-input>
-          <el-button type="primary" plain @click="handleBulkTimeDiff('minus')"
-            >減時</el-button
-          >
-          <el-button type="info" plain @click="handleBulkTimeDiff('add')"
-            >加時</el-button
-          >
-        </div>
-
-        <!-- GIF 統一大小 -->
-        <div class="flex items-center gap-2">
-          <span class="shrink-0 text-sm text-gray-600">GIF 高度</span>
-          <el-input-number
-            v-model="bulkGifSize"
-            :min="16"
-            :max="200"
-            :step="8"
-            class="flex-1"
-          />
-          <el-button type="success" plain @click="handleBulkGifSize"
-            >套用全部 GIF</el-button
-          >
-        </div>
-
-        <!-- 播放控制區 -->
-        <div class="flex w-full items-center gap-2">
-          <el-checkbox v-model="autoScroll">scrolling</el-checkbox>
-          <el-input-number
-            v-model="playbackRate"
-            :precision="1"
-            :step="0.1"
-            :max="2"
-            :min="0.3"
-            @change="changePlaybackRate(playbackRate)"
-          />
-          <el-checkbox v-model="formData.is_public">publish</el-checkbox>
-        </div>
-
-        <!-- 影片播放器 -->
-        <div class="flex h-[10%] flex-col gap-2">
-          <div id="player-container" ref="playerContainerRef" class="h-fit">
-            <div
-              :key="playerKey"
-              id="player"
-              ref="playerRef"
-              style="max-height: 430px; aspect-ratio: 4/3"
-            ></div>
-          </div>
-          <div class="w-full">
-            <el-space wrap>
-              <el-tag type="info">a - 往前3秒</el-tag>
-              <el-tag type="info">s - 暫停/開始</el-tag>
-              <el-tag type="info">d - 往後3秒</el-tag>
-              <el-tag type="info">enter - 紀錄時間</el-tag>
-              <el-tag type="info">f - 清除上一格時間</el-tag>
-            </el-space>
-          </div>
-        </div>
-      </div>
-      </Teleport>
-      </div>
-
-      <!-- 可拖動的分隔線（固定模式） -->
-      <div
-        v-if="panelMode === 'fixed' && !isMobile"
-        class="resizer"
-        :class="{ 'resizer-dragging': isDragging }"
-        @mousedown="handleMouseDown"
-      ></div>
-
-      <!-- 歌詞列表 -->
-      <el-scrollbar
-        class="lyrics-container min-h-0 min-w-0 flex-1 overflow-x-auto"
-        v-loading="lyricsLoading"
-      >
-        <div>
-          <div
-            v-for="(line, index) in allLyrics"
-            :key="index"
-            :id="`lyric-${index}`"
-            :class="{ 'bg-yellow-100': currentLyricIndex === index }"
-            class="flex flex-col items-stretch gap-2 py-4 sm:flex-row sm:items-center sm:gap-4"
-            style="border-block-width: 6px; border-block-color: #e5e7eb"
-          >
-            <!-- 行控制區（手機：橫排在歌詞上方；電腦：直排在左側） -->
-            <div
-              class="flex shrink-0 flex-row flex-wrap items-center justify-center gap-x-2 sm:flex-col sm:gap-x-0"
-            >
+        <!-- 左側面板（固定模式）；抽屜模式時內容會被 Teleport 到抽屜裡 -->
+        <div
+          v-show="panelMode === 'fixed'"
+          class="flex shrink-0 flex-col sm:overflow-y-auto"
+          :style="{ width: isMobile ? '100%' : `${leftPanelWidth}%` }"
+        >
+          <Teleport :to="drawerPanelHost" :disabled="!teleportToDrawer">
+            <div class="flex flex-col gap-2">
+              <!-- 影片資訊區 -->
               <div class="flex">
-                <el-button link plain @click="startVideoOn(line.timestamp)">
-                  <el-icon :size="25"><Switch /></el-icon>
-                </el-button>
-                <el-button link plain @click="handleCopyLine(line)">
-                  <el-icon :size="25"><CopyDocument /></el-icon>
-                </el-button>
-                <el-button link plain @click="handleDelete(index)">
-                  <el-icon :size="25" color="red"><Delete /></el-icon>
-                </el-button>
-                <el-button
-                  link
-                  class="text-sm text-blue-500"
-                  @click="handleAddNewLyricLine(index)"
+                <el-input
+                  v-model="videoId"
+                  class="w-full"
+                  placeholder="輸入YT ID"
+                />
+                <el-button type="primary" plain @click="handleReloadYT"
+                  >載入</el-button
                 >
-                  <el-icon :size="25" color="blue"><Plus /></el-icon>
-                </el-button>
-                <el-button
-                  link
-                  class="text-sm text-blue-500"
-                  @click="handleDuplicateLyricLine(index)"
+                <el-button type="primary" @click="openSearchDialog"
+                  >搜尋</el-button
                 >
-                  <el-icon :size="25" color="blue"><CopyDocument /></el-icon>
-                </el-button>
+                <el-button
+                  class="grow"
+                  type="success"
+                  @click="handlePublishSong"
+                  >發布</el-button
+                >
+                <el-button type="info" @click="handleGoToPractice"
+                  >GO</el-button
+                >
+              </div>
+              <div class="flex gap-2">
+                <el-input
+                  v-model="videoTitle"
+                  class="w-full"
+                  placeholder="輸入歌名"
+                />
+              </div>
+              <div class="flex gap-2">
+                <el-select
+                  v-model="videoChannel"
+                  filterable
+                  allow-create
+                  default-first-option
+                  clearable
+                  placeholder="選擇既有歌手或輸入新名稱"
+                  class="w-full"
+                  :loading="artistsLoading"
+                >
+                  <el-option
+                    v-for="artist in artistList"
+                    :key="artist.artist_id"
+                    :label="artist.name"
+                    :value="artist.name"
+                  />
+                </el-select>
+              </div>
+              <div class="flex gap-2">
+                <el-input
+                  v-model="tag"
+                  class="w-full"
+                  placeholder="輸入標籤(用,分隔)"
+                />
+              </div>
+              <div class="flex gap-2">
+                <el-input
+                  v-model="formData.remark"
+                  class="w-full"
+                  placeholder="輸入備註"
+                />
               </div>
 
-              <input
-                v-model="line.timestamp"
-                class="h-6 w-28 cursor-auto rounded border border-gray-300 px-1"
-                placeholder="輸入時間"
-              />
-
-              <div class="flex">
-                <el-button link @click="handleDecreaseTime(index, 5)"
-                  >-5</el-button
+              <!-- 歌詞操作區 -->
+              <div class="flex gap-2">
+                <el-button
+                  type="info"
+                  plain
+                  @click="handleClearLyrics"
+                  class="flex-1"
+                  >清空</el-button
                 >
-                <el-button link @click="handleDecreaseTime(index, 10)"
-                  >-10</el-button
+                <el-button
+                  class="flex-1"
+                  type="primary"
+                  plain
+                  @click="handleLyricsDialogOpen"
+                  >貼上歌詞</el-button
                 >
-                <el-button link @click="handleIncreaseTime(index, 5)"
-                  >+5</el-button
+                <el-button
+                  class="flex-1"
+                  type="primary"
+                  plain
+                  @click="convertedLyricsDialogVisible = true"
+                  >貼上轉換歌詞</el-button
                 >
-                <el-button link @click="handleIncreaseTime(index, 10)"
-                  >+10</el-button
+              </div>
+              <div class="flex gap-2">
+                <el-button
+                  class="flex-1"
+                  type="warning"
+                  plain
+                  @click="handleClearTime"
+                  >清空時間部分</el-button
+                >
+                <el-button
+                  class="flex-1"
+                  type="warning"
+                  plain
+                  @click="handleCopy"
+                  >複製歌詞</el-button
+                >
+                <el-button
+                  class="flex-1"
+                  type="warning"
+                  plain
+                  @click="handleCopyHiragana"
+                  >複製轉換歌詞</el-button
+                >
+              </div>
+              <div class="flex gap-2">
+                <el-button
+                  class="flex-1"
+                  type="success"
+                  plain
+                  @click="handleRefineLyrics"
+                  >AI 校正轉換歌詞</el-button
                 >
               </div>
 
-              <!-- 整列上色 -->
-              <div class="mt-1 flex items-center gap-1">
+              <!-- 時間控制區 -->
+              <div class="flex gap-2">
+                <el-input
+                  v-model="timeDiff"
+                  class="w-full"
+                  placeholder="輸入時間差"
+                ></el-input>
                 <el-button
-                  size="small"
-                  class="h-8 w-14 p-0 text-white"
-                  style="background-color: #9b59b6; border-color: #9b59b6"
-                  title="整列套用紫色"
-                  @click="handleColorLine(index, '#9B59B6')"
+                  type="primary"
+                  plain
+                  @click="handleBulkTimeDiff('minus')"
+                  >減時</el-button
                 >
-                  <span class="text-sm">整列紫</span>
-                </el-button>
-                <el-button
-                  size="small"
-                  class="h-8 w-14 p-0 text-white"
-                  style="background-color: #fa8072; border-color: #fa8072"
-                  title="整列套用鮭魚色"
-                  @click="handleColorLine(index, '#FA8072')"
+                <el-button type="info" plain @click="handleBulkTimeDiff('add')"
+                  >加時</el-button
                 >
-                  <span class="text-sm">整列鮭</span>
-                </el-button>
-                <!-- 插入 JSON 歌詞（往前 / 往後） -->
-                <div class="flex flex-col">
-                  <el-button
-                    link
-                    class="!h-4 !p-0"
-                    style="margin-left: 0"
-                    title="在此行之前插入 JSON 歌詞"
-                    @click="openInsertJsonDialog(index, 'before')"
-                  >
-                    <el-icon :size="16" color="#409eff"><ArrowUp /></el-icon>
-                  </el-button>
-                  <el-button
-                    link
-                    class="!h-4 !p-0"
-                    style="margin-left: 0"
-                    title="在此行之後插入 JSON 歌詞"
-                    @click="openInsertJsonDialog(index, 'after')"
-                  >
-                    <el-icon :size="16" color="#409eff"><ArrowDown /></el-icon>
-                  </el-button>
+              </div>
+
+              <!-- GIF 統一大小 -->
+              <div class="flex items-center gap-2">
+                <span class="shrink-0 text-sm text-gray-600">GIF 高度</span>
+                <el-input-number
+                  v-model="bulkGifSize"
+                  :min="16"
+                  :max="200"
+                  :step="8"
+                  class="flex-1"
+                />
+                <el-button type="success" plain @click="handleBulkGifSize"
+                  >套用全部 GIF</el-button
+                >
+              </div>
+
+              <!-- 播放控制區 -->
+              <div class="flex w-full items-center gap-2">
+                <el-checkbox v-model="autoScroll">scrolling</el-checkbox>
+                <el-input-number
+                  v-model="playbackRate"
+                  :precision="1"
+                  :step="0.1"
+                  :max="2"
+                  :min="0.3"
+                  @change="changePlaybackRate(playbackRate)"
+                />
+                <el-checkbox v-model="formData.is_public">publish</el-checkbox>
+              </div>
+
+              <!-- 影片播放器 -->
+              <div class="flex h-[10%] flex-col gap-2">
+                <div
+                  id="player-container"
+                  ref="playerContainerRef"
+                  class="h-fit"
+                >
+                  <div
+                    :key="playerKey"
+                    id="player"
+                    ref="playerRef"
+                    style="max-height: 430px; aspect-ratio: 4/3"
+                  ></div>
+                </div>
+                <div class="w-full">
+                  <el-space wrap>
+                    <el-tag type="info">a - 往前3秒</el-tag>
+                    <el-tag type="info">s - 暫停/開始</el-tag>
+                    <el-tag type="info">d - 往後3秒</el-tag>
+                    <el-tag type="info">enter - 紀錄時間</el-tag>
+                    <el-tag type="info">f - 清除上一格時間</el-tag>
+                  </el-space>
                 </div>
               </div>
             </div>
+          </Teleport>
+        </div>
 
-            <!-- 歌詞字元區（手機：兩欄 grid；電腦：固定寬度換行） -->
+        <!-- 可拖動的分隔線（固定模式） -->
+        <div
+          v-if="panelMode === 'fixed' && !isMobile"
+          class="resizer"
+          :class="{ 'resizer-dragging': isDragging }"
+          @mousedown="handleMouseDown"
+        ></div>
+
+        <!-- 歌詞列表 -->
+        <el-scrollbar
+          class="lyrics-container min-h-0 min-w-0 flex-1 overflow-x-auto"
+          v-loading="lyricsLoading"
+        >
+          <div>
             <div
-              class="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center"
+              v-for="(line, index) in allLyrics"
+              :key="index"
+              :id="`lyric-${index}`"
+              :class="{ 'bg-yellow-100': currentLyricIndex === index }"
+              class="flex flex-col items-stretch gap-2 py-4 sm:flex-row sm:items-center sm:gap-4"
+              style="border-block-width: 6px; border-block-color: #e5e7eb"
             >
-              <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
-                <!-- GIF 格 -->
-                <div
-                  v-if="ly.gif"
-                  class="flex w-full flex-col items-center gap-1 sm:w-56"
-                  :id="`lyric-cvt-${index}-${lyIndex}`"
-                >
-                  <span class="flex">
-                    <el-button
-                      class="text-sm text-green-600"
-                      @click="openGifPicker(index, lyIndex, 'replace')"
-                      type="text"
-                      title="換成另一張 GIF"
-                      >換</el-button
-                    >
-                    <el-button
-                      class="text-sm text-red-500"
-                      @click="handleDeleteLyric(index, lyIndex)"
-                      type="text"
-                      >刪</el-button
-                    >
-                    <el-button
-                      class="text-sm text-yellow-800"
-                      @click="handleAddLyric(index, lyIndex)"
-                      type="text"
-                      >加</el-button
-                    >
-                    <el-button
-                      class="text-sm text-green-600"
-                      @click="openGifPicker(index, lyIndex, 'after')"
-                      type="text"
-                      title="插入 GIF"
-                      >圖</el-button
-                    >
-                  </span>
-                  <img
-                    :src="gifUrl(ly.gif)"
-                    :alt="ly.gif"
-                    :style="{ height: `${gifSize(ly)}px` }"
-                  />
-                  <span class="text-xs text-gray-500">{{ ly.gif }}</span>
-                  <el-input-number
-                    size="small"
-                    :model-value="gifSize(ly)"
-                    :min="16"
-                    :max="200"
-                    :step="8"
-                    title="GIF 高度 (px)"
-                    @change="(val) => handleGifSizeChange(ly, val)"
-                  />
+              <!-- 行控制區（手機：橫排在歌詞上方；電腦：直排在左側） -->
+              <div
+                class="flex shrink-0 flex-row flex-wrap items-center justify-center gap-x-2 sm:flex-col sm:gap-x-0"
+              >
+                <div class="flex">
+                  <el-button link plain @click="startVideoOn(line.timestamp)">
+                    <el-icon :size="25"><Switch /></el-icon>
+                  </el-button>
+                  <el-button link plain @click="handleCopyLine(line)">
+                    <el-icon :size="25"><CopyDocument /></el-icon>
+                  </el-button>
+                  <el-button link plain @click="handleDelete(index)">
+                    <el-icon :size="25" color="red"><Delete /></el-icon>
+                  </el-button>
+                  <el-button
+                    link
+                    class="text-sm text-blue-500"
+                    @click="handleAddNewLyricLine(index)"
+                  >
+                    <el-icon :size="25" color="blue"><Plus /></el-icon>
+                  </el-button>
+                  <el-button
+                    link
+                    class="text-sm text-blue-500"
+                    @click="handleDuplicateLyricLine(index)"
+                  >
+                    <el-icon :size="25" color="blue"><CopyDocument /></el-icon>
+                  </el-button>
                 </div>
 
-                <div
-                  v-else
-                  class="flex w-full flex-col sm:w-56"
-                  :id="`lyric-cvt-${index}-${lyIndex}`"
-                >
-                  <!-- 字元操作按鈕 -->
-                  <span class="flex">
-                    <el-button
-                      class="text-sm text-purple-500"
-                      @click="handleAddBracketBefore(index, lyIndex)"
-                      type="text"
-                      title="在前方插入括號組"
-                      >+</el-button
-                    >
+                <input
+                  v-model="line.timestamp"
+                  class="h-6 w-28 cursor-auto rounded border border-gray-300 px-1"
+                  placeholder="輸入時間"
+                />
 
-                    <el-button
-                      class="text-sm text-yellow-500"
-                      @click="handleDoubleClick(index, lyIndex, ly.ori)"
-                      type="text"
-                      >推</el-button
-                    >
-                    <el-button
-                      class="text-sm text-blue-500"
-                      @click="handleWidthenLyric(index, lyIndex)"
-                      type="text"
-                    >
-                      寬
-                    </el-button>
-                    <el-button
-                      class="text-sm text-red-500"
-                      @click="handleDeleteLyric(index, lyIndex)"
-                      type="text"
-                    >
-                      刪
-                    </el-button>
-                    <el-button
-                      class="text-sm text-yellow-800"
-                      @click="handleAddLyric(index, lyIndex)"
-                      type="text"
-                    >
-                      加
-                    </el-button>
-                    <el-button
-                      class="text-sm text-green-600"
-                      @click="openGifPicker(index, lyIndex, 'before')"
-                      type="text"
-                      title="插入 GIF"
-                      >圖</el-button
-                    >
-                    <el-button
-                      class="text-sm text-purple-500"
-                      @click="handleAddBracketAfter(index, lyIndex)"
-                      type="text"
-                      title="在後方插入括號組"
-                      >+</el-button
-                    >
-                  </span>
-
-                  <!-- 平假名 -->
-                  <input
-                    v-model="ly.cvt"
-                    class="lyric-cvt h-6 w-full rounded border border-gray-300 px-1"
-                    placeholder=""
-                  />
-
-                  <!-- 原始歌詞 -->
-                  <el-popover
-                    placement="bottom"
-                    title="推薦假名"
-                    :width="200"
-                    trigger="manual"
-                    :trigger-keys="[]"
-                    :visible="isPopoverVisible(index, lyIndex)"
-                    @update:visible="(val) => !val && closePopover()"
+                <div class="flex">
+                  <el-button link @click="handleDecreaseTime(index, 5)"
+                    >-5</el-button
                   >
-                    <template #reference>
-                      <input
-                        v-model="ly.ori"
-                        class="lyric-ori h-6 w-full cursor-pointer rounded border border-gray-300 p-2"
-                        placeholder=""
-                      />
-                    </template>
-                    <div v-loading="recommendLoading" class="flex flex-col">
-                      <template
-                        v-for="(hiragana, hIndex) in recommendHiraganas"
-                        :key="hIndex"
+                  <el-button link @click="handleDecreaseTime(index, 10)"
+                    >-10</el-button
+                  >
+                  <el-button link @click="handleIncreaseTime(index, 5)"
+                    >+5</el-button
+                  >
+                  <el-button link @click="handleIncreaseTime(index, 10)"
+                    >+10</el-button
+                  >
+                </div>
+
+                <!-- 整列上色 -->
+                <div class="mt-1 flex items-center gap-1">
+                  <el-button
+                    size="small"
+                    class="h-8 w-14 p-0 text-white"
+                    style="background-color: #9b59b6; border-color: #9b59b6"
+                    title="整列套用紫色"
+                    @click="handleColorLine(index, '#9B59B6')"
+                  >
+                    <span class="text-sm">整列紫</span>
+                  </el-button>
+                  <el-button
+                    size="small"
+                    class="h-8 w-14 p-0 text-white"
+                    style="background-color: #fa8072; border-color: #fa8072"
+                    title="整列套用鮭魚色"
+                    @click="handleColorLine(index, '#FA8072')"
+                  >
+                    <span class="text-sm">整列鮭</span>
+                  </el-button>
+                  <!-- 插入 JSON 歌詞（往前 / 往後） -->
+                  <div class="flex flex-col">
+                    <el-button
+                      link
+                      class="!h-4 !p-0"
+                      style="margin-left: 0"
+                      title="在此行之前插入 JSON 歌詞"
+                      @click="openInsertJsonDialog(index, 'before')"
+                    >
+                      <el-icon :size="16" color="#409eff"><ArrowUp /></el-icon>
+                    </el-button>
+                    <el-button
+                      link
+                      class="!h-4 !p-0"
+                      style="margin-left: 0"
+                      title="在此行之後插入 JSON 歌詞"
+                      @click="openInsertJsonDialog(index, 'after')"
+                    >
+                      <el-icon :size="16" color="#409eff"
+                        ><ArrowDown
+                      /></el-icon>
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 歌詞字元區（手機：兩欄 grid；電腦：固定寬度換行） -->
+              <div
+                class="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center"
+              >
+                <template v-for="(ly, lyIndex) in line.lyrics" :key="lyIndex">
+                  <!-- GIF 格 -->
+                  <div
+                    v-if="ly.gif"
+                    class="flex w-full flex-col items-center gap-1 sm:w-56"
+                    :id="`lyric-cvt-${index}-${lyIndex}`"
+                  >
+                    <span class="flex">
+                      <el-button
+                        class="text-sm text-green-600"
+                        @click="openGifPicker(index, lyIndex, 'replace')"
+                        type="text"
+                        title="換成另一張 GIF"
+                        >換</el-button
                       >
-                        <div
-                          @click="
-                            ly.cvt = hiragana;
-                            closePopover();
-                          "
-                          class="w-full cursor-pointer p-1 text-center text-blue-400 hover:text-blue-600"
-                        >
-                          {{ hiragana }}
-                        </div>
+                      <el-button
+                        class="text-sm text-red-500"
+                        @click="handleDeleteLyric(index, lyIndex)"
+                        type="text"
+                        >刪</el-button
+                      >
+                      <el-button
+                        class="text-sm text-yellow-800"
+                        @click="handleAddLyric(index, lyIndex)"
+                        type="text"
+                        >加</el-button
+                      >
+                      <el-button
+                        class="text-sm text-green-600"
+                        @click="openGifPicker(index, lyIndex, 'after')"
+                        type="text"
+                        title="插入 GIF"
+                        >圖</el-button
+                      >
+                    </span>
+                    <img
+                      :src="gifUrl(ly.gif)"
+                      :alt="ly.gif"
+                      :style="{ height: `${gifSize(ly)}px` }"
+                    />
+                    <span class="text-xs text-gray-500">{{ ly.gif }}</span>
+                    <el-input-number
+                      size="small"
+                      :model-value="gifSize(ly)"
+                      :min="16"
+                      :max="200"
+                      :step="8"
+                      title="GIF 高度 (px)"
+                      @change="(val) => handleGifSizeChange(ly, val)"
+                    />
+                  </div>
+
+                  <div
+                    v-else
+                    class="flex w-full flex-col sm:w-56"
+                    :id="`lyric-cvt-${index}-${lyIndex}`"
+                  >
+                    <!-- 字元操作按鈕 -->
+                    <span class="flex">
+                      <el-button
+                        class="text-sm text-purple-500"
+                        @click="handleAddBracketBefore(index, lyIndex)"
+                        type="text"
+                        title="在前方插入括號組"
+                        >+</el-button
+                      >
+
+                      <el-button
+                        class="text-sm text-yellow-500"
+                        @click="handleDoubleClick(index, lyIndex, ly.ori)"
+                        type="text"
+                        >推</el-button
+                      >
+                      <el-button
+                        class="text-sm text-blue-500"
+                        @click="handleWidthenLyric(index, lyIndex)"
+                        type="text"
+                      >
+                        寬
+                      </el-button>
+                      <el-button
+                        class="text-sm text-red-500"
+                        @click="handleDeleteLyric(index, lyIndex)"
+                        type="text"
+                      >
+                        刪
+                      </el-button>
+                      <el-button
+                        class="text-sm text-yellow-800"
+                        @click="handleAddLyric(index, lyIndex)"
+                        type="text"
+                      >
+                        加
+                      </el-button>
+                      <el-button
+                        class="text-sm text-green-600"
+                        @click="openGifPicker(index, lyIndex, 'before')"
+                        type="text"
+                        title="插入 GIF"
+                        >圖</el-button
+                      >
+                      <el-button
+                        class="text-sm text-purple-500"
+                        @click="handleAddBracketAfter(index, lyIndex)"
+                        type="text"
+                        title="在後方插入括號組"
+                        >+</el-button
+                      >
+                    </span>
+
+                    <!-- 平假名 -->
+                    <input
+                      v-model="ly.cvt"
+                      class="lyric-cvt h-6 w-full rounded border border-gray-300 px-1"
+                      placeholder=""
+                    />
+
+                    <!-- 原始歌詞 -->
+                    <el-popover
+                      placement="bottom"
+                      title="推薦假名"
+                      :width="200"
+                      trigger="manual"
+                      :trigger-keys="[]"
+                      :visible="isPopoverVisible(index, lyIndex)"
+                      @update:visible="(val) => !val && closePopover()"
+                    >
+                      <template #reference>
+                        <input
+                          v-model="ly.ori"
+                          class="lyric-ori h-6 w-full cursor-pointer rounded border border-gray-300 p-2"
+                          placeholder=""
+                        />
                       </template>
-                    </div>
-                  </el-popover>
+                      <div v-loading="recommendLoading" class="flex flex-col">
+                        <template
+                          v-for="(hiragana, hIndex) in recommendHiraganas"
+                          :key="hIndex"
+                        >
+                          <div
+                            @click="
+                              ly.cvt = hiragana;
+                              closePopover();
+                            "
+                            class="w-full cursor-pointer p-1 text-center text-blue-400 hover:text-blue-600"
+                          >
+                            {{ hiragana }}
+                          </div>
+                        </template>
+                      </div>
+                    </el-popover>
 
-                  <!-- 顏色 -->
-                  <input
-                    v-model="ly.color"
-                    class="lyric-cvt h-6 w-full rounded border border-gray-300 px-1"
-                    placeholder=""
-                  />
+                    <!-- 顏色 -->
+                    <input
+                      v-model="ly.color"
+                      class="lyric-cvt h-6 w-full rounded border border-gray-300 px-1"
+                      placeholder=""
+                    />
 
-                  <!-- 意思 -->
-                  <!-- <input
+                    <!-- 意思 -->
+                    <!-- <input
                     v-model="ly.meaning"
                     class="lyric-meaning h-6 w-full rounded border border-gray-300 px-1"
                     placeholder=""
                   /> -->
 
-                  <!-- 顏色控制 -->
-                  <div class="mt-1 flex items-center gap-1">
-                    <el-button
-                      size="small"
-                      @click="openColorPicker(index, lyIndex)"
-                      :style="
-                        ly.color
-                          ? { backgroundColor: ly.color, borderColor: ly.color }
-                          : {}
-                      "
-                      class="h-6 w-8 p-0"
-                      :class="ly.color ? '' : 'bg-gray-200'"
-                      title="設定顏色"
-                    >
-                      <span class="text-xs">色</span>
-                    </el-button>
-                    <el-button
-                      size="small"
-                      class="h-8 w-14 p-0 text-white"
-                      style="background-color: #9b59b6; border-color: #9b59b6"
-                      title="套用紫色"
-                      @click="ly.color = '#9B59B6'"
-                    >
-                      <span class="text-sm">紫</span>
-                    </el-button>
-                    <el-button
-                      size="small"
-                      class="h-6 w-8 p-0 text-white"
-                      style="background-color: #fa8072; border-color: #fa8072"
-                      title="套用鮭魚色"
-                      @click="ly.color = '#FA8072'"
-                    >
-                      <span class="text-xs">鮭</span>
-                    </el-button>
-                    <el-button
-                      v-if="ly.color"
-                      link
-                      size="small"
-                      class="text-xs text-gray-500"
-                      @click="ly.color = ''"
-                    >
-                    </el-button>
+                    <!-- 顏色控制 -->
+                    <div class="mt-1 flex items-center gap-1">
+                      <el-button
+                        size="small"
+                        @click="openColorPicker(index, lyIndex)"
+                        :style="
+                          ly.color
+                            ? {
+                                backgroundColor: ly.color,
+                                borderColor: ly.color,
+                              }
+                            : {}
+                        "
+                        class="h-6 w-8 p-0"
+                        :class="ly.color ? '' : 'bg-gray-200'"
+                        title="設定顏色"
+                      >
+                        <span class="text-xs">色</span>
+                      </el-button>
+                      <el-button
+                        size="small"
+                        class="h-8 w-14 p-0 text-white"
+                        style="background-color: #9b59b6; border-color: #9b59b6"
+                        title="套用紫色"
+                        @click="ly.color = '#9B59B6'"
+                      >
+                        <span class="text-sm">紫</span>
+                      </el-button>
+                      <el-button
+                        size="small"
+                        class="h-6 w-8 p-0 text-white"
+                        style="background-color: #fa8072; border-color: #fa8072"
+                        title="套用鮭魚色"
+                        @click="ly.color = '#FA8072'"
+                      >
+                        <span class="text-xs">鮭</span>
+                      </el-button>
+                      <el-button
+                        v-if="ly.color"
+                        link
+                        size="small"
+                        class="text-xs text-gray-500"
+                        @click="ly.color = ''"
+                      >
+                      </el-button>
+                    </div>
                   </div>
-                </div>
-              </template>
+                </template>
+              </div>
             </div>
           </div>
-        </div>
-      </el-scrollbar>
+        </el-scrollbar>
       </div>
 
       <!-- 左側面板（抽屜模式） -->
@@ -1730,7 +1761,7 @@ watch(
 
 const containerRef = ref(null);
 const leftPanelWidth = ref(
-  Math.min(70, Math.max(20, Number(readStorage(PANEL_WIDTH_KEY)) || 33)),
+  Math.min(70, Math.max(20, Number(readStorage(PANEL_WIDTH_KEY)) || 23)),
 );
 const isDragging = ref(false);
 const isMobile = ref(false);
