@@ -126,103 +126,112 @@
         />
       </div>
 
-      <!-- key 綁定題目：換題時重新建立，不會看到上一張的翻轉動畫 -->
-      <div
-        :key="`${round}-${index}`"
-        class="flip-card w-full max-w-xl"
-        @click="flip"
-      >
-        <div class="flip-inner" :class="{ flipped }">
-          <!-- 正面 -->
-          <div class="flip-face front">
-            <span
-              class="absolute top-3 left-4 max-w-[70%] truncate text-xs text-gray-400"
-            >
-              {{ current.set_title }}
-            </span>
-            <button
-              type="button"
-              class="absolute top-2 right-2 rounded-full p-2 hover:bg-indigo-100"
-              :title="t('tools.speak')"
-              @click.stop="speakCurrent"
-            >
-              <img
-                :src="
-                  speakingKey === current.vocab_word_id
-                    ? '/images/volume2.png'
-                    : '/images/volume.png'
-                "
-                alt=""
-                class="h-8 w-8"
+      <!-- 外框只負責定位翻面鈕；翻面鈕不能放進 flip-card（perspective 會自成堆疊層，蓋不過手寫層） -->
+      <div class="relative w-full max-w-xl">
+        <!-- key 綁定題目：換題時重新建立，不會看到上一張的翻轉動畫 -->
+        <div :key="`${round}-${index}`" class="flip-card w-full" @click="flip">
+          <div class="flip-inner" :class="{ flipped }">
+            <!-- 正面 -->
+            <div class="flip-face front">
+              <span
+                class="absolute top-3 left-4 max-w-[70%] truncate text-xs text-gray-400"
+              >
+                {{ current.set_title }}
+              </span>
+              <button
+                type="button"
+                class="absolute top-2 right-2 rounded-full p-2 hover:bg-indigo-100"
+                :title="t('tools.speak')"
+                @click.stop="speakCurrent"
+              >
+                <img
+                  :src="
+                    speakingKey === current.vocab_word_id
+                      ? '/images/volume2.png'
+                      : '/images/volume.png'
+                  "
+                  alt=""
+                  class="h-8 w-8"
+                />
+              </button>
+              <RubyWord
+                :word="current.word"
+                :tokens="current.tokens"
+                :show-kana="showKana"
+                class="card-word px-4 text-center"
+                :class="{ 'tight-word': showRomaji && current.romaji }"
               />
-            </button>
-            <RubyWord
-              :word="current.word"
-              :tokens="current.tokens"
-              :show-kana="showKana"
-              class="card-word px-4 text-center"
-              :class="{ 'tight-word': showRomaji && current.romaji }"
-            />
-            <!-- 羅馬音位置同背面，由「顯示羅馬音」開關決定（背面一律顯示） -->
-            <span
-              v-if="showRomaji && current.romaji"
-              class="back-romaji px-4 text-center"
-            >
-              {{ current.romaji }}
-            </span>
-            <span class="absolute bottom-3 text-xs text-gray-400">{{
-              t(showWriting ? "vocab.writing_hint" : "vocab.tap_to_flip")
-            }}</span>
-          </div>
-          <!-- 背面 -->
-          <!-- 版面同正面，但一律標假名（不受「顯示假名」開關影響），下方依序羅馬音、意思 -->
-          <div class="flip-face back">
-            <span
-              class="absolute top-3 left-4 max-w-[70%] truncate text-xs text-gray-400"
-            >
-              {{ current.set_title }}
-            </span>
-            <button
-              type="button"
-              class="absolute top-2 right-2 rounded-full p-2 hover:bg-blue-50"
-              :title="t('tools.speak')"
-              @click.stop="speakCurrent"
-            >
-              <img
-                :src="
-                  speakingKey === current.vocab_word_id
-                    ? '/images/volume2.png'
-                    : '/images/volume.png'
-                "
-                alt=""
-                class="h-8 w-8"
+              <!-- 羅馬音位置同背面，由「顯示羅馬音」開關決定（背面一律顯示） -->
+              <span
+                v-if="showRomaji && current.romaji"
+                class="back-romaji px-4 text-center"
+              >
+                {{ current.romaji }}
+              </span>
+              <span class="absolute bottom-3 text-xs text-gray-400">{{
+                t(showWriting ? "vocab.writing_hint" : "vocab.tap_to_flip")
+              }}</span>
+            </div>
+            <!-- 背面 -->
+            <!-- 版面同正面，但一律標假名（不受「顯示假名」開關影響），下方依序羅馬音、意思 -->
+            <div class="flip-face back">
+              <span
+                class="absolute top-3 left-4 max-w-[70%] truncate text-xs text-gray-400"
+              >
+                {{ current.set_title }}
+              </span>
+              <button
+                type="button"
+                class="absolute top-2 right-2 rounded-full p-2 hover:bg-blue-50"
+                :title="t('tools.speak')"
+                @click.stop="speakCurrent"
+              >
+                <img
+                  :src="
+                    speakingKey === current.vocab_word_id
+                      ? '/images/volume2.png'
+                      : '/images/volume.png'
+                  "
+                  alt=""
+                  class="h-8 w-8"
+                />
+              </button>
+              <RubyWord
+                :word="current.word"
+                :tokens="current.tokens"
+                class="card-word back-word px-4 text-center"
               />
-            </button>
-            <RubyWord
-              :word="current.word"
-              :tokens="current.tokens"
-              class="card-word back-word px-4 text-center"
-            />
-            <span
-              v-if="(!hasRuby && current.kana) || current.romaji"
-              class="back-romaji px-4 text-center"
-            >
-              <!-- <span v-if="!hasRuby && current.kana" class="back-kana">{{
+              <span
+                v-if="(!hasRuby && current.kana) || current.romaji"
+                class="back-romaji px-4 text-center"
+              >
+                <!-- <span v-if="!hasRuby && current.kana" class="back-kana">{{
                 current.kana
               }}</span>
               <template v-if="!hasRuby && current.kana && current.romaji">
                 ・
               </template>
                -->
-              {{ current.romaji }}
-            </span>
-            <!-- 分隔線：上方是讀音區，下方是意思區 -->
-            <span class="back-divider" />
-            <span class="back-meaning px-6 text-center whitespace-pre-wrap">
-              {{ current.meaning }}
-            </span>
+                {{ current.romaji }}
+              </span>
+              <!-- 分隔線：上方是讀音區，下方是意思區 -->
+              <span class="back-divider" />
+              <span class="back-meaning px-6 text-center whitespace-pre-wrap">
+                {{ current.meaning }}
+              </span>
+            </div>
           </div>
         </div>
+        <!-- 手寫模式下卡片大多被手寫層蓋住，右下角給一顆按下就翻面的按鈕（不必剛好點成一個點） -->
+        <el-button
+          v-if="showWriting"
+          class="flip-btn above-ink"
+          :icon="Switch"
+          :title="t('vocab.flip')"
+          size="large"
+          circle
+          @pointerdown.prevent.stop="flip"
+        />
       </div>
 
       <div class="grid w-full max-w-xl grid-cols-2 gap-3">
@@ -320,6 +329,7 @@ import {
   CloseBold,
   Select,
   House,
+  Switch,
 } from "@element-plus/icons-vue";
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
 import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
@@ -798,6 +808,14 @@ onUnmounted(() => {
 .above-ink {
   position: relative;
   z-index: 3;
+}
+.flip-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
 }
 .answer-btn {
   height: 56px;

@@ -260,6 +260,7 @@
     "resume": "Resume",
     "end": "End",
     "tap_to_flip": "Tap the card to flip",
+    "flip": "Flip",
     "prev_word": "Previous",
     "keyboard_hint": "Keyboard: Space to flip · ← Not yet · → Got it · Backspace previous",
     "result_title": "Results",
