@@ -49,11 +49,16 @@ import { RefreshLeft, Delete } from "@element-plus/icons-vue";
 const { t } = useI18n();
 
 const PEN_COLOR = "rgba(79, 70, 229, 0.85)";
-// 輕點判定：觸控筆很容易畫出極短的筆劃（゛、、），門檻比手指 / 滑鼠嚴格，避免被當成輕點刪掉
+// 輕點判定（移動距離、按住時間）
 const TAP_MOVE_PX = 6;
 const TAP_MS = 350;
-const PEN_TAP_MOVE_PX = 2;
-const PEN_TAP_MS = 250;
+// 觸控筆點下去常會滑動幾 px，在空白處放寬門檻，點起來和手指一樣容易；
+// 但緊鄰既有筆跡時多半是在補短筆劃（゛、、），維持嚴格門檻避免被當成輕點刪掉
+const PEN_TAP_MOVE_PX = 12;
+const PEN_TAP_MS = 350;
+const PEN_TAP_STRICT_MOVE_PX = 2;
+const PEN_TAP_STRICT_MS = 250;
+const NEAR_INK_PX = 48;
 
 const layer = ref(null);
 const canvas = ref(null);
@@ -190,13 +195,30 @@ const forwardTap = (x, y) => {
   );
 };
 
+// 這一筆的起點是否緊鄰其他筆跡
+const nearInk = (stroke) => {
+  const { x, y } = stroke.points[0];
+  return strokes.value.some(
+    (s) =>
+      s !== stroke &&
+      s.points.some((p) => Math.hypot(p.x - x, p.y - y) < NEAR_INK_PX),
+  );
+};
+
+const tapLimits = (stroke) => {
+  if (activeType !== "pen") return [TAP_MOVE_PX, TAP_MS];
+  return nearInk(stroke)
+    ? [PEN_TAP_STRICT_MOVE_PX, PEN_TAP_STRICT_MS]
+    : [PEN_TAP_MOVE_PX, PEN_TAP_MS];
+};
+
 const onUp = (e) => {
   if (!active || e.pointerId !== activePointerId) return;
-  const isPen = activeType === "pen";
+  const [maxMove, maxMs] = tapLimits(active);
   const isTap =
     e.type === "pointerup" &&
-    moved < (isPen ? PEN_TAP_MOVE_PX : TAP_MOVE_PX) &&
-    performance.now() - downAt < (isPen ? PEN_TAP_MS : TAP_MS);
+    moved < maxMove &&
+    performance.now() - downAt < maxMs;
   active = null;
   activePointerId = null;
   activeType = null;
