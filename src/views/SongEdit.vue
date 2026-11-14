@@ -149,6 +149,21 @@
           >
         </div>
 
+        <!-- GIF 統一大小 -->
+        <div class="flex items-center gap-2">
+          <span class="shrink-0 text-sm text-gray-600">GIF 高度</span>
+          <el-input-number
+            v-model="bulkGifSize"
+            :min="16"
+            :max="200"
+            :step="8"
+            class="flex-1"
+          />
+          <el-button type="success" plain @click="handleBulkGifSize"
+            >套用全部 GIF</el-button
+          >
+        </div>
+
         <!-- 播放控制區 -->
         <div class="flex w-full items-center gap-2">
           <el-checkbox v-model="autoScroll">scrolling</el-checkbox>
@@ -1307,6 +1322,22 @@ const handlePickGif = (name) => {
 const handleGifSizeChange = (token, value) => {
   if (!value || value === DEFAULT_GIF_SIZE) delete token.gifSize;
   else token.gifSize = value;
+};
+
+// 統一調整所有 GIF 的高度
+const bulkGifSize = ref(DEFAULT_GIF_SIZE);
+
+const handleBulkGifSize = () => {
+  let count = 0;
+  allLyrics.value.forEach((line) => {
+    (line.lyrics || []).forEach((ly) => {
+      if (!ly.gif) return;
+      handleGifSizeChange(ly, bulkGifSize.value);
+      count++;
+    });
+  });
+  if (!count) return ElMessage.warning("目前歌詞中沒有 GIF");
+  ElMessage.success(`已將 ${count} 張 GIF 高度設為 ${bulkGifSize.value}px`);
 };
 
 // ============================================================
