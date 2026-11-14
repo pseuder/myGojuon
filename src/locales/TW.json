@@ -116,7 +116,7 @@
   "playback_speed": "播放速度",
   "lyric_offset": "歌詞偏移",
   "lyric_font_size": "歌詞大小",
-  "click_kana_to_play_sound": "點擊平假名可以播放聲音、此為輔助功能請以實際發音為主(測試中)",
+  "click_kana_to_play_sound": "點擊平假名可以播放聲音、此為輔助功能請以實際發音為主",
   "left_points": "剩餘點數",
   "play_next_song": "即將播放下一首",
   "last_song_and_replay": "已是此歌手的最後一首歌，將從頭播放目前歌曲",

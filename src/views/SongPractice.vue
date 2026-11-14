@@ -93,7 +93,7 @@
                   :content="t('click_kana_to_play_sound')"
                   placement="top"
                 >
-                  <el-tag type="warning" round>{{ t("click_kana") }}</el-tag>
+                  <el-tag type="info" round>{{ t("click_kana") }}</el-tag>
                 </el-tooltip>
 
                 <el-tooltip placement="top">
@@ -102,64 +102,68 @@
                       {{ t("keyboard_shortcuts_hint") }}
                     </div>
                   </template>
-                  <el-tag type="primary" round>{{
+                  <el-tag type="info" round>{{
                     t("keyboard_shortcuts")
                   }}</el-tag>
                 </el-tooltip>
-              </div>
 
-              <!-- 播放設定：速度 / 歌詞偏移 -->
-              <el-popover trigger="hover" placement="bottom-end" :width="240">
-                <template #reference>
-                  <el-button circle>
-                    <el-icon><Setting /></el-icon>
-                  </el-button>
-                </template>
-                <div class="flex flex-col gap-3">
-                  <div class="flex flex-col gap-1">
-                    <span class="text-sm text-gray-500">{{
-                      t("lyric_font_size")
-                    }}</span>
-                    <el-input-number
-                      v-model="songStore.lyricFontSize"
-                      :step="2"
-                      :max="40"
-                      :min="12"
-                      class="!w-full"
-                    />
+                <!-- 播放設定：速度 / 歌詞偏移 / 歌詞大小 -->
+                <el-popover
+                  trigger="hover"
+                  placement="bottom-start"
+                  :width="240"
+                >
+                  <template #reference>
+                    <el-button circle type="warning" plain>
+                      <el-icon><Setting /></el-icon>
+                    </el-button>
+                  </template>
+                  <div class="flex flex-col gap-3">
+                    <div class="flex flex-col gap-1">
+                      <span class="text-sm text-gray-500">{{
+                        t("lyric_font_size")
+                      }}</span>
+                      <el-input-number
+                        v-model="songStore.lyricFontSize"
+                        :step="2"
+                        :max="40"
+                        :min="12"
+                        class="!w-full"
+                      />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="text-sm text-gray-500">{{
+                        t("playback_speed")
+                      }}</span>
+                      <el-input-number
+                        v-model="songStore.playbackRate"
+                        :precision="1"
+                        :step="0.1"
+                        :max="2"
+                        :min="0.3"
+                        class="!w-full"
+                        @change="changePlaybackRate"
+                      />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="text-sm text-gray-500">{{
+                        t("lyric_offset")
+                      }}</span>
+                      <el-input-number
+                        v-model="songStore.lyricOffset"
+                        :precision="2"
+                        :step="0.05"
+                        :max="5"
+                        :min="-5"
+                        class="!w-full"
+                      />
+                      <span class="text-xs leading-snug text-gray-400">{{
+                        t("lyric_offset_hint")
+                      }}</span>
+                    </div>
                   </div>
-                  <div class="flex flex-col gap-1">
-                    <span class="text-sm text-gray-500">{{
-                      t("playback_speed")
-                    }}</span>
-                    <el-input-number
-                      v-model="songStore.playbackRate"
-                      :precision="1"
-                      :step="0.1"
-                      :max="2"
-                      :min="0.3"
-                      class="!w-full"
-                      @change="changePlaybackRate"
-                    />
-                  </div>
-                  <div class="flex flex-col gap-1">
-                    <span class="text-sm text-gray-500">{{
-                      t("lyric_offset")
-                    }}</span>
-                    <el-input-number
-                      v-model="songStore.lyricOffset"
-                      :precision="2"
-                      :step="0.05"
-                      :max="5"
-                      :min="-5"
-                      class="!w-full"
-                    />
-                    <span class="text-xs leading-snug text-gray-400">{{
-                      t("lyric_offset_hint")
-                    }}</span>
-                  </div>
-                </div>
-              </el-popover>
+                </el-popover>
+              </div>
 
               <!-- 我的最愛 -->
               <el-button
