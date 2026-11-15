@@ -11,6 +11,8 @@
     <VocabWritingPad
       v-if="showWriting && authStore.isLoggedIn && phase === 'study' && current"
       :key="`ink-${round}-${index}`"
+      ref="inkPad"
+      v-model:has-ink="hasInk"
     />
     <div class="flex shrink-0 flex-wrap items-center justify-between gap-2">
       <!-- 上排按鈕只顯示圖示，文字放在 title 當提示 -->
@@ -223,15 +225,43 @@
           </div>
         </div>
         <!-- 手寫模式下卡片大多被手寫層蓋住，右下角給一顆按下就翻面的按鈕（不必剛好點成一個點） -->
-        <el-button
+        <!-- 按鈕層疊在卡片上、結構和卡片相同（正反兩面各一組按鈕），用同樣的轉場一起翻面 -->
+        <!-- key 同卡片：換題時重新建立，不會看到翻回正面的動畫 -->
+        <div
           v-if="showWriting"
-          class="flip-btn above-ink"
-          :icon="Switch"
-          :title="t('vocab.flip')"
-          size="large"
-          circle
-          @pointerdown.prevent.stop="flip"
-        />
+          :key="`tools-${round}-${index}`"
+          class="tools-flip above-ink"
+        >
+          <div class="tools-inner" :class="{ flipped }">
+            <div
+              v-for="face in ['is-front', 'is-back']"
+              :key="face"
+              class="tools-face"
+              :class="face"
+            >
+              <div class="card-tools">
+                <!-- 有筆劃才出現 -->
+                <el-button
+                  v-if="hasInk"
+                  class="card-tool-btn"
+                  :icon="Delete"
+                  :title="t('vocab.writing_clear')"
+                  size="large"
+                  circle
+                  @click.stop="inkPad?.clear()"
+                />
+                <el-button
+                  class="card-tool-btn"
+                  :icon="Switch"
+                  :title="t('vocab.flip')"
+                  size="large"
+                  circle
+                  @pointerdown.prevent.stop="flip"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="grid w-full max-w-xl grid-cols-2 gap-3">
@@ -330,6 +360,7 @@ import {
   Select,
   House,
   Switch,
+  Delete,
 } from "@element-plus/icons-vue";
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
 import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
@@ -372,6 +403,9 @@ const phase = ref("study"); // study | result
 const cards = ref([]);
 const index = ref(0);
 const flipped = ref(false);
+// 手寫層：目前有沒有筆劃（決定清除鈕要不要出現）
+const inkPad = ref(null);
+const hasInk = ref(false);
 const round = ref(0);
 // 依題目位置存放：退回上一題重答時直接覆蓋
 const results = ref([]); // [{ ...card, is_familiar }]
@@ -809,12 +843,50 @@ onUnmounted(() => {
   position: relative;
   z-index: 3;
 }
-.flip-btn {
+/* 卡片右下角的按鈕層：和卡片同大小、同 perspective / 轉場，才會同步翻面 */
+/* 本身不擋觸控（底下的手寫層照樣能寫），只有按鈕可以點 */
+.tools-flip {
+  position: absolute;
+  inset: 0;
+  perspective: 1200px;
+  pointer-events: none;
+}
+.tools-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.45s;
+  transform-style: preserve-3d;
+}
+.tools-inner.flipped {
+  transform: rotateY(180deg);
+}
+.tools-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.tools-face.is-back {
+  transform: rotateY(180deg);
+}
+.card-tools {
   position: absolute;
   right: 12px;
   bottom: 12px;
+  display: flex;
+  gap: 10px;
+  pointer-events: auto;
+}
+/* 背對使用者的那一組不接受點按 */
+.tools-inner:not(.flipped) .is-back .card-tools,
+.tools-inner.flipped .is-front .card-tools {
+  pointer-events: none;
+}
+.card-tool-btn {
   width: 44px;
   height: 44px;
+  margin-left: 0;
   font-size: 20px;
 }
 .answer-btn {

@@ -10,25 +10,9 @@
       @pointerup="onUp"
       @pointercancel="onUp"
       @pointerleave="onUp"
+      @lostpointercapture="onUp"
       @click.stop
     />
-    <div v-if="strokes.length" class="ink-tools">
-      <el-button
-        :icon="RefreshLeft"
-        :title="t('vocab.writing_undo')"
-        size="large"
-        circle
-        @click.stop="undo"
-      />
-      <el-button
-        :icon="Delete"
-        :title="t('vocab.writing_clear')"
-        size="large"
-        circle
-        style="margin-left: 0"
-        @click.stop="clear"
-      />
-    </div>
   </div>
 </template>
 
@@ -39,14 +23,13 @@ let penOnly = false;
 </script>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
-import { useI18n } from "vue-i18n";
-import { RefreshLeft, Delete } from "@element-plus/icons-vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 
 // 換題時由外層 key 重建元件即清空，不需額外 prop
 // 輕點（幾乎沒移動）不留墨點，改為點擊底下的元素（卡片翻面、發音鈕…），拖曳才是書寫
 
-const { t } = useI18n();
+// 清除鈕由外層顯示（要跟著卡片翻面），這裡只回報目前有沒有筆劃：v-model:has-ink
+const emit = defineEmits(["update:hasInk"]);
 
 const PEN_COLOR = "rgba(79, 70, 229, 0.85)";
 // 輕點判定：觸控筆很容易畫出極短的筆劃（゛、、），門檻比手指 / 滑鼠嚴格，避免被當成輕點刪掉
@@ -62,6 +45,11 @@ let dpr = 1;
 
 // 筆劃以 CSS 像素儲存，調整大小時可依比例重畫
 const strokes = ref([]); // [{ points: [{x, y, w}] }]
+watch(
+  () => strokes.value.length > 0,
+  (has) => emit("update:hasInk", has),
+  { immediate: true },
+);
 let active = null;
 let activePointerId = null;
 let activeType = null;
@@ -135,20 +123,24 @@ const resize = () => {
   redraw();
 };
 
-const onDown = (e) => {
-  if (e.pointerType === "pen") penOnly = true;
-  else if (penOnly && e.pointerType === "touch") return;
-  if (e.pointerType === "mouse" && e.button !== 0) return;
-  if (active) {
-    // 手掌 / 手指先碰到螢幕佔住畫筆時，觸控筆落下就丟掉那一筆、由觸控筆接手
-    if (e.pointerType !== "pen" || activeType === "pen") return;
-    canvas.value.releasePointerCapture?.(activePointerId);
-    strokes.value.splice(strokes.value.indexOf(active), 1);
-    active = null;
-    redraw();
+// 指標已經失效時 capture 相關呼叫會丟例外，不能讓它中斷落筆流程
+const capture = (id) => {
+  try {
+    canvas.value.setPointerCapture?.(id);
+  } catch {
+    /* 指標已失效，沒有 capture 也能畫 */
   }
-  e.preventDefault();
-  canvas.value.setPointerCapture?.(e.pointerId);
+};
+const release = (id) => {
+  try {
+    canvas.value.releasePointerCapture?.(id);
+  } catch {
+    /* 指標已失效，不需釋放 */
+  }
+};
+
+const begin = (e) => {
+  capture(e.pointerId);
   activePointerId = e.pointerId;
   activeType = e.pointerType;
   downAt = performance.now();
@@ -159,8 +151,35 @@ const onDown = (e) => {
   drawDot(p);
 };
 
+const onDown = (e) => {
+  if (e.pointerType === "pen") penOnly = true;
+  else if (penOnly && e.pointerType === "touch") return;
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  if (active) {
+    // 書寫中的第二根手指 / 手掌不理會；觸控筆落下則一律由觸控筆接手
+    if (e.pointerType !== "pen") return;
+    release(activePointerId);
+    // 上一筆是手掌 / 手指佔住的就丟掉；上一筆也是觸控筆代表它的結束事件漏掉了
+    // （系統手勢、切換 App 等），保留已畫的部分，直接開始新的一筆，否則之後每一筆都畫不出來
+    if (activeType !== "pen") {
+      strokes.value.splice(strokes.value.indexOf(active), 1);
+      redraw();
+    }
+    active = null;
+  }
+  e.preventDefault();
+  begin(e);
+};
+
 const onMove = (e) => {
-  if (!active || e.pointerId !== activePointerId) return;
+  if (!active) {
+    // 筆劃被系統取消（pointercancel）或落筆事件漏掉，但觸控筆其實還壓在畫面上移動：
+    // 接著開始新的一筆，不要讓後半段沒有線。懸停時 buttons 為 0，不會誤觸發
+    if (e.pointerType !== "pen" || !(e.buttons & 1)) return;
+    penOnly = true;
+    begin(e);
+  }
+  if (e.pointerId !== activePointerId) return;
   e.preventDefault();
   // 合併事件可取得更密的取樣點，線條較平滑
   const events = e.getCoalescedEvents?.() || [];
@@ -227,11 +246,6 @@ const clear = () => {
   redraw();
 };
 
-const undo = () => {
-  strokes.value.pop();
-  redraw();
-};
-
 // iPadOS 的「隨手寫」等系統手勢會對觸控筆送出 pointercancel 讓筆劃中斷，
 // 只靠 CSS touch-action 擋不住，要在 touch 事件上 preventDefault（必須是非 passive 監聽）
 const blockTouch = (e) => e.preventDefault();
@@ -247,6 +261,7 @@ onMounted(() => {
   );
 });
 onUnmounted(() => {
+  emit("update:hasInk", false);
   observer?.disconnect();
   TOUCH_EVENTS.forEach((type) =>
     canvas.value?.removeEventListener(type, blockTouch),
@@ -274,20 +289,5 @@ defineExpose({ clear });
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
-}
-.ink-tools {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  z-index: 1;
-  display: flex;
-  gap: 10px;
-  pointer-events: auto;
-}
-/* 平板上用手指 / 觸控筆點按，按鈕與圖示放大一點 */
-.ink-tools :deep(.el-button) {
-  width: 44px;
-  height: 44px;
-  font-size: 20px;
 }
 </style>
