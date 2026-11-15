@@ -139,7 +139,11 @@ const release = (id) => {
   }
 };
 
+// 觸控筆的筆劃剛被系統取消、筆可能還壓在畫面上
+let cancelledPen = false;
+
 const begin = (e) => {
+  cancelledPen = false;
   capture(e.pointerId);
   activePointerId = e.pointerId;
   activeType = e.pointerType;
@@ -173,11 +177,17 @@ const onDown = (e) => {
 
 const onMove = (e) => {
   if (!active) {
-    // 筆劃被系統取消（pointercancel）或落筆事件漏掉，但觸控筆其實還壓在畫面上移動：
-    // 接著開始新的一筆，不要讓後半段沒有線。懸停時 buttons 為 0，不會誤觸發
-    if (e.pointerType !== "pen" || !(e.buttons & 1)) return;
-    penOnly = true;
+    // 筆劃被系統取消（pointercancel）後觸控筆其實還壓在畫面上移動：接著開始新的一筆，不要讓後半段沒有線。
+    // 只在「剛被取消」時才接續：觸控筆按在別的元素上（例如翻面鈕）再滑進畫布不算，
+    // 否則按翻面鈕時會在畫布上多出一筆、放開又被當成輕點，再翻一次
+    if (!cancelledPen || e.pointerType !== "pen") return;
+    if (!(e.buttons & 1)) {
+      // 筆已離開畫面，取消的那一筆不用接了
+      cancelledPen = false;
+      return;
+    }
     begin(e);
+    active.resumed = true;
   }
   if (e.pointerId !== activePointerId) return;
   e.preventDefault();
@@ -223,8 +233,11 @@ const onUp = (e) => {
     }
   }
   const isPen = activeType === "pen";
+  cancelledPen = isPen && e.type === "pointercancel";
+  // 接續被取消筆劃而來的那一筆一定是書寫，不當成輕點
   const isTap =
     e.type === "pointerup" &&
+    !active.resumed &&
     moved < (isPen ? PEN_TAP_MOVE_PX : TAP_MOVE_PX) &&
     performance.now() - downAt < (isPen ? PEN_TAP_MS : TAP_MS);
   active = null;
