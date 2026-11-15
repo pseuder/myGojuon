@@ -38,6 +38,22 @@
           style="margin-left: 0"
           >{{ t("vocab.prev_word") }}
         </el-button>
+        <!-- iPadOS 的「隨手寫」會攔截觸控筆，寫到一半會卡住好幾秒；手寫模式下提醒使用者關閉 -->
+        <el-tooltip
+          v-if="
+            showWriting && authStore.isLoggedIn && phase === 'study' && current
+          "
+          placement="bottom-start"
+        >
+          <template #content>
+            <div class="max-w-64 leading-relaxed">
+              {{ t("vocab.scribble_tip") }}
+            </div>
+          </template>
+          <el-icon class="above-ink scribble-tip" :size="22">
+            <QuestionFilled />
+          </el-icon>
+        </el-tooltip>
       </div>
       <div
         v-if="authStore.isLoggedIn && phase === 'study' && current"
@@ -361,6 +377,7 @@ import {
   House,
   Switch,
   Delete,
+  QuestionFilled,
 } from "@element-plus/icons-vue";
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
 import { useGoogleTTS } from "@/composables/useGoogleTTS.js";
@@ -842,6 +859,13 @@ onUnmounted(() => {
 .above-ink {
   position: relative;
   z-index: 3;
+}
+.scribble-tip {
+  color: #9ca3af;
+  cursor: help;
+}
+.scribble-tip:hover {
+  color: #6366f1;
 }
 /* 卡片右下角的按鈕層：和卡片同大小、同 perspective / 轉場，才會同步翻面 */
 /* 本身不擋觸控（底下的手寫層照樣能寫），只有按鈕可以點 */
