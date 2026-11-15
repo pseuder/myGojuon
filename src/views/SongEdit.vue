@@ -1296,11 +1296,9 @@ const handleAddNewLyricLine = (index) => {
 };
 
 const handleDuplicateLyricLine = (index) => {
-  allLyrics.value.splice(
-    index + 1,
-    0,
-    JSON.parse(JSON.stringify(allLyrics.value[index])),
-  );
+  const copy = JSON.parse(JSON.stringify(allLyrics.value[index]));
+  copy.timestamp = "";
+  allLyrics.value.splice(index + 1, 0, copy);
 };
 
 // ============================================================
