@@ -50,8 +50,8 @@ const { t } = useI18n();
 
 const PEN_COLOR = "rgba(79, 70, 229, 0.85)";
 // 輕點判定：觸控筆很容易畫出極短的筆劃（゛、、），門檻比手指 / 滑鼠嚴格，避免被當成輕點刪掉
-const TAP_MOVE_PX = 6;
-const TAP_MS = 350;
+const TAP_MOVE_PX = 3;
+const TAP_MS = 200;
 const PEN_TAP_MOVE_PX = 2;
 const PEN_TAP_MS = 250;
 
@@ -192,6 +192,17 @@ const forwardTap = (x, y) => {
 
 const onUp = (e) => {
   if (!active || e.pointerId !== activePointerId) return;
+  // 很快的短筆劃可能只收到一兩個 pointermove，放開點也要算進去，否則距離被低估而誤判成輕點
+  if (e.type === "pointerup") {
+    const p = pointOf(e);
+    const first = active.points[0];
+    const last = active.points[active.points.length - 1];
+    if (Math.abs(p.x - last.x) >= 0.5 || Math.abs(p.y - last.y) >= 0.5) {
+      moved = Math.max(moved, Math.hypot(p.x - first.x, p.y - first.y));
+      active.points.push(p);
+      drawSegment(last, p);
+    }
+  }
   const isPen = activeType === "pen";
   const isTap =
     e.type === "pointerup" &&
