@@ -7,7 +7,7 @@
     @contextmenu.prevent
     @dragstart.prevent
   >
-    <!-- 手寫層鋪滿整頁空白處（不跟著翻轉）；輕點會點到底下的卡片 / 按鈕，拖曳書寫，換題時隨 key 重建而清空 -->
+    <!-- 手寫層鋪滿整頁空白處（不跟著翻轉）；所有筆劃都保留（含只點一下的墨點），底下的卡片點不到，換題時隨 key 重建而清空 -->
     <VocabWritingPad
       v-if="showWriting && authStore.isLoggedIn && phase === 'study' && current"
       :key="`ink-${round}-${index}`"
@@ -260,12 +260,35 @@
                 <el-button
                   v-if="hasInk"
                   class="card-tool-btn"
-                  :icon="Delete"
                   :title="t('vocab.writing_clear')"
                   size="large"
                   circle
                   @click.stop="inkPad?.clear()"
-                />
+                >
+                  <img
+                    src="/images/broom.png"
+                    alt=""
+                    class="h-7 w-7 max-w-none"
+                  />
+                </el-button>
+                <!-- 卡片右上角的發音鈕被手寫層蓋住點不到，這裡補一顆 -->
+                <el-button
+                  class="card-tool-btn"
+                  :title="t('tools.speak')"
+                  size="large"
+                  circle
+                  @click.stop="speakCurrent"
+                >
+                  <img
+                    :src="
+                      speakingKey === current.vocab_word_id
+                        ? '/images/volume2.png'
+                        : '/images/volume.png'
+                    "
+                    alt=""
+                    class="h-7 w-7 max-w-none"
+                  />
+                </el-button>
                 <el-button
                   class="card-tool-btn"
                   :icon="Switch"
@@ -376,7 +399,6 @@ import {
   Select,
   House,
   Switch,
-  Delete,
   QuestionFilled,
 } from "@element-plus/icons-vue";
 import { useAuthStore, useVocabStore } from "@/stores/index.js";
@@ -911,7 +933,7 @@ onUnmounted(() => {
   width: 44px;
   height: 44px;
   margin-left: 0;
-  font-size: 20px;
+  font-size: 26px;
 }
 .answer-btn {
   height: 56px;

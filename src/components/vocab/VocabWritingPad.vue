@@ -1,7 +1,7 @@
 <template>
   <!-- 鋪滿整個練習頁的手寫層：手指 / 觸控筆 / 滑鼠在任何空白處都能寫，純練習不做辨識 -->
-  <!-- 不跟著卡片翻轉，翻面時可直接對照背面答案；輕點會轉交給底下的元素（翻面、發音鈕等） -->
-  <div ref="layer" class="ink-layer">
+  <!-- 不跟著卡片翻轉，翻面時可直接對照背面答案；寫什麼就留什麼（只點一下也會留下墨點） -->
+  <div class="ink-layer">
     <canvas
       ref="canvas"
       class="ink-canvas"
@@ -26,19 +26,14 @@ let penOnly = false;
 import { ref, watch, onMounted, onUnmounted } from "vue";
 
 // 換題時由外層 key 重建元件即清空，不需額外 prop
-// 輕點（幾乎沒移動）不留墨點，改為點擊底下的元素（卡片翻面、發音鈕…），拖曳才是書寫
+// 所有筆劃都保留，包含只點一下的墨點（゛、、這類極短的筆劃不能被吃掉）；
+// 手寫層底下的元素因此點不到，翻面 / 發音改用外層疊在手寫層之上的按鈕
 
 // 清除鈕由外層顯示（要跟著卡片翻面），這裡只回報目前有沒有筆劃：v-model:has-ink
 const emit = defineEmits(["update:hasInk"]);
 
 const PEN_COLOR = "rgba(79, 70, 229, 0.85)";
-// 輕點判定：觸控筆很容易畫出極短的筆劃（゛、、），門檻比手指 / 滑鼠嚴格，避免被當成輕點刪掉
-const TAP_MOVE_PX = 3;
-const TAP_MS = 200;
-const PEN_TAP_MOVE_PX = 2;
-const PEN_TAP_MS = 250;
 
-const layer = ref(null);
 const canvas = ref(null);
 let ctx = null;
 let dpr = 1;
@@ -53,8 +48,6 @@ watch(
 let active = null;
 let activePointerId = null;
 let activeType = null;
-let downAt = 0;
-let moved = 0;
 
 const lineWidth = (e) => {
   const base = 6;
@@ -147,8 +140,6 @@ const begin = (e) => {
   capture(e.pointerId);
   activePointerId = e.pointerId;
   activeType = e.pointerType;
-  downAt = performance.now();
-  moved = 0;
   const p = pointOf(e);
   active = { points: [p] };
   strokes.value.push(active);
@@ -179,7 +170,7 @@ const onMove = (e) => {
   if (!active) {
     // 筆劃被系統取消（pointercancel）後觸控筆其實還壓在畫面上移動：接著開始新的一筆，不要讓後半段沒有線。
     // 只在「剛被取消」時才接續：觸控筆按在別的元素上（例如翻面鈕）再滑進畫布不算，
-    // 否則按翻面鈕時會在畫布上多出一筆、放開又被當成輕點，再翻一次
+    // 否則按翻面鈕時會在畫布上多出一筆
     if (!cancelledPen || e.pointerType !== "pen") return;
     if (!(e.buttons & 1)) {
       // 筆已離開畫面，取消的那一筆不用接了
@@ -187,7 +178,6 @@ const onMove = (e) => {
       return;
     }
     begin(e);
-    active.resumed = true;
   }
   if (e.pointerId !== activePointerId) return;
   e.preventDefault();
@@ -195,60 +185,28 @@ const onMove = (e) => {
   const events = e.getCoalescedEvents?.() || [];
   for (const ev of events.length ? events : [e]) {
     const p = pointOf(ev);
-    const first = active.points[0];
     const last = active.points[active.points.length - 1];
     if (Math.abs(p.x - last.x) < 0.5 && Math.abs(p.y - last.y) < 0.5) continue;
-    moved = Math.max(moved, Math.hypot(p.x - first.x, p.y - first.y));
     active.points.push(p);
     drawSegment(last, p);
   }
 };
 
-// 把輕點轉交給手寫層底下的元素
-const forwardTap = (x, y) => {
-  layer.value.style.display = "none";
-  const target = document.elementFromPoint(x, y);
-  layer.value.style.display = "";
-  target?.dispatchEvent(
-    new MouseEvent("click", {
-      bubbles: true,
-      cancelable: true,
-      clientX: x,
-      clientY: y,
-    }),
-  );
-};
-
 const onUp = (e) => {
   if (!active || e.pointerId !== activePointerId) return;
-  // 很快的短筆劃可能只收到一兩個 pointermove，放開點也要算進去，否則距離被低估而誤判成輕點
+  // 很快的短筆劃可能只收到一兩個 pointermove，放開點也要畫進去
   if (e.type === "pointerup") {
     const p = pointOf(e);
-    const first = active.points[0];
     const last = active.points[active.points.length - 1];
     if (Math.abs(p.x - last.x) >= 0.5 || Math.abs(p.y - last.y) >= 0.5) {
-      moved = Math.max(moved, Math.hypot(p.x - first.x, p.y - first.y));
       active.points.push(p);
       drawSegment(last, p);
     }
   }
-  const isPen = activeType === "pen";
-  cancelledPen = isPen && e.type === "pointercancel";
-  // 接續被取消筆劃而來的那一筆一定是書寫，不當成輕點
-  const isTap =
-    e.type === "pointerup" &&
-    !active.resumed &&
-    moved < (isPen ? PEN_TAP_MOVE_PX : TAP_MOVE_PX) &&
-    performance.now() - downAt < (isPen ? PEN_TAP_MS : TAP_MS);
+  cancelledPen = activeType === "pen" && e.type === "pointercancel";
   active = null;
   activePointerId = null;
   activeType = null;
-  if (isTap) {
-    // 輕點不留墨點，改為點擊底下的元素
-    strokes.value.pop();
-    redraw();
-    forwardTap(e.clientX, e.clientY);
-  }
 };
 
 const clear = () => {
