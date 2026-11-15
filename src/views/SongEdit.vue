@@ -16,6 +16,24 @@
           <el-icon class="mr-1"><Operation /></el-icon>
           {{ drawerVisible ? "收起面板" : "影片 / 工具" }}
         </el-button>
+        <el-button-group class="shrink-0">
+          <el-button
+            size="small"
+            :disabled="!canUndo"
+            title="復原 (Ctrl+Z)"
+            @click="undo"
+          >
+            <el-icon class="mr-1"><RefreshLeft /></el-icon>復原
+          </el-button>
+          <el-button
+            size="small"
+            :disabled="!canRedo"
+            title="重做 (Ctrl+Y / Ctrl+Shift+Z)"
+            @click="redo"
+          >
+            <el-icon class="mr-1"><RefreshRight /></el-icon>重做
+          </el-button>
+        </el-button-group>
         <span class="truncate text-gray-600">{{ videoTitle }}</span>
       </div>
 
@@ -221,6 +239,8 @@
                     <el-tag type="info">d - 往後3秒</el-tag>
                     <el-tag type="info">enter - 紀錄時間</el-tag>
                     <el-tag type="info">f - 清除上一格時間</el-tag>
+                    <el-tag type="info">ctrl+z - 復原</el-tag>
+                    <el-tag type="info">ctrl+y - 重做</el-tag>
                   </el-space>
                 </div>
               </div>
@@ -241,7 +261,8 @@
           class="lyrics-container min-h-0 min-w-0 flex-1 overflow-x-auto"
           v-loading="lyricsLoading"
         >
-          <div>
+          <!-- 輸入框失焦時先把打字內容記成一步，避免跟下一個操作併在一起 -->
+          <div @focusout="commitHistory">
             <div
               v-for="(line, index) in allLyrics"
               :key="index"
@@ -766,6 +787,8 @@ import {
   ArrowUp,
   ArrowDown,
   Operation,
+  RefreshLeft,
+  RefreshRight,
 } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import axios from "axios";
@@ -1060,6 +1083,90 @@ const scrollToCurrentLyric = (index) => {
   document
     .getElementById(`lyric-${index}`)
     ?.scrollIntoView({ behavior: "smooth", block: "center" });
+};
+
+// ============================================================
+// 復原 / 重做（Ctrl+Z、Ctrl+Y）：每次歌詞變動後存一份快照
+// ============================================================
+const HISTORY_LIMIT = 100;
+// 打字時停頓這麼久才算一步，避免每個字元都佔一格歷史
+const TYPING_COMMIT_DELAY = 500;
+
+let historyStack = ["[]"];
+let historyTimer = null;
+const historyIndex = ref(0);
+const historyLength = ref(1);
+const canUndo = computed(() => historyIndex.value > 0);
+const canRedo = computed(() => historyIndex.value < historyLength.value - 1);
+
+// 把目前歌詞記成新的一步（內容沒變就略過，所以復原後觸發的 watch 不會多記一筆）
+const commitHistory = () => {
+  clearTimeout(historyTimer);
+  historyTimer = null;
+  const snapshot = JSON.stringify(allLyrics.value);
+  if (snapshot === historyStack[historyIndex.value]) return;
+  historyStack = historyStack.slice(0, historyIndex.value + 1);
+  historyStack.push(snapshot);
+  if (historyStack.length > HISTORY_LIMIT) historyStack.shift();
+  historyIndex.value = historyStack.length - 1;
+  historyLength.value = historyStack.length;
+};
+
+// 以目前歌詞為起點重新開始（載入歌曲後呼叫，避免復原回空白）
+const resetHistory = () => {
+  clearTimeout(historyTimer);
+  historyTimer = null;
+  historyStack = [JSON.stringify(allLyrics.value)];
+  historyIndex.value = 0;
+  historyLength.value = 1;
+};
+
+const restoreHistory = (index) => {
+  historyIndex.value = index;
+  allLyrics.value = JSON.parse(historyStack[index]);
+  closePopover();
+};
+
+const undo = () => {
+  commitHistory(); // 還在等停頓的打字內容先記下來，才能被復原
+  if (!canUndo.value) return;
+  restoreHistory(historyIndex.value - 1);
+  ElMessage({ message: "已復原", type: "info", duration: 800 });
+};
+
+const redo = () => {
+  commitHistory();
+  if (!canRedo.value) return;
+  restoreHistory(historyIndex.value + 1);
+  ElMessage({ message: "已重做", type: "info", duration: 800 });
+};
+
+watch(
+  allLyrics,
+  () => {
+    // 打字中：等停頓後再記；按鈕 / 快捷鍵操作：立刻記成一步
+    if (isTypingTarget(document.activeElement)) {
+      clearTimeout(historyTimer);
+      historyTimer = setTimeout(commitHistory, TYPING_COMMIT_DELAY);
+    } else {
+      commitHistory();
+    }
+  },
+  { deep: true },
+);
+
+const handleHistoryKeydown = (event) => {
+  if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+  const key = event.key.toLowerCase();
+  const isUndo = key === "z" && !event.shiftKey;
+  const isRedo = key === "y" || (key === "z" && event.shiftKey);
+  if (!isUndo && !isRedo) return;
+  // 歌詞區以外的輸入框（歌名、貼上歌詞的文字框…）保留瀏覽器原生的復原
+  const el = event.target;
+  if (isTypingTarget(el) && !el.closest(".lyrics-container")) return;
+  event.preventDefault();
+  if (isUndo) undo();
+  else redo();
 };
 
 // ============================================================
@@ -1669,6 +1776,7 @@ const loadVideoFromApi = async (videoIdParam) => {
           ElMessage.warning("歌詞資料格式錯誤，無法載入歌詞");
         }
       }
+      resetHistory();
       ElMessage.success("影片資料載入成功");
     } else {
       ElMessage.warning("找不到指定的影片資料");
@@ -1848,6 +1956,7 @@ onMounted(async () => {
   getApiKey();
 
   window.addEventListener("keypress", handleKeyPress, true);
+  window.addEventListener("keydown", handleHistoryKeydown, true);
   window.addEventListener("beforeunload", beforeUnloadHandler);
 
   const urlVideoId = route.params.video_id;
@@ -1859,7 +1968,9 @@ onUnmounted(() => {
   clearInterval(lyricTimer);
   destroyPlayer();
   mobileQuery.removeEventListener("change", updateIsMobile);
+  clearTimeout(historyTimer);
   window.removeEventListener("keypress", handleKeyPress, true);
+  window.removeEventListener("keydown", handleHistoryKeydown, true);
   window.removeEventListener("beforeunload", beforeUnloadHandler);
 });
 </script>
