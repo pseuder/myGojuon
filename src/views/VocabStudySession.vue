@@ -21,7 +21,7 @@
           class="above-ink"
           :icon="House"
           :title="t('vocab.back_to_list')"
-          @click="router.push('/VocabSets')"
+          @click="router.push(`${localePrefix}/VocabSets`)"
           type="warning"
           plain
         />
@@ -498,8 +498,11 @@ watch(autoPlay, (v) => {
 });
 // 通勤模式：正面念 N 次 → 翻面念 M 次 → 自動下一張（設定在開始學習頁調整）
 const commuteMode = ref(readFlag(COMMUTE_KEY, false));
-const frontTimes = ref(readNumber(FRONT_TIMES_KEY, 1));
 const backTimes = ref(readNumber(BACK_TIMES_KEY, 1));
+// 正反面都是 0 次會什麼都不念就一路跳到結束（設定頁已擋，這裡再保底）：正面至少念 1 次
+const frontTimes = ref(
+  readNumber(FRONT_TIMES_KEY, 1) || (backTimes.value ? 0 : 1),
+);
 const commutePaused = ref(false);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -576,6 +579,8 @@ const releaseWakeLock = () => {
 watch(
   () => phase.value === "study" && commuteMode.value,
   (on) => (on ? requestWakeLock() : releaseWakeLock()),
+  // phase 預設就是 study，條件從一開始就成立；不加 immediate 開局時不會觸發
+  { immediate: true },
 );
 
 watch([round, index], () => {
@@ -631,27 +636,45 @@ const beginRound = (list) => {
 };
 
 let recordErrorShown = false;
-// 送出尚未記錄的作答；記錄不阻塞畫面
-const flushRecords = () => {
-  const pending = results.value.slice(committed.value).filter(Boolean);
-  committed.value = results.value.length;
-  // committed 變了要立刻存，否則重新整理後同一題會再送一次
-  if (pending.length) persist();
-  pending.forEach((r) =>
-    vocabStore.recordAnswer(r.vocab_word_id, r.is_familiar).catch((err) => {
-      console.error(err);
-      if (!recordErrorShown) {
-        recordErrorShown = true;
-        ElMessage.warning(t("vocab.record_failed"));
-      }
-    }),
-  );
+// 送出待送佇列（整批一個請求）；不阻塞畫面，失敗的留在佇列裡下次再送
+const sendQueued = (keepalive = false) =>
+  vocabStore.flushAnswers({ keepalive }).catch((err) => {
+    console.error(err);
+    if (!recordErrorShown) {
+      recordErrorShown = true;
+      ElMessage.warning(t("vocab.record_failed"));
+    }
+  });
+
+// 把第 upTo 題之前、尚未記錄的作答排進待送佇列並送出；排進去的題目不能再退回
+const flushRecords = ({ upTo = results.value.length, keepalive = false } = {}) => {
+  if (upTo > committed.value) {
+    vocabStore.queueAnswers(
+      results.value
+        .slice(committed.value, upTo)
+        .filter(Boolean)
+        .map((r) => ({
+          vocab_word_id: r.vocab_word_id,
+          is_familiar: r.is_familiar,
+          // 舊版存下來的進度沒有作答時間
+          answered_at: r.answered_at ?? Date.now(),
+        })),
+    );
+    committed.value = upTo;
+    // committed 變了要立刻存，否則重新整理後同一題會再排一次
+    persist();
+  }
+  return sendQueued(keepalive);
 };
 
 const answer = (isFamiliar) => {
   const card = current.value;
   if (!card) return;
-  results.value[index.value] = { ...card, is_familiar: isFamiliar };
+  results.value[index.value] = {
+    ...card,
+    is_familiar: isFamiliar,
+    answered_at: Date.now(),
+  };
   stop();
   // 避免按鈕保留焦點，之後按空白/Enter 又觸發一次作答
   document.activeElement?.blur?.();
@@ -683,8 +706,11 @@ const finish = () => {
 
 // 切到背景（關分頁、手機切 App）時先送出，避免作答遺失
 const onVisibilityChange = () => {
+  // 只送目前這題之前的：退回重答到一半時，後面那幾題等重答完再送，才不會記到舊答案
   if (document.visibilityState === "hidden" && phase.value === "study")
-    flushRecords();
+    flushRecords({ upTo: index.value, keepalive: true });
+  // 切回前景時補送先前沒送成功的
+  if (document.visibilityState === "visible") sendQueued();
   // 切回前景時 wake lock 已被系統釋放，需重新取得
   if (
     document.visibilityState === "visible" &&
@@ -695,7 +721,9 @@ const onVisibilityChange = () => {
 };
 
 const restart = (list) =>
-  beginRound(shuffle(list.map(({ is_familiar, ...card }) => card)));
+  beginRound(
+    shuffle(list.map(({ is_familiar, answered_at, ...card }) => card)),
+  );
 
 // 回設定頁重新選學習集：這次練習到此結束
 const reselect = () => {
@@ -745,6 +773,8 @@ const clearPressedKeys = () => pressedKeys.clear();
 // --- 初始化：從 localStorage 還原進度 ---
 const init = () => {
   if (!authStore.isLoggedIn) return;
+  // 上次沒送成功（斷線、頁面被關掉）的作答先補送
+  sendQueued();
   const saved = loadStudySession(studyOwner(authStore.user));
   if (!saved) {
     // 沒有進行中的練習（直接開網址或已被清掉）→ 回設定頁

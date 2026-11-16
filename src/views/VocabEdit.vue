@@ -4,7 +4,7 @@
       <h1 class="text-2xl font-bold text-indigo-700">
         {{ isEdit ? t("vocab.edit_set") : t("vocab.create_set") }}
       </h1>
-      <el-button :icon="Back" @click="router.push('/VocabSets')">
+      <el-button :icon="Back" @click="router.push(listPath)">
         {{ t("vocab.back_to_list") }}
       </el-button>
     </div>
@@ -316,7 +316,7 @@
         />
 
         <div class="sticky bottom-0 flex justify-end gap-2 bg-white/90 py-3">
-          <el-button @click="router.push('/VocabSets')">{{ t("vocab.cancel") }}</el-button>
+          <el-button @click="router.push(listPath)">{{ t("vocab.cancel") }}</el-button>
           <el-button type="primary" size="large" :loading="saving" @click="handleSave">
             {{ isEdit ? t("vocab.save") : t("vocab.confirm_create") }}
           </el-button>
@@ -352,6 +352,8 @@ const MAX_WORDS = 500;
 const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
+// 保留 /en 前綴
+const listPath = `${route.path.startsWith("/en/") ? "/en" : ""}/VocabSets`;
 const authStore = useAuthStore();
 const vocabStore = useVocabStore();
 const { speak, speakingKey } = useGoogleTTS("ja");
@@ -684,7 +686,7 @@ const handleSave = async () => {
       }),
     });
     ElMessage.success(isEdit.value ? t("vocab.saved") : t("vocab.created"));
-    router.push("/VocabSets");
+    router.push(listPath);
   } catch (err) {
     ElMessage.error(err.message);
   } finally {
@@ -704,7 +706,7 @@ const loadSet = async () => {
     showImport.value = false;
   } catch (err) {
     ElMessage.error(err.message);
-    router.replace("/VocabSets");
+    router.replace(listPath);
   } finally {
     loadingSet.value = false;
   }

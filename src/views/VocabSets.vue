@@ -8,7 +8,7 @@
           v-if="authStore.isAdmin"
           type="primary"
           :icon="Plus"
-          @click="router.push('/VocabSets/create')"
+          @click="router.push(`${localePrefix}/VocabSets/create`)"
         >
         </el-button>
         <el-button
@@ -204,7 +204,9 @@
           <el-button
             v-if="authStore.isAdmin"
             :icon="Edit"
-            @click="router.push(`/VocabSets/${detail.vocab_set_id}/edit`)"
+            @click="router.push(
+                `${localePrefix}/VocabSets/${detail.vocab_set_id}/edit`,
+              )"
           >
             {{ t("vocab.edit") }}
           </el-button>
@@ -223,7 +225,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
@@ -239,6 +241,8 @@ import VocabSetDetailDialog from "@/components/vocab/VocabSetDetailDialog.vue";
 
 const { t } = useI18n();
 const router = useRouter();
+// 保留 /en 前綴
+const localePrefix = useRoute().path.startsWith("/en/") ? "/en" : "";
 const authStore = useAuthStore();
 const vocabStore = useVocabStore();
 
@@ -304,10 +308,9 @@ const goStudy = (setId) => {
     ElMessage.warning(t("vocab.study_login_required"));
     return;
   }
+  const path = `${localePrefix}/VocabStudy`;
   router.push(
-    setId == null
-      ? "/VocabStudy"
-      : { path: "/VocabStudy", query: { sets: String(setId) } },
+    setId == null ? path : { path, query: { sets: String(setId) } },
   );
 };
 const studySet = (setId) => goStudy(setId);

@@ -281,6 +281,7 @@
     "retry_all": "Retry all",
     "reselect": "Choose again",
     "no_matching_words": "No words match these settings",
+    "commute_times_required": "Front and back repeat counts can't both be 0 in auto play mode",
     "record_failed": "Failed to save study record, please check your connection",
     "reset": "Reset",
     "reset_stats": "Reset study counts",

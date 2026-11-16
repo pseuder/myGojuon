@@ -2,6 +2,15 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { useApi } from "@/composables/useApi.js";
+import { useAuthStore } from "@/stores/auth.js";
+import {
+  studyOwner,
+  loadAnswerOutbox,
+  saveAnswerOutbox,
+} from "@/utils/vocabStudyStorage.js";
+
+// 與後端 VocabAnswersRequest 的上限一致
+const RECORD_BATCH = 500;
 
 // 後端回傳 status=error 時轉成例外，呼叫端統一 catch
 const unwrap = (res) => {
@@ -11,6 +20,7 @@ const unwrap = (res) => {
 
 export const useVocabStore = defineStore("vocab", () => {
   const MYAPI = useApi();
+  const authStore = useAuthStore();
 
   // --- State ---
   const sets = ref([]);
@@ -21,6 +31,8 @@ export const useVocabStore = defineStore("vocab", () => {
   const fetchSets = async () => {
     isFetching.value = true;
     try {
+      // 先把還沒送出的作答送完，抓回來的進度才是最新的（送失敗不擋列表）
+      await flushAnswers().catch(() => {});
       sets.value = unwrap(await MYAPI.get("/get_vocab_sets")) ?? [];
       isInitialized.value = true;
     } finally {
@@ -62,16 +74,79 @@ export const useVocabStore = defineStore("vocab", () => {
   const getStudyWords = async (params) =>
     unwrap(await MYAPI.post("/get_vocab_study_words", params));
 
-  const recordAnswer = async (wordId, isFamiliar) => {
-    const data = unwrap(
-      await MYAPI.request("/record_vocab_answer", {
+  // --- 作答記錄：先排進 localStorage 的待送佇列，再整批送出 ---
+  // 後端以（單字, 作答時間）判斷是否已記錄過，所以同一筆重送不會重複累加
+  const answerOwner = () => studyOwner(authStore.user);
+  const answerKey = (a) => `${a.vocab_word_id}:${a.answered_at}`;
+
+  /** 把作答排進待送佇列（尚未送出） */
+  const queueAnswers = (answers) => {
+    if (!answers.length) return;
+    const owner = answerOwner();
+    saveAnswerOutbox(owner, [...loadAnswerOutbox(owner), ...answers]);
+  };
+
+  const sendAnswers = async (answers, keepalive) => {
+    if (!keepalive)
+      return MYAPI.request("/record_vocab_answers", {
         method: "POST",
-        body: { vocab_word_id: wordId, is_familiar: isFamiliar },
+        body: { answers },
         retry: 2,
-      }),
-    );
-    isInitialized.value = false; // 列表上的進度已變動
-    return data;
+      });
+    // 頁面切到背景 / 即將關閉：axios（XHR）會被中斷，改用 keepalive 的 fetch 讓請求送完
+    const base = String(import.meta.env.VITE_API_BASE).replace(/\/+$/, "");
+    const res = await fetch(`${base}/record_vocab_answers`, {
+      method: "POST",
+      keepalive: true,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authStore.token}`,
+      },
+      body: JSON.stringify({ answers }),
+    });
+    if (!res.ok) {
+      const err = new Error(`HTTP ${res.status}`);
+      err.response = { status: res.status };
+      throw err;
+    }
+    return res.json();
+  };
+
+  const flushOutbox = async (keepalive) => {
+    if (!authStore.isLoggedIn) return;
+    const owner = answerOwner();
+    for (;;) {
+      const batch = loadAnswerOutbox(owner).slice(0, RECORD_BATCH);
+      if (!batch.length) return;
+      // 送出期間可能又有新的作答排進來，只移除這次送出的那幾筆
+      const sent = new Set(batch.map(answerKey));
+      const dropBatch = () =>
+        saveAnswerOutbox(
+          owner,
+          loadAnswerOutbox(owner).filter((a) => !sent.has(answerKey(a))),
+        );
+      try {
+        unwrap(await sendAnswers(batch, keepalive));
+      } catch (err) {
+        // 格式被後端拒絕（400 / 422）：重送也不會成功，丟掉以免永遠卡在佇列最前面
+        // 其他都留著下次再送：斷線、逾時、5xx、後端尚未更新的 404，
+        // 以及 200 + status=error（登入過期也是這樣回，重新登入後就能送出）
+        const status = err.response?.status;
+        if (status === 400 || status === 422) dropBatch();
+        throw err;
+      }
+      dropBatch();
+      isInitialized.value = false; // 列表上的進度已變動
+    }
+  };
+
+  // 同一時間只跑一個送出流程，後來的排在後面
+  let flushChain = Promise.resolve();
+  /** 送出待送佇列；失敗時 reject，佇列內容會保留到下次 */
+  const flushAnswers = ({ keepalive = false } = {}) => {
+    const run = flushChain.then(() => flushOutbox(keepalive));
+    flushChain = run.catch(() => {});
+    return run;
   };
 
   /** 重置自己在此學習集的熟悉 / 不熟悉次數 */
@@ -139,6 +214,7 @@ export const useVocabStore = defineStore("vocab", () => {
     saveSet,
     deleteSet,
     getStudyWords,
-    recordAnswer,
+    queueAnswers,
+    flushAnswers,
   };
 });

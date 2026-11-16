@@ -279,6 +279,7 @@
     "retry_all": "全部再練一次",
     "reselect": "重新選擇",
     "no_matching_words": "沒有符合條件的單字",
+    "commute_times_required": "自動輪播的正面與背面次數不能同時為 0",
     "record_failed": "學習紀錄儲存失敗，請檢查網路",
     "reset": "重置",
     "reset_stats": "重置熟悉 / 不熟悉次數",

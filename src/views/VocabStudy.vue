@@ -7,7 +7,7 @@
       </h1> -->
       <el-button
         :icon="House"
-        @click="router.push('/VocabSets')"
+        @click="router.push(`${localePrefix}/VocabSets`)"
         type="primary"
         plain
       >
@@ -231,6 +231,8 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const vocabStore = useVocabStore();
+// 保留 /en 前綴
+const localePrefix = route.path.startsWith("/en/") ? "/en" : "";
 // 只用來在點擊當下啟用音訊（AudioContext 全站共用，到練習頁仍有效）
 const { unlock } = useGoogleTTS("ja");
 
@@ -282,6 +284,11 @@ watch(frontTimes, (v) => saveNumber(FRONT_TIMES_KEY, v ?? 0));
 watch(backTimes, (v) => saveNumber(BACK_TIMES_KEY, v ?? 0));
 
 const handleStart = async () => {
+  // 正反面都念 0 次的話輪播什麼都不做，會一路跳到結束
+  if (commuteMode.value && !frontTimes.value && !backTimes.value) {
+    ElMessage.warning(t("vocab.commute_times_required"));
+    return;
+  }
   // 取題目要等 API，先在點擊當下啟用音訊，第一張的自動播放才不會被瀏覽器擋下
   if (autoPlay || commuteMode.value) unlock();
   starting.value = true;
@@ -307,8 +314,7 @@ const handleStart = async () => {
       committed: 0,
       round: 0,
     });
-    const prefix = route.path.startsWith("/en/") ? "/en" : "";
-    router.push(`${prefix}/VocabStudy/session`);
+    router.push(`${localePrefix}/VocabStudy/session`);
   } catch (err) {
     ElMessage.error(err.message);
   } finally {

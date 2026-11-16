@@ -73,6 +73,31 @@ export const saveStudySession = (session) => {
   }
 };
 
+// --- 待送出的作答 ---
+// 作答先排進這裡再送到後端，成功才移除；送失敗或頁面被關掉時留著，下次再送
+const OUTBOX_KEY = "vocab_answer_outbox";
+
+/** @returns {{ vocab_word_id: number, is_familiar: boolean, answered_at: number }[]} */
+export const loadAnswerOutbox = (owner) => {
+  try {
+    const box = JSON.parse(localStorage.getItem(OUTBOX_KEY) || "null");
+    if (!Array.isArray(box?.items)) return [];
+    return (box.owner ?? null) === (owner ?? null) ? box.items : [];
+  } catch {
+    return [];
+  }
+};
+
+export const saveAnswerOutbox = (owner, items) => {
+  try {
+    if (items.length)
+      localStorage.setItem(OUTBOX_KEY, JSON.stringify({ owner, items }));
+    else localStorage.removeItem(OUTBOX_KEY);
+  } catch {
+    /* 存不下時這批作答只在本次有效 */
+  }
+};
+
 export const clearStudySession = () => {
   try {
     localStorage.removeItem(SESSION_KEY);
