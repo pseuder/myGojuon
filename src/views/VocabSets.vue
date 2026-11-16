@@ -10,7 +10,6 @@
           :icon="Plus"
           @click="router.push('/VocabSets/create')"
         >
-          {{ t("vocab.create_set") }}
         </el-button>
         <el-button
           v-if="authStore.isLoggedIn"

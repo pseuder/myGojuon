@@ -35,6 +35,9 @@ const BUFFER_CACHE_SIZE = 100;
 const RESUME_TIMEOUT_MS = 1500;
 // 音訊該播完卻沒收到 onended 的寬限時間，超過就當作 context 已經壞掉
 const STALL_MARGIN_MS = 2000;
+// 快速偵測：等 CLOCK_PROBE_MS 後 currentTime 前進不到 CLOCK_PROBE_MIN_S 秒就視為時鐘停了
+const CLOCK_PROBE_MS = 500;
+const CLOCK_PROBE_MIN_S = 0.05;
 // 瀏覽器內建語音的保險時間：Chrome 偶爾不觸發 onend（切過背景後尤其常見）
 const BROWSER_TTS_BASE_MS = 3000;
 const BROWSER_TTS_PER_CHAR_MS = 250;
@@ -61,6 +64,58 @@ let stale = false;
 let watching = false;
 // context 被換掉時要通知還在等舊 context 的播放流程
 const ctxReplaced = new Set();
+
+// 備援用的 <audio>：iOS 不允許在沒有手勢時啟動新的 AudioContext，
+// 但同一個 <audio> 元素只要在手勢中 play() 過一次，之後換 src 再播都不需要手勢。
+// 回前景後還沒人碰螢幕（通勤模式）時就靠它出聲。
+let mediaEl = null;
+let mediaState = "locked"; // locked | unlocking | unlocked
+const MEDIA_STALL_MARGIN_MS = 5000;
+const MEDIA_UNKNOWN_DURATION_S = 15;
+
+// 0.05 秒的靜音 WAV（8kHz / 8-bit / 單聲道），只用來在手勢中解鎖 <audio>
+const silentWavUrl = () => {
+  const n = 400;
+  const bytes = new Uint8Array(44 + n).fill(128);
+  const view = new DataView(bytes.buffer);
+  const str = (offset, s) =>
+    [...s].forEach((c, i) => (bytes[offset + i] = c.charCodeAt(0)));
+  str(0, "RIFF");
+  view.setUint32(4, 36 + n, true);
+  str(8, "WAVEfmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, 8000, true);
+  view.setUint32(28, 8000, true);
+  view.setUint16(32, 1, true);
+  view.setUint16(34, 8, true);
+  str(36, "data");
+  view.setUint32(40, n, true);
+  return URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
+};
+
+// 需在使用者手勢中呼叫；失敗（不在手勢內）就維持 locked，下次手勢再試
+const unlockMedia = () => {
+  if (mediaState !== "locked" || typeof Audio === "undefined") return;
+  mediaState = "unlocking";
+  if (!mediaEl) {
+    mediaEl = new Audio();
+    mediaEl.preload = "auto";
+    mediaEl.playsInline = true;
+  }
+  const url = silentWavUrl();
+  mediaEl.src = url;
+  mediaEl
+    .play()
+    .then(() => {
+      mediaState = "unlocked";
+    })
+    .catch(() => {
+      mediaState = "locked";
+    })
+    .finally(() => URL.revokeObjectURL(url));
+};
 
 const createContext = () => {
   const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -90,6 +145,7 @@ const renewAudioContext = () => {
 const onGesture = () => {
   if (stale) renewAudioContext();
   resumeAudio();
+  unlockMedia();
 };
 
 const watchPage = () => {
@@ -115,6 +171,7 @@ const getAudioContext = () => {
     if (!audioCtx) return null;
     watchPage();
   }
+  unlockMedia();
   // 需在使用者點擊的同步流程中呼叫，瀏覽器才允許恢復播放
   resumeAudio();
   return audioCtx;
@@ -175,9 +232,12 @@ export const useGoogleTTS = (lang = "ja") => {
   const speakingKey = ref(null);
   let source = null;
   let session = 0;
+  // 正在用 <audio> 備援播放時的取消函式
+  let cancelMedia = null;
 
   const stop = () => {
     session += 1;
+    cancelMedia?.();
     if (source) {
       // 停止會觸發 onended，speak 的迴圈再依 session 判斷結束
       try {
@@ -225,8 +285,10 @@ export const useGoogleTTS = (lang = "ja") => {
       const node = ctx.createBufferSource();
       source = node;
       let timer = null;
+      let probe = null;
       const cleanup = () => {
         clearTimeout(timer);
+        clearTimeout(probe);
         ctxReplaced.delete(onReplaced);
         document.removeEventListener("visibilitychange", arm);
       };
@@ -234,23 +296,30 @@ export const useGoogleTTS = (lang = "ja") => {
         cleanup();
         reject(new Error("AudioContext replaced"));
       };
-      // 保險：context 顯示 running 卻沒在跑時 onended 永遠不會來，
-      // 逾時就放棄這個 context（下次觸碰重建），不要讓 speak 卡死
+      // 放棄這個 context（下次觸碰重建），讓呼叫端改走備援，不要讓 speak 卡死
+      const fail = () => {
+        cleanup();
+        stale = true;
+        interrupted = true;
+        try {
+          node.stop();
+        } catch {
+          // 尚未開始播放
+        }
+        reject(new Error("AudioContext stalled"));
+      };
+      // context 顯示 running 卻沒在跑時 onended 永遠不會來：
+      // 開始播放與每次回前景時先快速確認時鐘有在走，另外再留一個總時長的保險
       const arm = () => {
         clearTimeout(timer);
+        clearTimeout(probe);
         if (document.visibilityState === "hidden") return;
+        const t0 = ctx.currentTime;
+        probe = setTimeout(() => {
+          if (ctx.currentTime - t0 < CLOCK_PROBE_MIN_S) fail();
+        }, CLOCK_PROBE_MS);
         timer = setTimeout(
-          () => {
-            cleanup();
-            stale = true;
-            interrupted = true;
-            try {
-              node.stop();
-            } catch {
-              // 尚未開始播放
-            }
-            reject(new Error("AudioContext stalled"));
-          },
+          fail,
           (LEAD_SILENCE + buffer.duration) * 1000 + STALL_MARGIN_MS,
         );
       };
@@ -267,6 +336,91 @@ export const useGoogleTTS = (lang = "ja") => {
     });
   };
 
+  // 用已解鎖的 <audio> 播放；回傳 false 表示被 stop() 中斷，播不出來則 reject
+  const playWithElement = (text, voiceLang) =>
+    new Promise((resolve, reject) => {
+      const el = mediaEl;
+      let timer = null;
+      const cleanup = () => {
+        clearTimeout(timer);
+        cancelMedia = null;
+        el.removeEventListener("ended", onEnded);
+        el.removeEventListener("error", onError);
+        el.removeEventListener("durationchange", arm);
+        document.removeEventListener("visibilitychange", onVisible);
+      };
+      const onEnded = () => {
+        cleanup();
+        resolve(true);
+      };
+      const onError = () => {
+        cleanup();
+        reject(new Error("Audio element failed"));
+      };
+      const start = () => el.play().catch(onError);
+      // 逾時保險：頁面在前景卻遲遲播不完就放棄
+      const arm = () => {
+        clearTimeout(timer);
+        if (document.visibilityState === "hidden") return;
+        const duration = Number.isFinite(el.duration)
+          ? el.duration
+          : MEDIA_UNKNOWN_DURATION_S;
+        timer = setTimeout(() => {
+          el.pause();
+          onError();
+        }, duration * 1000 + MEDIA_STALL_MARGIN_MS);
+      };
+      // 切到背景時系統會暫停 <audio>，回前景後接著播
+      const onVisible = () => {
+        arm();
+        if (document.visibilityState === "visible" && el.paused && !el.ended)
+          start();
+      };
+      cancelMedia = () => {
+        cleanup();
+        el.pause();
+        resolve(false);
+      };
+      el.addEventListener("ended", onEnded);
+      el.addEventListener("error", onError);
+      el.addEventListener("durationchange", arm);
+      document.addEventListener("visibilitychange", onVisible);
+      el.src = `${TTS_URL}?${new URLSearchParams({ q: text, lang: voiceLang })}`;
+      arm();
+      start();
+    });
+
+  // 依序嘗試 Web Audio → <audio> → 瀏覽器內建語音；回傳 false 表示被 stop() 中斷
+  const speakChunk = async (chunk, mySession, voiceLang) => {
+    const alive = () => mySession === session;
+    // 回前景後還沒有觸碰可以重建 context 時，舊 context 不可靠，直接走 <audio>
+    for (
+      let attempt = 0;
+      !(stale && mediaState === "unlocked");
+      attempt++
+    ) {
+      const ctx = audioCtx;
+      try {
+        if (!ctx) throw new Error("Web Audio not supported");
+        return await playChunk(ctx, chunk, mySession, voiceLang);
+      } catch {
+        if (!alive()) return false;
+        // 播到一半 context 被重建：用新的 context 重播這一段
+        if (ctx && ctx !== audioCtx && attempt < 2) continue;
+        break;
+      }
+    }
+    if (mediaState === "unlocked") {
+      try {
+        return await playWithElement(chunk, voiceLang);
+      } catch {
+        if (!alive()) return false;
+      }
+    }
+    await speakWithBrowser(chunk, voiceLang);
+    return alive();
+  };
+
   const speak = async (text, key = text, voiceLang = lang) => {
     // 再點一次同一個喇叭 = 停止；但如果上次播放被中斷過，就當成重播
     const wasSame = speakingKey.value === key && !interrupted;
@@ -278,21 +432,8 @@ export const useGoogleTTS = (lang = "ja") => {
     const mySession = session;
     speakingKey.value = key;
     for (const chunk of splitText(text)) {
-      for (let attempt = 0; ; attempt++) {
-        if (mySession !== session) return;
-        const ctx = audioCtx;
-        try {
-          if (!ctx) throw new Error("Web Audio not supported");
-          if (!(await playChunk(ctx, chunk, mySession, voiceLang))) return;
-          break;
-        } catch {
-          if (mySession !== session) return;
-          // 播到一半 context 被重建：用新的 context 重播這一段
-          if (ctx && ctx !== audioCtx && attempt < 2) continue;
-          await speakWithBrowser(chunk, voiceLang);
-          break;
-        }
-      }
+      if (mySession !== session) return;
+      if (!(await speakChunk(chunk, mySession, voiceLang))) return;
     }
     if (mySession === session) speakingKey.value = null;
   };
