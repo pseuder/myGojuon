@@ -1867,7 +1867,7 @@ watch(
 
 const containerRef = ref(null);
 const leftPanelWidth = ref(
-  Math.min(70, Math.max(20, Number(readStorage(PANEL_WIDTH_KEY)) || 23)),
+  Math.min(70, Math.max(20, Number(readStorage(PANEL_WIDTH_KEY)) || 30)),
 );
 const isDragging = ref(false);
 const isMobile = ref(false);
