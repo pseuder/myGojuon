@@ -77,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from "vue";
+import { ref, computed, watch, onUnmounted } from "vue";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import { useApi } from "@/composables/useApi.js";
@@ -85,10 +85,25 @@ import { useApi } from "@/composables/useApi.js";
 const { t } = useI18n();
 const MYAPI = useApi();
 
-const props = defineProps({ visible: Boolean });
+const props = defineProps({
+  visible: Boolean,
+  // 開啟表單時預先填入的留言內容（例如歌詞回報會帶入歌曲資訊）
+  initialMessage: { type: String, default: "" },
+  // 表單距離畫面底部的距離（頁面底部有固定控制列時用來避開）
+  bottomOffset: { type: String, default: "0" },
+});
 const emit = defineEmits(["close"]);
 
 const form = ref({ name: "", email: "", message: "" });
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible && props.initialMessage) {
+      form.value.message = props.initialMessage;
+    }
+  },
+);
 
 // 拖曳邏輯
 const isDragging = ref(false);
@@ -97,7 +112,7 @@ const dragOffset = ref({ x: 0, y: 0 });
 
 const dragStyle = computed(() => {
   if (position.value.x === null) {
-    return { right: "1rem", bottom: "0" };
+    return { right: "1rem", bottom: props.bottomOffset };
   }
   return {
     left: `${position.value.x}px`,

@@ -169,6 +169,14 @@
                   @click="handleRefineLyrics"
                   >AI 校正轉換歌詞</el-button
                 >
+                <el-button
+                  class="flex-1"
+                  type="success"
+                  plain
+                  title="為還沒填羅馬拼音的格子自動產生（不會覆蓋已填寫的格子；想重新產生就先清空該格）"
+                  @click="handleFillRomaji"
+                  >補上羅馬拼音</el-button
+                >
               </div>
 
               <!-- 時間控制區 -->
@@ -523,6 +531,14 @@
                         </template>
                       </div>
                     </el-popover>
+
+                    <!-- 羅馬拼音：有填、有發布，練習頁才會顯示 -->
+                    <input
+                      v-model="ly.roma"
+                      class="lyric-roma h-6 w-full rounded border border-gray-300 px-1"
+                      placeholder=""
+                      title="羅馬拼音（留空 = 練習頁不顯示）"
+                    />
 
                     <!-- 顏色 -->
                     <input
@@ -1238,6 +1254,38 @@ const handleRefineLyrics = async () => {
 };
 
 // ============================================================
+// 羅馬拼音：存在每個 token 的 roma，有存才會在練習頁顯示
+// 「貼上歌詞」與「AI 校正」會自動填好，這裡是單獨補上還沒填的格子
+// ============================================================
+const handleFillRomaji = async () => {
+  if (allLyrics.value.length === 0) return ElMessage.error("請先添加歌詞");
+
+  lyricsLoading.value = true;
+  try {
+    const before = JSON.stringify(serializeLyricLines());
+    const response = await MYAPI.post("/fill_romaji", {
+      lyrics: before,
+    });
+    if (response.status === "success") {
+      const count = (lines) =>
+        lines.reduce(
+          (sum, line) => sum + line.lyrics.filter((ly) => ly.roma).length,
+          0,
+        );
+      const added = count(response.data) - count(JSON.parse(before));
+      allLyrics.value = response.data;
+      ElMessage.success(`已補上 ${added} 格羅馬拼音`);
+    } else {
+      ElMessage.error(response.message || "產生羅馬拼音失敗");
+    }
+  } catch {
+    ElMessage.error("產生羅馬拼音時發生錯誤");
+  } finally {
+    lyricsLoading.value = false;
+  }
+};
+
+// ============================================================
 // 歌詞行操作（清空、插入、刪除、新增、複製）
 // ============================================================
 const handleClearLyrics = () => {
@@ -1332,6 +1380,7 @@ const normalizeLyricLine = (line) => ({
               ori: ly.ori ?? "",
               color: ly.color ?? "",
               meaning: ly.meaning ?? "",
+              ...(ly.roma ? { roma: ly.roma } : {}),
             },
       )
     : [],
@@ -1631,30 +1680,19 @@ const applyColor = () => {
 // ============================================================
 // 複製歌詞
 // ============================================================
+// 每個 token 物件（以 "cvt" 開頭）壓成一行：{"cvt": "…","ori": "…","color": "…"}
+// 換行只會出現在字串值之外（字串內的換行會被跳脫），所以直接移除是安全的
 const customStringify = (obj) =>
   JSON.stringify(obj, null, 2)
-    .replace(
-      /{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)",\s*"color":\s*"([^"]*)",\s*"meaning":\s*"([^"]*)"\s*}/g,
-      '{"cvt": "$1","ori": "$2","color": "$3","meaning": "$4"}',
-    )
-    .replace(
-      /{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)",\s*"meaning":\s*"([^"]*)"\s*}/g,
-      '{"cvt": "$1","ori": "$2","meaning": "$3"}',
-    )
-    .replace(
-      /{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)",\s*"color":\s*"([^"]*)"\s*}/g,
-      '{"cvt": "$1","ori": "$2","color": "$3"}',
-    )
-    .replace(
-      /{\s*"cvt":\s*"([^"]*)",\s*"ori":\s*"([^"]*)"\s*}/g,
-      '{"cvt": "$1","ori": "$2"}',
-    )
-    .replace(
-      /{\s*"cvt":\s*"",\s*"ori":\s*"",\s*"gif":\s*"([^"]*)"(?:,\s*"gifSize":\s*(\d+))?\s*}/g,
-      (_, gif, size) =>
-        `{"cvt": "","ori": "","gif": "${gif}"${size ? `,"gifSize": ${size}` : ""}}`,
-    )
+    .replace(/{\s*"cvt":[^{}]*}/g, (token) => token.replace(/\n\s*/g, ""))
     .replace(/},\s+]/g, "},\n  ]");
+
+// 沒填的羅馬拼音不存（留空 = 練習頁不顯示）
+const withoutEmptyRoma = (ly) => {
+  if (ly.roma || !("roma" in ly)) return ly;
+  const { roma, ...rest } = ly;
+  return rest;
+};
 
 // 儲存/送出用：GIF token 只留必要欄位，其餘 token 原樣保留
 const serializeLyricLines = () =>
@@ -1662,7 +1700,9 @@ const serializeLyricLines = () =>
     .filter((line) => line.lyrics.length > 0)
     .map((line) => ({
       timestamp: line.timestamp,
-      lyrics: line.lyrics.map((ly) => (ly.gif ? toGifToken(ly) : ly)),
+      lyrics: line.lyrics.map((ly) =>
+        ly.gif ? toGifToken(ly) : withoutEmptyRoma(ly),
+      ),
     }));
 
 const combinedLyric = () =>
@@ -1694,6 +1734,7 @@ const handleCopyHiragana = () => {
         const item = { cvt: ly.cvt, ori: ly.ori };
         if (ly.color) item.color = ly.color;
         if (ly.meaning) item.meaning = ly.meaning;
+        if (ly.roma) item.roma = ly.roma;
         return item;
       }),
     }));
@@ -1990,6 +2031,9 @@ onUnmounted(() => {
 }
 .lyric-ori {
   background-color: cadetblue;
+}
+.lyric-roma {
+  background-color: #fde68a;
 }
 .lyric-meaning {
   background-color: whitesmoke;

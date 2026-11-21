@@ -119,6 +119,25 @@
                     </el-button>
                   </template>
                   <div class="flex flex-col gap-3">
+                    <div class="flex flex-row justify-between">
+                      <!-- 羅馬字開關 -->
+                      <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-500">{{
+                          t("show_romaji")
+                        }}</span>
+                        <el-switch v-model="songStore.showRomaji" />
+                      </div>
+
+                      <!-- 重置設定 -->
+                      <div class="flex justify-end">
+                        <el-link
+                          :icon="RefreshLeft"
+                          @click="resetSongSettings"
+                          underline="never"
+                          >{{ t("reset_song_settings") }}</el-link
+                        >
+                      </div>
+                    </div>
                     <div class="flex flex-col gap-1">
                       <span class="text-sm text-gray-500">{{
                         t("lyric_font_size")
@@ -163,6 +182,18 @@
                     </div>
                   </div>
                 </el-popover>
+
+                <!-- 通報：開啟匿名回饋表單並帶入歌曲資訊 -->
+                <el-button
+                  circle
+                  plain
+                  type="danger"
+                  class="!ml-0"
+                  :title="t('report_lyric_issue')"
+                  @click="openLyricReport"
+                >
+                  <img src="/images/megaphone.png" alt="" class="h-4 w-4" />
+                </el-button>
               </div>
 
               <!-- 我的最愛 -->
@@ -342,6 +373,14 @@
                     <template v-else
                       ><div>{{ ly.ori }}</div></template
                     >
+
+                    <!-- 羅馬拼音（沒有的格子也佔一行，讓整列底部對齊） -->
+                    <div
+                      v-if="songStore.showRomaji && hasRomaji"
+                      class="lyric-romaji"
+                    >
+                      {{ ly.roma?.trim() || " " }}
+                    </div>
                   </div>
                 </el-tooltip>
               </template>
@@ -488,6 +527,14 @@
       </div>
     </Teleport>
 
+    <!-- 歌詞問題回報（匿名回饋表單，預先填好歌曲資訊） -->
+    <ContactForm
+      :visible="showLyricReport"
+      :initial-message="lyricReportMessage"
+      bottom-offset="4rem"
+      @close="showLyricReport = false"
+    />
+
     <!-- 建立清單 Dialog -->
     <el-dialog
       v-model="showCreatePlaylistDialog"
@@ -597,6 +644,7 @@ import {
   FolderAdd,
   Headset,
   Setting,
+  RefreshLeft,
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
@@ -604,6 +652,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useApi } from "@/composables/useApi.js";
 import { useKanaAudio, splitKanaUnits } from "@/composables/useKanaAudio.js";
 import { gifUrl, gifSize } from "@/utils/lyricGifs.js";
+import ContactForm from "@/components/ContactForm.vue";
 
 /*-- store --*/
 import {
@@ -708,6 +757,11 @@ const processedLyrics = computed(() =>
       };
     }),
   })),
+);
+
+// 羅馬拼音只顯示資料庫裡有存的值（編輯頁確認並發布過的歌曲才有）
+const hasRomaji = computed(() =>
+  lyrics.value.some((line) => line.lyrics.some((ly) => ly.roma?.trim())),
 );
 
 /*-- 結構化資料 (JSON-LD)--*/
@@ -1293,6 +1347,38 @@ const changePlaybackRate = () => {
   }
 };
 
+/*-- 歌詞問題回報：開啟匿名回饋表單並帶入歌曲資訊 --*/
+const showLyricReport = ref(false);
+const lyricReportMessage = ref("");
+
+const openLyricReport = () => {
+  const video = currentVideo.value;
+  if (!video) return;
+  const lines = [
+    `【${t("report_lyric_issue")}】`,
+    `${t("report_song")}：${video.name} - ${video.artists}`,
+    `${t("report_url")}：${window.location.origin}/SongPractice/${video.source_id}`,
+  ];
+  // 帶入目前播放到的那一句，方便指出是哪裡有問題
+  const line = lyrics.value[currentLyricIndex.value];
+  if (line) {
+    const text = line.lyrics.map((ly) => ly.ori).join("");
+    lines.push(`${t("report_current_line")}：${line.timestamp} ${text}`);
+  }
+  lines.push(`${t("report_description")}：`);
+  lyricReportMessage.value = lines.join("\n");
+  showLyricReport.value = true;
+};
+
+// 重置設定視窗內的項目（羅馬拼音、歌詞大小、播放速度、歌詞偏移）
+const resetSongSettings = () => {
+  songStore.showRomaji = true;
+  songStore.lyricFontSize = DEFAULT_LYRIC_FONT_SIZE;
+  songStore.playbackRate = 1;
+  songStore.lyricOffset = 0;
+  changePlaybackRate();
+};
+
 const goToPreviousLyric = () => {
   if (currentLyricIndex.value > 0 && lyrics.value.length > 0) {
     startVideo(lyrics.value[currentLyricIndex.value - 1].timestamp);
@@ -1734,6 +1820,16 @@ onUnmounted(() => {
 
 .kana-clickable:hover {
   background-color: rgba(64, 158, 255, 0.2);
+}
+
+/* 歌詞下方的羅馬拼音 */
+.lyric-romaji {
+  margin-top: -2px;
+  font-size: 0.6em;
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: #6b7280;
+  white-space: nowrap;
 }
 
 /* 歌詞中插入的 GIF：維持比例、不被 flex 壓扁 */
