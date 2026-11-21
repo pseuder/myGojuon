@@ -17,7 +17,7 @@ export const useSongStore = defineStore(
     // 歌詞字級（px）
     const lyricFontSize = ref(20);
     // 是否在歌詞下方顯示羅馬拼音
-    const showRomaji = ref(false);
+    const showRomaji = ref(true);
 
     return {
       showRomaji,
