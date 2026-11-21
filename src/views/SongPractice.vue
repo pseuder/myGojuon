@@ -88,24 +88,19 @@
 
           <div class="flex h-full w-full flex-col items-center gap-2">
             <div class="flex w-full flex-row items-center gap-2">
-              <div class="flex flex-1 items-center gap-1">
-                <el-tooltip
+              <div class="flex flex-1 items-center gap-4">
+                <!-- <el-tooltip
                   :content="t('click_kana_to_play_sound')"
                   placement="top"
                 >
-                  <el-tag type="info" round>{{ t("click_kana") }}</el-tag>
-                </el-tooltip>
-
-                <el-tooltip placement="top">
-                  <template #content>
-                    <div style="white-space: pre-wrap">
-                      {{ t("keyboard_shortcuts_hint") }}
-                    </div>
-                  </template>
-                  <el-tag type="info" round>{{
-                    t("keyboard_shortcuts")
-                  }}</el-tag>
-                </el-tooltip>
+                  <img
+                    src="/images/question.png"
+                    alt=""
+                    class="h-6 w-6"
+                    :title="t('report_lyric_issue')"
+                    @click="openLyricReport"
+                  />
+                </el-tooltip> -->
 
                 <!-- 播放設定：速度 / 歌詞偏移 / 歌詞大小 -->
                 <el-popover
@@ -114,9 +109,7 @@
                   :width="240"
                 >
                   <template #reference>
-                    <el-button circle type="warning" plain>
-                      <el-icon><Setting /></el-icon>
-                    </el-button>
+                    <el-icon color="#E6A23C" size="24px"><Setting /></el-icon>
                   </template>
                   <div class="flex flex-col gap-3">
                     <div class="flex flex-row justify-between">
@@ -183,17 +176,29 @@
                   </div>
                 </el-popover>
 
+                <!-- 操作提示 -->
+                <el-tooltip placement="top">
+                  <template #content>
+                    <div style="white-space: pre-wrap">
+                      {{ t("keyboard_shortcuts_hint") }}
+                    </div>
+                  </template>
+                  <img
+                    src="/images/question.png"
+                    alt=""
+                    class="h-6 w-6"
+                    :title="t('keyboard_shortcuts')"
+                  />
+                </el-tooltip>
+
                 <!-- 通報：開啟匿名回饋表單並帶入歌曲資訊 -->
-                <el-button
-                  circle
-                  plain
-                  type="danger"
-                  class="!ml-0"
+                <img
+                  src="/images/megaphone.png"
+                  alt=""
+                  class="h-6 w-6 hover:cursor-pointer"
                   :title="t('report_lyric_issue')"
                   @click="openLyricReport"
-                >
-                  <img src="/images/megaphone.png" alt="" class="h-4 w-4" />
-                </el-button>
+                />
               </div>
 
               <!-- 我的最愛 -->
