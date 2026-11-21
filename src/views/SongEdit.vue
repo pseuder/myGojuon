@@ -482,6 +482,13 @@
                         >圖</el-button
                       >
                       <el-button
+                        class="text-sm text-teal-600"
+                        @click="handleMergeLyric(index, lyIndex)"
+                        type="text"
+                        title="與下一格合併成一格"
+                        >合</el-button
+                      >
+                      <el-button
                         class="text-sm text-purple-500"
                         @click="handleAddBracketAfter(index, lyIndex)"
                         type="text"
@@ -1428,6 +1435,52 @@ const handleAddLyric = (lyricIndex, lyricLineIndex) => {
     color: "",
     meaning: "",
   });
+};
+
+// 合併時補讀音用：純假名的 ori 本身就是讀音（片假名轉成平假名）
+const kanaReading = (ori) =>
+  /^[ぁ-ゖァ-ヶー]+$/.test(ori)
+    ? ori.replace(/[ァ-ヶ]/g, (ch) =>
+        String.fromCharCode(ch.charCodeAt(0) - 0x60),
+      )
+    : "";
+
+// 把這一格與下一格合併成一格（ori / cvt / roma / meaning 依序相接）
+const handleMergeLyric = (lyricIndex, lyricLineIndex) => {
+  const tokens = allLyrics.value[lyricIndex].lyrics;
+  const cur = tokens[lyricLineIndex];
+  const next = tokens[lyricLineIndex + 1];
+  if (!next) {
+    ElMessage.warning("後面沒有可以合併的格子");
+    return;
+  }
+  if (next.gif) {
+    ElMessage.warning("下一格是 GIF，無法合併");
+    return;
+  }
+
+  const curOri = cur.ori ?? "";
+  const nextOri = next.ori ?? "";
+  const curCvt = cur.cvt ?? "";
+  const nextCvt = next.cvt ?? "";
+  // 只有一邊有讀音時，另一邊若是假名就用它本身補上，讀音才會完整（朝+の → あさの）
+  const cvt =
+    curCvt || nextCvt
+      ? (curCvt || kanaReading(curOri)) + (nextCvt || kanaReading(nextOri))
+      : "";
+
+  const merged = {
+    ...cur,
+    ori: curOri + nextOri,
+    cvt,
+    color: cur.color || next.color || "",
+    meaning: (cur.meaning ?? "") + (next.meaning ?? ""),
+  };
+  const roma = (cur.roma ?? "") + (next.roma ?? "");
+  if (roma) merged.roma = roma;
+  else delete merged.roma;
+
+  tokens.splice(lyricLineIndex, 2, merged);
 };
 
 const BRACKET_CELLS = () => [
