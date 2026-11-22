@@ -986,10 +986,7 @@ const playNextSong = () => {
 
     // 更新網址（保留瀏覽歷史）並更新歌詞資料
     router.push(buildSongPath(nextSong.source_id));
-    currentLyricIndex.value = -1;
-    isLooping.value = false;
-    scrollLyricsToTop();
-    fetchVideoData(nextSong.source_id);
+    loadSongWithLyricsReset(nextSong.source_id);
   } else {
     if (player && player.seekTo) player.seekTo(0);
   }
@@ -1013,10 +1010,7 @@ const goToPreviousSong = () => {
   }
   isAutoNavigating.value = true;
   router.push(buildSongPath(prevSong.source_id));
-  currentLyricIndex.value = -1;
-  isLooping.value = false;
-  scrollLyricsToTop();
-  fetchVideoData(prevSong.source_id);
+  loadSongWithLyricsReset(prevSong.source_id);
   if (songStore.playMode === "shuffle") {
     computeShuffleNextIndex();
   }
@@ -1053,10 +1047,7 @@ const navigateToSong = (song) => {
   }
   isAutoNavigating.value = true;
   router.push(buildSongPath(song.source_id));
-  currentLyricIndex.value = -1;
-  isLooping.value = false;
-  scrollLyricsToTop();
-  fetchVideoData(song.source_id);
+  loadSongWithLyricsReset(song.source_id);
   isPlaylistDrawerOpen.value = false;
 };
 
@@ -1071,9 +1062,30 @@ const lyricScale = computed(
   () => lyricFontSize.value / DEFAULT_LYRIC_FONT_SIZE,
 );
 const scrollLyricsToTop = () => {
+  // 歌詞區 scrollbar 直接歸零（不依賴舊歌詞 DOM）
+  lyricsScrollbarRef.value?.setScrollTop?.(0);
   const lyricElement = document.getElementById(`lyric-0`);
   if (lyricElement) {
     lyricElement.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+};
+
+/*-- 換歌時重置歌詞高亮與位置 --*/
+// 換歌期間暫停 updateCurrentLyric，避免舊歌詞 + 播放器殘留的舊時間
+// 把高亮重新設回上一首的最後一行並捲到底部
+const isSwitchingSong = ref(false);
+const loadSongWithLyricsReset = async (id) => {
+  isSwitchingSong.value = true;
+  currentLyricIndex.value = -1;
+  isLooping.value = false;
+  scrollLyricsToTop();
+  try {
+    await fetchVideoData(id);
+    await nextTick();
+    currentLyricIndex.value = -1;
+    scrollLyricsToTop();
+  } finally {
+    isSwitchingSong.value = false;
   }
 };
 
@@ -1257,6 +1269,7 @@ const parseTimeToSeconds = (timeString) => {
 
 const updateCurrentLyric = () => {
   if (
+    isSwitchingSong.value ||
     !player ||
     typeof player.getCurrentTime !== "function" ||
     lyrics.value.length === 0
@@ -1273,6 +1286,11 @@ const updateCurrentLyric = () => {
 
   // 更新當前歌詞索引（加上偏移，補償慢速裝置的延遲）
   const lyricTime = currentTime + (songStore.lyricOffset || 0);
+  // 尚未到第一行（例如新歌前奏）：清除高亮，避免殘留上一首的索引
+  if (lyricTime < parseTimeToSeconds(lyrics.value[0].timestamp)) {
+    currentLyricIndex.value = -1;
+    return;
+  }
   for (let i = 0; i < lyrics.value.length; i++) {
     const lineStartTime = parseTimeToSeconds(lyrics.value[i].timestamp);
     const nextLineStartTime =
@@ -1671,10 +1689,7 @@ watch(videoId, async (newId, oldId) => {
       }
       return;
     }
-    currentLyricIndex.value = -1;
-    isLooping.value = false;
-    scrollLyricsToTop();
-    await fetchVideoData(newId);
+    await loadSongWithLyricsReset(newId);
     await fetchplaylist();
     initializePlayer();
   }
