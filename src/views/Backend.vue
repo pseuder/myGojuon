@@ -83,7 +83,7 @@
               :key="col"
               :prop="col"
               :label="col"
-              min-width="140"
+              :min-width="columnMinWidth(view, col)"
               show-overflow-tooltip
             >
               <template #default="{ row }">
@@ -551,7 +551,12 @@ const viewTabs = [
   { name: "v_rec_logs", label: "辨識紀錄" },
   { name: "v_writing_logs", label: "書寫紀錄" },
   { name: "v_ai_logs", label: "AI 紀錄" },
-  { name: "v_feedbacks", label: "意見回饋" },
+  {
+    name: "v_feedbacks",
+    label: "意見回饋",
+    defaultColumnWidth: 100,
+    columnWidths: { content: 600, create_time: 170, feedback_email: 160 },
+  },
   { name: "v_contact_logs", label: "聯絡紀錄" },
   { name: "v_special_activity_logs", label: "特殊活動紀錄" },
   { name: "v_user_vocab_progress", label: "單字學習進度" },
@@ -626,6 +631,13 @@ const usageTrendTabs = [
   { name: "trend_rec", view: "v_rec_logs", label: "辨識用量趨勢" },
   { name: "trend_song", view: "v_song_logs", label: "歌曲用量趨勢" },
 ];
+
+// 欄寬至少能容納標題文字，避免表頭換行導致表頭高度改變、捲軸錯位
+const columnMinWidth = (view, col) => {
+  const configured = view.columnWidths?.[col] ?? view.defaultColumnWidth ?? 140;
+  const labelWidth = col.length * 9 + 40;
+  return Math.max(configured, labelWidth);
+};
 
 const formatCell = (value) => {
   if (value === null || value === undefined) return "";
