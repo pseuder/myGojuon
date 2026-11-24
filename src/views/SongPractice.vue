@@ -32,6 +32,7 @@
         <div
           id="player-container"
           ref="playerContainerRef"
+          data-nosnippet
           class="flex-1 overflow-auto"
           :style="
             isPlayerFloating ? { minHeight: `${playerNaturalHeight}px` } : {}
@@ -682,6 +683,14 @@ const currentVideo = computed(() => videoData.value);
 
 const isLoading = ref(false);
 
+// 搜尋結果摘要：開頭放歌名/歌手，讓 Google 判定描述與查詢相符而直接採用，
+// 不去頁面上抓文字（例如 YouTube 播放器在爬蟲端的錯誤訊息）
+// 格式須與 Service/seo_module.py 的 _apply_song 一致
+const buildMetaDescription = (video) =>
+  `${video.name} - ${video.artists} 歌詞：` +
+  plainLyricsText.value.replace(/\n/g, " ").slice(0, 90) +
+  "...";
+
 // 動態 meta title
 watch(
   currentVideo,
@@ -691,12 +700,7 @@ watch(
 
       document
         .querySelector('meta[name="description"]')
-        .setAttribute(
-          "content",
-          plainLyricsText.value.replace(/\n/g, " ").slice(0, 90) + "...",
-        );
-
-      console.log(plainLyricsText.value);
+        .setAttribute("content", buildMetaDescription(video));
 
       document
         .querySelector('meta[property="og:title"]')
@@ -706,10 +710,7 @@ watch(
         );
       document
         .querySelector('meta[property="og:description"]')
-        .setAttribute(
-          "content",
-          plainLyricsText.value.replace(/\n/g, " ").slice(0, 90) + "...",
-        );
+        .setAttribute("content", buildMetaDescription(video));
       document
         .querySelector('meta[property="og:url"]')
         .setAttribute(
