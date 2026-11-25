@@ -317,7 +317,7 @@
             <div class="anchor-button flex shrink-0 items-center">
               <el-icon
                 @click="handleStartVideoClick(line.timestamp)"
-                :size="25"
+                :size="Math.round(25 * lyricScale)"
                 title="跳轉到此"
                 color="#409efc"
                 class="hover:cursor-pointer"
@@ -345,6 +345,7 @@
                 >
                   <div
                     class="rounded text-center"
+                    :class="{ 'lyric-latin-gap': ly.latinGap }"
                     :style="ly.color ? { color: ly.color } : {}"
                   >
                     <template v-if="ly.cvtUnits">
@@ -747,19 +748,34 @@ const handleKanaClick = (unit) => {
   });
 };
 
+// 判斷是否為拉丁字母（英文等）片段：含字母且不含日文字元
+const isLatinSegment = (text) =>
+  !!text &&
+  /[A-Za-z\u00C0-\u024F]/.test(text) &&
+  !/[\u3040-\u30FF\u3400-\u9FFF\uFF66-\uFF9F]/.test(text);
+
 // 將歌詞拆解為逐字可點擊發音單元：優先使用注音(cvt)，若無對應發音則嘗試原文(ori)
 const processedLyrics = computed(() =>
   lyrics.value.map((line) => ({
     ...line,
-    lyrics: line.lyrics.map((ly) => {
+    lyrics: line.lyrics.map((ly, lyIndex, arr) => {
       const cvtUnits = splitKanaUnits(ly.cvt);
       const hasCvtAudio = cvtUnits.some((unit) => unit.file);
       const oriUnits = hasCvtAudio ? null : splitKanaUnits(ly.ori);
       const hasOriAudio = oriUnits?.some((unit) => unit.file);
+      // 英文單字之間補上字距（flex 會吃掉片段頭尾的空白）
+      const next = arr[lyIndex + 1];
+      const latinGap =
+        !ly.gif &&
+        isLatinSegment(ly.ori) &&
+        !!next &&
+        !next.gif &&
+        isLatinSegment(next.ori);
       return {
         ...ly,
         cvtUnits: hasCvtAudio ? cvtUnits : null,
         oriUnits: hasOriAudio ? oriUnits : null,
+        latinGap,
       };
     }),
   })),
@@ -1981,5 +1997,10 @@ onUnmounted(() => {
 
 ruby {
   ruby-align: center;
+}
+
+/* 英文單字之間的間距（gap-1 之外再補約一個空白寬） */
+.lyric-latin-gap {
+  margin-inline-end: 0.3em;
 }
 </style>
