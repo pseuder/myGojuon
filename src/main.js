@@ -21,6 +21,7 @@ pinia.use(piniaPluginPersistedstate);
 app.use(pinia);
 
 /* i18n */
+import { isEnPath, toLangPath } from "@/composables/useLocalePath.js";
 import TW from "./locales/TW.json";
 import EN from "./locales/EN.json";
 // 讀取 store 語言設定
@@ -38,11 +39,21 @@ const i18n = createI18n({
 });
 app.use(i18n);
 
-// 以 /en 開頭的網址強制切換為英文
+// 網址決定介面語言：/en 開頭為英文；有英文對應頁的中文網址則切回中文。
+// 只有中文版的頁面（例如後台）沒有語言之分，沿用使用者目前的語言設定。
 router.beforeEach((to) => {
-  if (/^\/en(\/|$)/.test(to.path) && i18n.global.locale.value !== "en") {
-    i18n.global.locale.value = "en";
-    settingsStore.language = "en";
+  let lang = null;
+  if (isEnPath(to.path)) {
+    lang = "en";
+  } else if (
+    to.name !== "notFound" &&
+    router.resolve(toLangPath(to.path, "en")).name !== "notFound"
+  ) {
+    lang = "zh-TW";
+  }
+  if (lang && i18n.global.locale.value !== lang) {
+    i18n.global.locale.value = lang;
+    settingsStore.language = lang;
   }
   document.documentElement.lang = i18n.global.locale.value;
 });

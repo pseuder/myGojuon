@@ -23,7 +23,8 @@
       <div class="flex items-center gap-2">
         <span class="w-[88px] shrink-0 text-sm">{{ t("language") }}</span>
         <el-switch
-          v-model="locale"
+          :model-value="locale"
+          @update:model-value="handleLanguageSelect"
           style="
             width: 100% !important;
             --el-switch-on-color: #13ce66;
@@ -143,6 +144,11 @@ import { ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
 const { t, locale } = useI18n();
 
+import { useRouter, useRoute } from "vue-router";
+import { toLangPath } from "@/composables/useLocalePath.js";
+const router = useRouter();
+const route = useRoute();
+
 const showContactForm = ref(false);
 const showFloatingButton = ref(true);
 
@@ -156,13 +162,24 @@ const cursorThemes = [
 
 watch(locale, (newValue) => {
   settingsStore.language = newValue;
+});
+
+// 使用者手動切換語言：有對應語言網址的頁面就導過去（由路由守衛切換語言），
+// 否則只切換介面語言。紀錄只在手動切換時送出，不含因網址自動切換的情況。
+const handleLanguageSelect = (lang) => {
+  if (lang === locale.value) return;
   MYAPI.post("/activity_log", {
     c1: "setting",
     c2: "language_change",
-    c3: newValue,
+    c3: lang,
   });
-  // handleLocaleChange();
-});
+  const target = toLangPath(route.path, lang);
+  if (router.resolve(target).name !== "notFound") {
+    router.push({ path: target, query: route.query, hash: route.hash });
+  } else {
+    locale.value = lang;
+  }
+};
 
 const handleLocaleChange = () => {
   // 在行動裝置切換語言時重整頁面以免跑版

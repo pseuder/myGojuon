@@ -38,7 +38,7 @@
           <!-- 用真正的 <a href> 讓搜尋引擎能爬到各歌手頁；點擊時攔截改走站內分頁邏輯 -->
           <template v-else v-for="artist in allArtists" :key="artist.artist_id">
             <a
-              :href="`/SongOverview?artist=${artist.artist_id}`"
+              :href="localePath(`/SongOverview?artist=${artist.artist_id}`)"
               class="flex w-full cursor-pointer flex-col text-inherit no-underline sm:w-fit"
               @click.prevent="handleArtistSelect(artist.artist_id, artist.name)"
             >
@@ -405,9 +405,11 @@ import {
   ref,
   onMounted,
   onActivated,
+  onDeactivated,
   onUnmounted,
   nextTick,
   computed,
+  watch,
 } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
@@ -422,11 +424,12 @@ import {
   Upload,
 } from "@element-plus/icons-vue";
 import VideoCard from "@/components/VideoCard.vue";
+import { useLocalePath } from "@/composables/useLocalePath.js";
 
 /*-- router --*/
 const router = useRouter();
 const route = useRoute();
-const localePath = (p) => p;
+const localePath = useLocalePath();
 
 /*-- i18n --*/
 import { useI18n } from "vue-i18n";
@@ -801,26 +804,79 @@ const scrollToTop = () => {
   scrollEl?.scrollTo({ top: 0, behavior: "smooth" });
 };
 
+// 目前選中的歌手（名稱一律從 allArtists 取，避免載入中把 artist_id 當成名稱寫進標題）
+const selectedArtistInfo = computed(() => {
+  if (!selectedArtist.value) return null;
+  return (
+    allArtists.value.find(
+      (a) => String(a.artist_id) === String(selectedArtist.value),
+    ) || null
+  );
+});
+
+// 依是否選了歌手，產生不同的 title / description，讓每位歌手在搜尋結果可被辨識
+const buildMeta = () => {
+  const artist = selectedArtistInfo.value;
+  if (!artist) {
+    return {
+      title: `${t("song_practice")} | ${t("meta.title")}`,
+      description: t("meta.description"),
+    };
+  }
+  const isEn = locale.value === "en";
+  const sampleSongs = allVideos.value
+    .map((v) => v.song_name)
+    .filter(Boolean)
+    .slice(0, 8);
+  const songs = sampleSongs.length
+    ? isEn
+      ? `${sampleSongs.join(", ")}...`
+      : `${sampleSongs.join("、")}…`
+    : "";
+  const count = allVideos.value.length || artist.song_count || "";
+  return {
+    title: `${t("artist_songs_title", { artist: artist.name })} | ${t("meta.title")}`,
+    description: t("artist_songs_description", {
+      artist: artist.name,
+      count,
+      songs,
+    }),
+  };
+};
+
 const updateMeta = () => {
-  document.title = `${t("song_practice")} | ${t("meta.title")}`;
+  const { title, description } = buildMeta();
+  document.title = title;
 
   document
     .querySelector('meta[name="description"]')
-    .setAttribute("content", `${t("meta.description")}`);
+    .setAttribute("content", description);
 
   document
     .querySelector('meta[property="og:title"]')
-    .setAttribute("content", `${t("song_practice")} | ${t("meta.title")}`);
+    .setAttribute("content", title);
   document
     .querySelector('meta[property="og:description"]')
-    .setAttribute("content", `${t("meta.description")}`);
+    .setAttribute("content", description);
   document
     .querySelector('meta[property="og:url"]')
     .setAttribute("content", window.location.href);
 };
 
+// keep-alive 下元件離開後仍存活，只在顯示中才改 <head>，避免蓋掉其他頁面的標題
+const isPageActive = ref(false);
+// 中英文頁共用同一個快取元件，語言切換時也要重產 meta
+watch([selectedArtistInfo, allVideos, locale], () => {
+  if (isPageActive.value) updateMeta();
+});
+
 onActivated(() => {
+  isPageActive.value = true;
   updateMeta();
+});
+
+onDeactivated(() => {
+  isPageActive.value = false;
 });
 
 onMounted(async () => {

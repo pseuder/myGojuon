@@ -112,6 +112,8 @@ async function build() {
 
   const seen = new Set();
   for (const artist of artists) {
+    // 歌手頁（/SongOverview?artist=）各自有獨立的 title / description，列入 sitemap 讓 Google 個別收錄
+    paths.push(`/SongOverview?artist=${encodeURIComponent(artist.artist_id)}`);
     const songs = await fetchJson(
       `${API_BASE}/get_artist_songs?artist_id=${encodeURIComponent(artist.artist_id)}`,
     );

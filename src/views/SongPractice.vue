@@ -657,6 +657,7 @@ import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
 import { useApi } from "@/composables/useApi.js";
+import { useLocalePath } from "@/composables/useLocalePath.js";
 import { useKanaAudio, splitKanaUnits } from "@/composables/useKanaAudio.js";
 import { gifUrl, gifSize } from "@/utils/lyricGifs.js";
 import ContactForm from "@/components/ContactForm.vue";
@@ -675,7 +676,7 @@ const { t } = useI18n();
 const MYAPI = useApi();
 const router = useRouter();
 const route = useRoute();
-const localePath = (p) => p;
+const localePath = useLocalePath();
 
 const videoId = computed(() => route.params.uid);
 const uid = route.params.uid;

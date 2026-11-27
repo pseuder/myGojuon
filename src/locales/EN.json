@@ -20,6 +20,8 @@
   "home": "Home",
   "handwriting_practice": "Handwriting Practice",
   "dictation_practice": "Listening Practice",
+  "artist_songs_title": "{artist} 歌詞/lyrics/歌詞付き/假名/羅馬",
+  "artist_songs_description": "{songs}",
   "song_practice": "Song Promotion",
   "activity_analysis": "Activity Analysis",
   "admin_panel": "Admin Panel",

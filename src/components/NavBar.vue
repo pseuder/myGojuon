@@ -10,10 +10,13 @@
         <el-menu-item
           v-for="item in navItems"
           :key="item.path"
-          :index="item.path"
+          :index="localePath(item.path)"
           class="nav-item"
         >
-          <router-link :to="item.path" class="flex h-full items-center gap-2">
+          <router-link
+            :to="localePath(item.path)"
+            class="flex h-full items-center gap-2"
+          >
             <img
               :src="item.icon"
               :alt="t(item.label)"
@@ -36,9 +39,11 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import NavSetting from "@/components/NavSetting.vue";
+import { useLocalePath } from "@/composables/useLocalePath.js";
 
 const { t } = useI18n();
 const route = useRoute();
+const localePath = useLocalePath();
 
 const activeIndex = computed(() => route.path);
 

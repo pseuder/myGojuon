@@ -34,7 +34,11 @@
       <div
         class="my-10 flex flex-col justify-center gap-4 text-center md:flex-row"
       >
-        <router-link to="/WritingPractice" custom v-slot="{ href, navigate }">
+        <router-link
+          :to="localePath('/WritingPractice')"
+          custom
+          v-slot="{ href, navigate }"
+        >
           <el-button
             tag="a"
             :href="href"
@@ -44,7 +48,11 @@
             {{ t("start_handwriting_practice") }}
           </el-button>
         </router-link>
-        <router-link to="/ListeningPractice" custom v-slot="{ href, navigate }">
+        <router-link
+          :to="localePath('/ListeningPractice')"
+          custom
+          v-slot="{ href, navigate }"
+        >
           <el-button
             tag="a"
             :href="href"
@@ -55,7 +63,11 @@
             {{ t("start_dictation_practice") }}
           </el-button>
         </router-link>
-        <router-link to="/SongOverview" custom v-slot="{ href, navigate }">
+        <router-link
+          :to="localePath('/SongOverview')"
+          custom
+          v-slot="{ href, navigate }"
+        >
           <el-button
             tag="a"
             :href="href"
@@ -144,7 +156,7 @@
                 <div class="flex flex-col">
                   <h3 class="text-2xl">
                     <router-link
-                      to="/SongOverview?artist=25"
+                      :to="localePath('/SongOverview?artist=25')"
                       class="gradient-text-tech-animated"
                     >
                       LiSA
@@ -169,14 +181,14 @@
                 <div class="flex flex-col">
                   <h3 class="text-2xl">
                     <router-link
-                      to="/SongOverview?artist=1"
+                      :to="localePath('/SongOverview?artist=1')"
                       class="gradient-text-tech-animated"
                     >
                       孤獨搖滾
                     </router-link>
                   </h3>
                   <router-link
-                    to="/SongPractice/B7BxrAAXl94"
+                    :to="localePath('/SongPractice/B7BxrAAXl94')"
                     class="text-blue-700 underline"
                   >
                     ギターと孤独と蒼い惑星 - 結束バンド
@@ -196,14 +208,14 @@
                 <div class="flex flex-col">
                   <h3 class="text-2xl">
                     <router-link
-                      to="/SongOverview?artist=2"
+                      :to="localePath('/SongOverview?artist=2')"
                       class="gradient-text-tech-animated"
                     >
                       あたらよ
                     </router-link>
                   </h3>
                   <router-link
-                    to="/SongPractice/Y2wZKacNue8"
+                    :to="localePath('/SongPractice/Y2wZKacNue8')"
                     class="text-blue-700 underline"
                   >
                     outcry - あたらよ
@@ -223,14 +235,14 @@
                 <div class="flex flex-col">
                   <h3 class="text-2xl">
                     <router-link
-                      to="/SongOverview?artist=45"
+                      :to="localePath('/SongOverview?artist=45')"
                       class="gradient-text-tech-animated"
                     >
                       ヨルシカ
                     </router-link>
                   </h3>
                   <router-link
-                    to="/SongPractice/-VKIqrvVOpo"
+                    :to="localePath('/SongPractice/-VKIqrvVOpo')"
                     class="text-blue-700 underline"
                   >
                     ただ君に晴れ - ヨルシカ
@@ -241,7 +253,11 @@
           </div>
 
           <div class="flex flex-wrap justify-center gap-4">
-            <router-link to="/Tools" custom v-slot="{ href, navigate }">
+            <router-link
+              :to="localePath('/Tools')"
+              custom
+              v-slot="{ href, navigate }"
+            >
               <el-button
                 tag="a"
                 :href="href"
@@ -252,7 +268,11 @@
                 {{ t("tools.enter") }}
               </el-button>
             </router-link>
-            <router-link to="/VocabSets" custom v-slot="{ href, navigate }">
+            <router-link
+              :to="localePath('/VocabSets')"
+              custom
+              v-slot="{ href, navigate }"
+            >
               <el-button
                 tag="a"
                 :href="href"
@@ -300,10 +320,12 @@ import { useI18n } from "vue-i18n";
 
 /*-- API --*/
 import { useApi } from "@/composables/useApi.js";
+import { useLocalePath } from "@/composables/useLocalePath.js";
 const MYAPI = useApi();
 
 /*-- router --*/
 const router = useRouter();
+const localePath = useLocalePath();
 const { t } = useI18n();
 
 const handleContactClick = async (contactType) => {

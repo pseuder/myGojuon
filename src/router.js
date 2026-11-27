@@ -15,6 +15,8 @@ const routes = [
   {
     path: "/SongOverview",
     component: () => import("@/views/SongOverview.vue"),
+    // 每位歌手是獨立可索引的頁面，canonical / hreflang 需保留 ?artist=
+    meta: { canonicalQuery: ["artist"] },
   },
   {
     path: "/SongPractice/:uid",
@@ -75,6 +77,7 @@ const routes = [
   {
     path: "/en/SongOverview",
     component: () => import("@/views/SongOverview.vue"),
+    meta: { canonicalQuery: ["artist"] },
   },
   {
     path: "/en/SongPractice/:uid",
@@ -154,7 +157,7 @@ const upsertHead = (selector, create) => {
 };
 
 // 設定中英文互為 alternate 的 hreflang（只在兩種語言都有對應頁面時輸出）
-const setHreflang = (zhPath, hasEn) => {
+const setHreflang = (zhPath, hasEn, search = "") => {
   document.querySelectorAll("link[hreflang]").forEach((el) => el.remove());
   if (!hasEn) return;
   const enPath = zhPath === "/" ? "/en" : `/en${zhPath}`;
@@ -166,9 +169,20 @@ const setHreflang = (zhPath, hasEn) => {
     const link = document.createElement("link");
     link.rel = "alternate";
     link.hreflang = lang;
-    link.href = `${SITE_BASE}${path}`;
+    link.href = `${SITE_BASE}${path}${search}`;
     document.head.appendChild(link);
   });
+};
+
+const buildCanonicalSearch = (to) => {
+  const keys = to.meta.canonicalQuery || [];
+  const params = new URLSearchParams();
+  keys.forEach((k) => {
+    const v = to.query[k];
+    if (v != null && v !== "") params.set(k, String(v));
+  });
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
 };
 
 router.afterEach((to) => {
@@ -190,16 +204,19 @@ router.afterEach((to) => {
     return;
   }
 
+  // 只保留路由宣告為「內容不同」的 query（例如歌手頁 ?artist=），其餘參數一律略過
+  const search = buildCanonicalSearch(to);
+
   // canonical 指向自己：中英文是不同語言的頁面，不是重複內容
   upsertHead('link[rel="canonical"]', () => {
     const l = document.createElement("link");
     l.rel = "canonical";
     return l;
-  }).setAttribute("href", `${SITE_BASE}${to.path}`);
+  }).setAttribute("href", `${SITE_BASE}${to.path}${search}`);
 
   const enPath = zhPath === "/" ? "/en" : `/en${zhPath}`;
   const hasEn = router.resolve(enPath).name !== "notFound";
-  setHreflang(zhPath, hasEn);
+  setHreflang(zhPath, hasEn, search);
 });
 
 export default router;
