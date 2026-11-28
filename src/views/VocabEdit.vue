@@ -701,6 +701,7 @@ const loadSet = async () => {
   try {
     const data = await vocabStore.getSet(setId.value);
     title.value = data.title;
+    if (data.title) document.title = `${data.title} - ${t("site_title")}`;
     description.value = data.description;
     rows.value = data.words.map(makeRow);
     showImport.value = false;
