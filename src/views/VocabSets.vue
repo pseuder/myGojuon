@@ -204,9 +204,7 @@
           <el-button
             v-if="authStore.isAdmin"
             :icon="Edit"
-            @click="router.push(
-                `${localePrefix}/VocabSets/${detail.vocab_set_id}/edit`,
-              )"
+            @click="openEditInNewTab(detail.vocab_set_id)"
           >
             {{ t("vocab.edit") }}
           </el-button>
@@ -243,6 +241,11 @@ const { t } = useI18n();
 const router = useRouter();
 // 保留 /en 前綴
 const localePrefix = useRoute().path.startsWith("/en/") ? "/en" : "";
+
+const openEditInNewTab = (id) => {
+  const { href } = router.resolve(`${localePrefix}/VocabSets/${id}/edit`);
+  window.open(href, "_blank");
+};
 const authStore = useAuthStore();
 const vocabStore = useVocabStore();
 
